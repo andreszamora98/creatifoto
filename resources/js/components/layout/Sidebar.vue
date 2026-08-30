@@ -1,0 +1,63 @@
+<template>
+    <aside
+        :class="[
+            'flex flex-col h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-all duration-300 overflow-y-auto border-r border-gray-200 dark:border-gray-700',
+            isOpen ? 'w-64' : 'w-16',
+        ]"
+    >
+        <!-- Logo / Marca -->
+        <div class="flex items-center justify-center h-20 border-b border-gray-200 dark:border-gray-700">
+            <img v-if="isOpen" :src="'/images/creatifoto_2.png'" alt="creatifoto" class="h-14 w-auto" />
+            <img v-else :src="'/images/creatifoto_1.png'" alt="creatifoto" class="h-14 w-auto" />
+        </div>
+
+        <!-- Menú -->
+        <nav class="flex-1 px-2 py-4 space-y-1">
+            <a
+                v-for="item in menuItems"
+                :key="item.path"
+                :href="item.path"
+                class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                :class="{ 'bg-gray-200 dark:bg-gray-700': isActiveRoute(item.path) }"
+            >
+                <i :class="item.icon" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+                <span v-if="isOpen" class="ml-3">{{ item.title }}</span>
+            </a>
+        </nav>
+
+        <!-- Pie: Ajustes -->
+        <div class="p-2 border-t border-gray-200 dark:border-gray-700">
+            <a href="/settings" class="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <i class="ti ti-settings w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+                <span v-if="isOpen" class="ml-3">Ajustes</span>
+            </a>
+        </div>
+    </aside>
+</template>
+
+<script>
+export default {
+    name: 'Sidebar',
+    props: {
+        isOpen: {
+            type: Boolean,
+            required: true,
+        },
+    },
+    data() {
+        return {
+            menuItems: [
+                { title: 'Dashboard', path: '/', icon: 'ti ti-home' },
+                // { title: 'Órdenes', path: '/orders', icon: 'ti ti-ticket' },
+                // { title: 'Clientes', path: '/customers', icon: 'ti ti-users' },
+                // { title: 'Paquetes', path: '/packages', icon: 'ti ti-package' },
+            ],
+        };
+    },
+    methods: {
+        isActiveRoute(path) {
+            return window.location.pathname === path;
+        },
+    },
+};
+</script>

@@ -5,8 +5,7 @@
 </head>
 <body>
     <div id="app">
-        <!-- Vue se montará aquí -->
-        <app-component></app-component>
+        <orders-board></orders-board>
     </div>
-</body>
+</body
 </html>
