@@ -12,4 +12,14 @@ export default defineConfig({
         vue(),
         tailwindcss(),
     ],
+    server: {
+        host: '192.168.100.94', //Dirección IP de la Mac
+        port: 5173,
+        strictPort: true,
+        cors: {
+            origin: 'http://192.168.100.94:8000', //Dirección IP de la Mac
+            methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+            credentials: true,
+        },
+    },
 });

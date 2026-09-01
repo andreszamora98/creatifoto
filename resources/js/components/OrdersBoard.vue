@@ -6,43 +6,43 @@
         <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
           <i class="ti ti-ticket mr-2 text-lg"></i>Tablero de órdenes
         </h2>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <button class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-filter text-sm"></i>
-              <span>Filtros</span>
+            <i class="ti ti-filter text-sm"></i>
+            <span>Filtros</span>
           </button>
           <button class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-sort-descending text-sm"></i>
-              <span>Recientes</span>
+            <i class="ti ti-sort-descending text-sm"></i>
+            <span>Recientes</span>
           </button>
           <button class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-refresh text-sm mr-1"></i>
-              Actualizar
+            <i class="ti ti-refresh text-sm mr-1"></i>
+            Actualizar
           </button>
           <button class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-plus text-sm"></i>
-              <span>Nueva orden</span>
+            <i class="ti ti-plus text-sm"></i>
+            <span>Nueva orden</span>
           </button>
-      </div>
+        </div>
       </div>
     </div>
 
     <!-- PANEL SUPERIOR: Columnas -->
     <div class="flex-shrink-0 mb-4">
       <div class="relative mb-2">
-        <!-- Barra de desplazamiento -->
+        <div class="absolute h-1 rounded-full bg-gray-200 dark:bg-gray-500 bottom-0 left-5 right-5"></div>
         <div class="absolute h-1 rounded-full transition-all duration-300 ease-in-out bottom-0"
-            :style="{
-              width: `${100 / columns.length}%`,
-              transform: `translateX(${activeColumn * 100}%)`,
-              backgroundColor: columns[activeColumn]?.color.outline,
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-            }">
+             :style="{
+               width: `${100 / columns.length}%`,
+               transform: `translateX(${activeColumn * 100}%)`,
+               backgroundColor: columns[activeColumn]?.color.outline,
+               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+             }">
         </div>
       </div>
 
       <div class="relative">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 px-1">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
           <div v-for="(column, index) in columns" :key="index"
                @click="activeColumn = index"
                :class="[
@@ -69,7 +69,7 @@
                 <i :class="column.icon + ' text-white text-lg'"></i>
               </div>
             </div>
-            <h3 class="font-semibold text-lg mb-1" :style="{ color: column.textColor.active }">
+            <h3 class="font-semibold text-xs mb-1" :style="{ color: column.textColor.active }">
               {{ column.title }}
             </h3>
             <div class="text-base font-bold" :style="{ color: column.textColor.active }">
@@ -83,7 +83,7 @@
     <!-- PANEL INFERIOR: Grid de órdenes -->
     <div class="flex-1 flex flex-col overflow-hidden min-h-0">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow flex-1 flex flex-col overflow-hidden min-h-0">
-        <!-- Barra de búsqueda -->
+        <!-- Barra de búsqueda y controles -->
         <div class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
             <div class="flex-1">
@@ -106,9 +106,12 @@
                 <span class="mx-1">•</span>
                 <span>{{ filteredOrders.length }} órdenes</span>
               </div>
-              <button class="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white text-xs">
-                <i class="ti ti-layout-grid text-xs"></i>
-                <span>Tarjetas</span>
+              <button 
+                @click="toggleViewMode" 
+                class="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white text-xs"
+              >
+                <i :class="viewMode === 'cards' ? 'ti ti-table' : 'ti ti-layout-grid'" class="text-xs"></i>
+                <span>{{ viewMode === 'cards' ? 'Tabla' : 'Tarjetas' }}</span>
               </button>
             </div>
           </div>
@@ -117,7 +120,8 @@
         <!-- Contenido de órdenes -->
         <div class="flex-1 overflow-hidden min-h-0 relative">
           <div class="h-full overflow-y-auto p-3">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Vista tarjetas -->
+            <div v-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div v-for="order in filteredOrders" :key="order.id"
                    class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden group">
                 <div class="h-1.5" :style="{ backgroundColor: columns[activeColumn]?.color.active }"></div>
@@ -168,6 +172,41 @@
                 </div>
               </div>
             </div>
+
+            <!-- Vista tabla -->
+            <div v-else class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Código</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Cliente</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Paquete</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Precio</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Estado</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">F. Entrega</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Entregado</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tr v-for="order in filteredOrders" :key="order.id" 
+                      class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">#{{ order.code }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ order.customer_name }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ order.package_name }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ order.price }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                      <span class="px-2 py-0.5 text-xs rounded-full" :class="statusClass(order.status)">
+                        {{ order.status }}
+                      </span>
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ order.delivery_date }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <i :class="order.delivered ? 'ti ti-check-circle text-green-500' : 'ti ti-clock text-yellow-500'"></i>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -181,6 +220,7 @@ export default {
   data() {
     return {
       activeColumn: 0,
+      viewMode: 'cards', // 'cards' | 'table'
       columns: [
         {
           title: 'Pendientes',
@@ -312,6 +352,9 @@ export default {
     }
   },
   methods: {
+    toggleViewMode() {
+      this.viewMode = this.viewMode === 'cards' ? 'table' : 'cards';
+    },
     getColumnType(status) {
       const map = {
         'Pendiente': 'pending',
@@ -344,7 +387,6 @@ export default {
 </script>
 
 <style scoped>
-/* El layout ya maneja el espacio, así que solo definimos estilos internos */
 .overflow-hidden { overflow: hidden; }
 .flex-1 { flex: 1 1 0%; }
 .flex-shrink-0 { flex-shrink: 0; }
