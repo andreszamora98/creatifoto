@@ -1,6 +1,5 @@
 import { reactive } from 'vue';
 
-// Leer desde localStorage
 const storedSidebar = localStorage.getItem('sidebarOpen');
 const storedTheme = localStorage.getItem('darkMode');
 
@@ -9,7 +8,6 @@ export const state = reactive({
     darkMode: storedTheme !== null ? JSON.parse(storedTheme) : false,
 });
 
-// Funciones para actualizar y persistir
 export function setSidebarOpen(value) {
     state.sidebarOpen = value;
     localStorage.setItem('sidebarOpen', JSON.stringify(value));
@@ -18,7 +16,6 @@ export function setSidebarOpen(value) {
 export function setDarkMode(value) {
     state.darkMode = value;
     localStorage.setItem('darkMode', JSON.stringify(value));
-    // Aplicar clase al HTML
     if (value) {
         document.documentElement.classList.add('dark');
     } else {
@@ -26,5 +23,4 @@ export function setDarkMode(value) {
     }
 }
 
-// Inicializar tema
 setDarkMode(state.darkMode);

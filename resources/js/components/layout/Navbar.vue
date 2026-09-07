@@ -7,11 +7,10 @@
             >
                 <i class="ti ti-menu-2 text-xl"></i>
             </button>
-            <h1 class="text-lg font-semibold text-gray-800 dark:text-white">CreatiFoto</h1>
+            <h1 class="text-lg font-semibold text-gray-800 dark:text-white">{{ pageTitle }}</h1>
         </div>
 
         <div class="flex items-center gap-3">
-            <!-- Botón tema -->
             <button
                 @click="$emit('toggle-theme')"
                 class="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -20,7 +19,6 @@
                 <i v-else class="ti ti-sun text-xl"></i>
             </button>
 
-            <!-- Usuario -->
             <div class="relative">
                 <button @click="dropdownOpen = !dropdownOpen" class="flex items-center space-x-2 focus:outline-none">
                     <i class="ti ti-user-circle text-3xl text-gray-600 dark:text-gray-300"></i>
@@ -53,6 +51,7 @@ export default {
         userEmail: { type: String, default: 'usuario@ejemplo.com' },
         profilePic: { type: String, default: 'https://ui-avatars.com/api/?name=User&background=random' },
         isDark: { type: Boolean, default: false },
+        pageTitle: { type: String, default: 'CreatiFoto' },
     },
     data() {
         return {
