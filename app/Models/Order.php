@@ -65,7 +65,7 @@ class Order extends Model
      */
     public function packages(): BelongsToMany
     {
-        return $this->belongsToMany(Package::class, 'order_package')
+        return $this->belongsToMany(Package::class, 'order_packages')
             ->withPivot(['package_name_snapshot', 'price_snapshot'])
             ->withTimestamps()
             ->using(OrderPackage::class);

@@ -13,6 +13,9 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->decimal('amount', 10, 2);
             $table->string('payment_method', 50)->nullable();
+            $table->enum('type', ['advance', 'settlement'])
+                  ->default('advance')
+                  ->comment('advance = anticipo, settlement = liquidación');
             $table->timestamp('paid_at')->useCurrent();
             $table->text('notes')->nullable();
             $table->timestamps();

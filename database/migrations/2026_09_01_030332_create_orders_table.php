@@ -14,11 +14,16 @@ return new class extends Migration
                   ->constrained()
                   ->cascadeOnDelete();
 
-            // total = SUM(order_photo_type) + SUM(order_package) + servicios adicionales a nivel orden
+            //total = SUM(order_photo_type) + SUM(order_package) + servicios adicionales a nivel orden
             $table->decimal('total', 10, 2)->default(0);
 
-            // toma elegida de las 3 fotos (1, 2 o 3)
-            $table->unsignedTinyInteger('pose_number')->nullable();
+            // Saldo pendiente por cobrar. Se mantiene sincronizado automáticamente
+            // vía PaymentObserver cada vez que se crea/edita/elimina un pago.
+            // No debe actualizarse manualmente desde ningún controlador.
+            $table->decimal('balance_due', 10, 2)->default(0);
+
+            //toma elegida de las 3 fotos
+            $table->integer('pose_number')->nullable();
 
             $table->text('notes')->nullable();
             $table->date('estimated_delivery_date');
@@ -39,6 +44,7 @@ return new class extends Migration
             $table->index('actual_delivery_date');
             $table->index('status');
             $table->index('signature_id');
+            $table->index('balance_due'); // para filtrar clientes/órdenes con saldo pendiente
         });
     }
 

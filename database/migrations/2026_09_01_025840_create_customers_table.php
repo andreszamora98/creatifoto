@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->index();
+            $table->string('name')->unique();
             $table->string('email')->unique()->nullable();
-            $table->string('phone', 20)->nullable()->unique();
+            $table->string('phone', 10)->nullable()->unique();
             $table->softDeletes();
             $table->timestamps(); //(created_at, updated_at)
         });

@@ -13,8 +13,6 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  */
 class OrderPackage extends Pivot
 {
-    protected $table = 'order_package';
-
     public $incrementing = true;
 
     protected $fillable = [

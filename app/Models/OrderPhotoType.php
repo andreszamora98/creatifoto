@@ -11,8 +11,6 @@ class OrderPhotoType extends Model
 {
     use HasFactory;
     
-    protected $table = 'order_photo_type';  
-
     protected $fillable = [
         'order_id',
         'photo_type_id',

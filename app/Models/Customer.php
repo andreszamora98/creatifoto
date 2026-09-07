@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,12 +18,13 @@ class Customer extends Model
         'phone',
     ];
 
-    /**
-     * Un cliente puede tener muchas órdenes a lo largo del tiempo.
-     * Nota: orders.customer_id es cascadeOnDelete, pero como Customer
-     * usa SoftDeletes, en la práctica nunca se hace un delete físico
-     * (solo soft-delete), por lo que las órdenes quedan intactas.
-     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value) => trim(preg_replace('/\s+/', ' ', $value)),
+        );
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

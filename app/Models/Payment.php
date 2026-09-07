@@ -14,6 +14,7 @@ class Payment extends Model
         'order_id',
         'amount',
         'payment_method',
+        'type',
         'paid_at',
         'notes',
     ];
@@ -24,10 +25,13 @@ class Payment extends Model
     ];
 
     /**
-     * Historial de abonos. order_id es cascadeOnDelete.
-     * El saldo (debe) NUNCA se guarda como columna: se calcula como
-     * orders.total - SUM(payments.amount) para que nunca se
-     * desincronice (ver Order::balance()).
+     * Historial de abonos/pagos de una orden. order_id es cascadeOnDelete.
+     * 'type' distingue si el pago corresponde al anticipo ('advance')
+     * o a la liquidación final ('settlement').
+     *
+     * orders.balance_due se mantiene sincronizado automáticamente por
+     * PaymentObserver cada vez que se crea/edita/elimina un Payment,
+     * sumando SUM(payments.amount) y restándolo de orders.total.
      */
     public function order(): BelongsTo
     {
