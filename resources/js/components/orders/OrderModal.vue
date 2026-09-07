@@ -1,5 +1,4 @@
 <template>
-  <!-- Overlay principal de OrderModal -->
   <transition name="fade">
     <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-3">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl max-h-[92vh] overflow-y-auto">
@@ -15,7 +14,6 @@
 
           <div class="space-y-8" @input="markDirty" @change="markDirty" @click="markDirty">
 
-            <!-- ===================== SECCIÓN 1: DATOS DEL CLIENTE ===================== -->
             <section>
               <h4 class="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-4 flex items-center gap-2">
                 <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold">1</span>
@@ -67,7 +65,6 @@
                   Campo obligatorio*
                 </p>
 
-                <!-- Teléfono y correo del cliente -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
                   <div>
                     <div class="flex items-center justify-between mb-2">
@@ -168,14 +165,12 @@
 
             <div class="my-8 border-t-4 border-dashed border-gray-300 dark:border-gray-600"></div>
 
-            <!-- ===================== SECCIÓN 2: DATOS DE LA ORDEN ===================== -->
             <section class="space-y-6">
               <h4 class="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
                 <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold">2</span>
                 Datos de la orden
               </h4>
 
-              <!-- Fecha de entrega y toma -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label class="form-label text-base font-medium mb-2 block text-gray-700 dark:text-gray-300">Fecha de entrega estimada <span class="text-red-500">*</span></label>
@@ -212,7 +207,6 @@
                 </div>
               </div>
 
-              <!-- Tipos de fotografía -->
               <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border-2"
                    :class="attemptedSubmit && fieldErrors.photo_types ? 'border-red-500' : 'border-transparent'">
                 <h4 class="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
@@ -249,7 +243,6 @@
                             class="form-control form-control-sm text-base p-2 w-24 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     </div>
                     <div v-if="lines[pt.id] && lines[pt.id].selected" class="grid grid-cols-2 gap-4 mt-3 pl-10" @click.stop>
-
                       <div class="relative">
                         <button
                           type="button"
@@ -298,7 +291,6 @@
                 </div>
               </div>
 
-              <!-- Paquetes escolares -->
               <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5">
                 <h4 class="text-base font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center">
                   <i class="ti ti-package mr-2"></i>Paquetes escolares (opcional)
@@ -319,13 +311,11 @@
                 </div>
               </div>
 
-              <!-- Total estimado -->
               <div class="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-lg p-5">
                 <span class="text-base font-semibold text-blue-800 dark:text-blue-300">Total estimado</span>
                 <span class="text-xl font-bold text-blue-800 dark:text-blue-300">${{ estimatedTotal.toFixed(2) }}</span>
               </div>
 
-              <!-- Notas -->
               <div>
                 <label class="form-label text-base font-medium mb-2 block text-gray-700 dark:text-gray-300">Observaciones</label>
                 <textarea v-model="form.notes" rows="4" class="form-control form-control-sm w-full text-base p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none"></textarea>
@@ -339,7 +329,6 @@
 
             <div class="my-8 border-t-4 border-dashed border-gray-300 dark:border-gray-600"></div>
 
-            <!-- ===================== SECCIÓN 3: PAGO ===================== -->
             <section>
               <h4 class="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-4 flex items-center gap-2">
                 <span class="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold">3</span>
@@ -347,7 +336,7 @@
               </h4>
 
               <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <h4 class="text-base font-semibold text-gray-700 dark:text-gray-300 flex items-center">
                     <i class="ti ti-cash-banknote mr-2"></i>{{ paymentConcept }} <span class="text-red-500 ml-1">*</span>
                   </h4>
@@ -358,6 +347,11 @@
                   </span>
                 </div>
 
+                <label class="flex items-center gap-2 mb-4 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                  <input type="checkbox" :checked="liquidateAll" @change="toggleLiquidateAll" class="w-4 h-4 text-blue-600 dark:text-blue-500">
+                  Liquidar todo con un solo pago
+                </label>
+
                 <div class="space-y-3">
                   <div v-for="(payment, idx) in payments" :key="idx"
                        class="flex flex-col md:flex-row gap-3 md:items-start bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
@@ -365,18 +359,12 @@
 
                     <div class="flex-1 w-full md:w-auto">
                       <input v-model.number="payment.amount" type="number" min="0" step="0.01"
-                            :disabled="payment.autofill"
                             @input="onPaymentAmountInput(idx)"
                             placeholder="0.00"
-                            class="form-control form-control-sm text-base p-2.5 rounded-lg border w-full disabled:opacity-70 disabled:cursor-not-allowed text-gray-800 dark:text-gray-200"
+                            class="form-control form-control-sm text-base p-2.5 rounded-lg border w-full text-gray-800 dark:text-gray-200"
                             :class="attemptedSubmit && (!payment.amount || payment.amount <= 0)
                               ? 'border-red-500 dark:border-red-500'
                               : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'">
-
-                      <label class="flex items-center gap-1.5 mt-1.5 text-xs text-gray-500 dark:text-gray-400 cursor-pointer select-none">
-                        <input type="checkbox" :checked="payment.autofill" @change="toggleAutofillPayment(idx)" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-500">
-                        Liquidar total con este pago
-                      </label>
 
                       <p v-if="attemptedSubmit && (!payment.amount || payment.amount <= 0)" class="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
                         Campo obligatorio*
@@ -426,12 +414,12 @@
                   </div>
                 </div>
 
-                <button @click="addPayment" type="button" :disabled="remainingBalance <= 0"
+                <button @click="addPayment" type="button" :disabled="remainingBalance <= 0 || liquidateAll"
                         class="mt-3 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1">
                   <i class="ti ti-plus"></i> Agregar otro pago
                 </button>
 
-                <p v-if="remainingBalance <= 0 && totalPaid > 0 && estimatedTotal > 0" class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                <p v-if="remainingBalance <= 0 && estimatedTotal > 0" class="text-xs text-gray-400 dark:text-gray-500 mt-2">
                   El pago cubre el total de la orden. No se pueden agregar más pagos.
                 </p>
               </div>
@@ -454,9 +442,6 @@
     </div>
   </transition>
 
-  <!-- ====================================================== -->
-  <!-- Modales secundarios (se renderizan en <body> gracias a Teleport) -->
-  <!-- ====================================================== -->
   <ConfirmModal
     :show="showConfirmModal"
     title="¿Cerrar sin guardar?"
@@ -509,6 +494,7 @@ export default {
       dateInputOpen: false,
       attemptedSubmit: false,
       initialState: null,
+      liquidateAll: false,
       photoTypes: [],
       paperTypes: [],
       packages: [],
@@ -521,7 +507,7 @@ export default {
       selectedPackageIds: [],
       lines: {},
       payments: [
-        { amount: null, payment_method: '', autofill: false }
+        { amount: null, payment_method: '' }
       ],
       form: {
         estimated_delivery_date: '',
@@ -572,19 +558,6 @@ export default {
       if (!trimmed) return null;
       return this.customers.find(c => c.name.trim().toLowerCase() === trimmed) || null;
     },
-    /*
-    filteredCustomers() {
-      if (!this.customerSearch.trim()) return [];
-      const q = this.customerSearch.toLowerCase().trim();
-      return this.customers.filter(c => {
-        const nameMatch = (c.name || '').toLowerCase().startsWith(q);
-        const phoneMatch = (c.phone || '').includes(q);
-        const emailMatch = (c.email || '').toLowerCase().includes(q);
-        return nameMatch || phoneMatch || emailMatch;
-      });
-    },
-    */
-
     filteredCustomers() {
       if (!this.customerSearch.trim()) return [];
       const q = this.customerSearch.toLowerCase().trim();
@@ -592,7 +565,6 @@ export default {
         (c.name || '').toLowerCase().startsWith(q)
       );
     },
-
     phoneChanged() {
       if (!this.selectedCustomer) return false;
       return this.customerPhone.trim() !== (this.selectedCustomer.phone || '').trim();
@@ -626,7 +598,7 @@ export default {
       return this.remainingBalance > 0 ? 'Anticipo' : 'De contado';
     },
     showBalanceBadge() {
-      return this.estimatedTotal > 0 && this.totalPaid > 0;
+      return this.estimatedTotal > 0 && this.payments.length > 0;
     },
     notesWordCount() {
       const trimmed = this.form.notes.trim();
@@ -694,21 +666,10 @@ export default {
         this.form.notes = words.slice(0, 1000).join(' ');
       }
     },
-    payments: {
-      deep: true,
-      handler() {
-        this.payments.forEach((p, idx) => {
-          if (p.autofill) {
-            const max = this.maxAmountFor(idx);
-            if (p.amount !== max) p.amount = max;
-          }
-        });
-      }
-    },
     estimatedTotal() {
-      this.payments.forEach((p, idx) => {
-        if (p.autofill) p.amount = this.maxAmountFor(idx);
-      });
+      if (this.liquidateAll && this.payments.length) {
+        this.payments[0].amount = this.estimatedTotal;
+      }
     }
   },
   methods: {
@@ -719,21 +680,38 @@ export default {
       );
       return Math.max(this.estimatedTotal - othersSum, 0);
     },
-    toggleAutofillPayment(idx) {
-      const payment = this.payments[idx];
-      payment.autofill = !payment.autofill;
-      if (payment.autofill) {
-        payment.amount = this.maxAmountFor(idx);
+    toggleLiquidateAll() {
+      this.liquidateAll = !this.liquidateAll;
+      if (this.liquidateAll) {
+        const method = this.payments[0]?.payment_method || '';
+        this.payments = [{ amount: this.estimatedTotal, payment_method: method }];
+      } else {
+        this.payments[0].amount = 0;
       }
       this.markDirty();
     },
     onPaymentAmountInput(idx) {
       const payment = this.payments[idx];
+      const amount = Number(payment.amount) || 0;
+
+      if (this.estimatedTotal > 0 && amount >= this.estimatedTotal) {
+        payment.amount = this.estimatedTotal;
+        this.payments = [payment];
+        this.liquidateAll = true;
+        this.markDirty();
+        return;
+      }
+
       const max = this.maxAmountFor(idx);
-      if (Number(payment.amount) > max) {
+      if (amount > max) {
         payment.amount = max;
       }
-      if (payment.autofill) payment.autofill = false;
+
+      if (this.liquidateAll) {
+        this.liquidateAll = false;
+      }
+
+      this.markDirty();
     },
     toggleEditPhone() {
       this.editingPhone = true;
@@ -847,8 +825,8 @@ export default {
       this.markDirty();
     },
     addPayment() {
-      if (this.remainingBalance <= 0) return;
-      this.payments.push({ amount: null, payment_method: '', autofill: false });
+      if (this.remainingBalance <= 0 || this.liquidateAll) return;
+      this.payments.push({ amount: null, payment_method: '' });
       this.markDirty();
     },
     removePayment(idx) {
@@ -916,7 +894,8 @@ export default {
       this.customerEmail = '';
       this.selectedPackageIds = [];
       this.attemptedSubmit = false;
-      this.payments = [{ amount: null, payment_method: '', autofill: false }];
+      this.liquidateAll = false;
+      this.payments = [{ amount: null, payment_method: '' }];
       this.openPaymentMethodDropdownIdx = null;
       this.editingPhone = false;
       this.editingEmail = false;
