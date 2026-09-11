@@ -77,7 +77,8 @@
             <input
               type="text"
               :value="customerPhone"
-              @input="$emit('update:customerPhone', $event.target.value)"
+              @input="onPhoneInput"
+              @blur="onPhoneBlur"
               maxlength="10"
               inputmode="numeric"
               :disabled="selectedCustomer && selectedCustomer.phone && !editingPhone"
@@ -85,6 +86,14 @@
               class="form-control form-control-sm w-full text-lg p-4 pl-11 pr-10 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
               :class="phoneError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'"
             />
+            <button
+              v-if="customerPhone && (!selectedCustomer || !selectedCustomer.phone || editingPhone)"
+              @click="clearPhone"
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <i class="ti ti-eraser text-xl"></i>
+            </button>
           </div>
           <p v-if="phoneError" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
             {{ phoneError }}
@@ -133,6 +142,14 @@
               class="form-control form-control-sm w-full text-lg p-4 pl-11 pr-10 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
               :class="emailError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'"
             />
+            <button
+              v-if="customerEmail && (!selectedCustomer || !selectedCustomer.email || editingEmail)"
+              @click="clearEmail"
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <i class="ti ti-eraser text-xl"></i>
+            </button>
           </div>
           <p v-if="emailError" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
             {{ emailError }}
@@ -157,6 +174,9 @@
 export default {
   name: 'CustomerStep',
   props: {
+    onPhoneBlur: { type: Function, required: true },
+    clearPhone: { type: Function, required: true },
+    clearEmail: { type: Function, required: true },
     customerSearch: { type: String, default: '' },
     customerPhone: { type: String, default: '' },
     customerEmail: { type: String, default: '' },
@@ -185,6 +205,15 @@ export default {
     confirmEmailChange: { type: Function, required: true },
     cancelEmailEdit: { type: Function, required: true }
   },
-  emits: ['update:customerSearch', 'update:customerPhone', 'update:customerEmail']
+  emits: ['update:customerSearch', 'update:customerPhone', 'update:customerEmail'],
+  methods: {
+    onPhoneInput(event) {
+      const filtered = event.target.value.replace(/\D/g, '');
+      if (event.target.value !== filtered) {
+        event.target.value = filtered;
+      }
+      this.$emit('update:customerPhone', filtered);
+    },
+  }
 };
 </script>

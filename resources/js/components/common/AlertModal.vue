@@ -2,26 +2,22 @@
   <Teleport to="body">
     <transition name="fade">
       <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-60 p-3">
-        <div class="bg-yellow-50 rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col items-center text-center">
-          <!-- Icono de advertencia -->
-          <div class="w-16 h-16 rounded-full bg-yellow-200 flex items-center justify-center mb-4">
-            <i class="ti ti-alert-circle text-3xl text-yellow-700"></i>
+        <div class="bg-yellow-50 dark:bg-amber-950 rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col items-center text-center">
+          <div class="w-16 h-16 rounded-full bg-yellow-200 dark:bg-yellow-800/40 flex items-center justify-center mb-4">
+            <i class="ti ti-alert-circle text-3xl text-yellow-700 dark:text-yellow-300"></i>
           </div>
 
-          <!-- Título -->
-          <h3 class="text-xl font-bold text-yellow-800 mb-2">
+          <h3 class="text-xl font-bold text-yellow-800 dark:text-yellow-300 mb-2">
             {{ title }}
           </h3>
 
-          <!-- Mensaje -->
-          <p class="text-base text-yellow-700 mb-6 max-w-xs">
+          <p class="text-base text-yellow-700 dark:text-yellow-200/80 mb-6 max-w-xs">
             {{ message }}
           </p>
 
-          <!-- Botón único -->
           <button
             @click="acknowledge"
-            class="w-full px-4 py-2.5 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors"
+            class="w-full px-4 py-2.5 text-sm font-medium text-white bg-yellow-600 dark:text-amber-950 dark:bg-yellow-500 rounded-lg hover:bg-yellow-700 dark:hover:bg-yellow-400 transition-colors"
           >
             {{ buttonText }}
           </button>

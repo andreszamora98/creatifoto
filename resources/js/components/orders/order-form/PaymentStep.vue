@@ -33,54 +33,58 @@
             </button>
           </div>
 
-          <div class="w-full">
-            <input v-model.number="payment.amount" type="number" min="0" step="0.01"
-                  @input="onPaymentAmountInput(idx)"
-                  placeholder="0.00"
-                  class="form-control form-control-sm text-lg p-3 rounded-lg border w-full text-gray-800 dark:text-gray-200"
-                  :class="showErrors && (!payment.amount || payment.amount <= 0)
-                    ? 'border-red-500 dark:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'">
-
-            <p v-if="showErrors && (!payment.amount || payment.amount <= 0)" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
-              Campo obligatorio*
-            </p>
-          </div>
-
-          <div class="relative w-full">
-            <button
-              type="button"
-              @click="togglePaymentMethodDropdown(idx)"
-              @blur="closePaymentMethodDropdown(idx)"
-              class="w-full text-lg p-3 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center justify-between"
-              :class="showErrors && !payment.payment_method
-                ? 'border-red-500 dark:border-red-500'
-                : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
-            >
-              <span class="flex items-center gap-2">
-                <i v-if="payment.payment_method === 'efectivo'" class="ti ti-cash text-xl text-green-600 dark:text-green-400"></i>
-                <i v-else-if="payment.payment_method === 'tarjeta'" class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i>
-                <span v-if="payment.payment_method === 'efectivo'">Efectivo</span>
-                <span v-else-if="payment.payment_method === 'tarjeta'">Tarjeta</span>
-                <span v-else class="text-gray-400 dark:text-gray-500">Método</span>
-              </span>
-              <i class="ti ti-chevron-down text-base"></i>
-            </button>
-
-            <div v-if="openPaymentMethodDropdownIdx === idx"
-                 class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
-              <button @mousedown.prevent="selectLinePaymentMethod(idx, 'efectivo')"
-                      class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                <i class="ti ti-cash text-xl text-green-600 dark:text-green-400"></i> Efectivo
-              </button>
-              <button @mousedown.prevent="selectLinePaymentMethod(idx, 'tarjeta')"
-                      class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                <i class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i> Tarjeta
-              </button>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-lg font-medium">$</span>
+                <input v-model.number="payment.amount" type="number" min="0" step="0.01"
+                      @input="onPaymentAmountInput(idx)"
+                      placeholder="0.00"
+                      class="form-control form-control-sm text-lg p-3 pl-7 rounded-lg border w-full text-gray-800 dark:text-gray-200"
+                      :class="showErrors && (!payment.amount || payment.amount <= 0)
+                        ? 'border-red-500 dark:border-red-500'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'">
+              </div>
+              <p v-if="showErrors && (!payment.amount || payment.amount <= 0)" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
+                Campo obligatorio*
+              </p>
             </div>
-            <p v-if="showErrors && !payment.payment_method" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
-              Campo obligatorio*
-            </p>
+
+            <div class="relative">
+              <button
+                type="button"
+                @click="togglePaymentMethodDropdown(idx)"
+                @blur="closePaymentMethodDropdown(idx)"
+                class="w-full text-lg p-3 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                :class="showErrors && !payment.payment_method
+                  ? 'border-red-500 dark:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
+              >
+                <span class="flex items-center gap-2">
+                  <i v-if="payment.payment_method === 'efectivo'" class="ti ti-cash text-xl text-green-600 dark:text-green-400"></i>
+                  <i v-else-if="payment.payment_method === 'tarjeta'" class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i>
+                  <span v-if="payment.payment_method === 'efectivo'">Efectivo</span>
+                  <span v-else-if="payment.payment_method === 'tarjeta'">Tarjeta</span>
+                  <span v-else class="text-gray-400 dark:text-gray-500">Método</span>
+                </span>
+                <i class="ti ti-chevron-down text-base"></i>
+              </button>
+
+              <div v-if="openPaymentMethodDropdownIdx === idx"
+                   class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
+                <button @mousedown.prevent="selectLinePaymentMethod(idx, 'efectivo')"
+                        class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                  <i class="ti ti-cash text-xl text-green-600 dark:text-green-400"></i> Efectivo
+                </button>
+                <button @mousedown.prevent="selectLinePaymentMethod(idx, 'tarjeta')"
+                        class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                  <i class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i> Tarjeta
+                </button>
+              </div>
+              <p v-if="showErrors && !payment.payment_method" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
+                Campo obligatorio*
+              </p>
+            </div>
           </div>
         </div>
       </div>

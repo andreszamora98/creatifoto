@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-6">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] overflow-y-auto">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl max-h-[85vh] overflow-y-auto">
         <div class="p-8">
           <div class="flex justify-between items-center mb-3">
             <h3 class="text-3xl font-bold text-gray-800 dark:text-gray-200">
@@ -35,6 +35,9 @@
               <CustomerStep
                 v-if="currentStep === 1"
                 key="step-1"
+                :on-phone-blur="onPhoneBlur"
+                :clear-phone="clearPhone"
+                :clear-email="clearEmail"
                 :customer-search="customerSearch"
                 :customer-phone="customerPhone"
                 :customer-email="customerEmail"
@@ -89,6 +92,8 @@
                 :toggle-format-dropdown="toggleFormatDropdown"
                 :close-format-dropdown="closeFormatDropdown"
                 :select-format="selectFormat"
+                @update:form="form = $event"
+
               />
 
               <PaymentStep
@@ -145,10 +150,21 @@
     @confirm="closeConfirmed"
     @cancel="showConfirmModal = false"
   />
+
+  <ConfirmModal
+    :show="showMissingContactModal"
+    title="¿Estás seguro que quieres continuar?"
+    message="No se ha agregado ningún dato de contacto del cliente"
+    confirm-text="Continuar"
+    cancel-text="Seguir editando"
+    @confirm="confirmContinueWithoutContact"
+    @cancel="cancelContinueWithoutContact"
+  />
+
   <SuccessModal
     :show="showSuccessModal"
-    title="¡Orden creada!"
-    message="La orden se registró correctamente."
+    :title="successModalTitle"
+    :message="successModalMessage"
     @closed="onSuccessClosed"
   />
   <AlertModal
@@ -177,6 +193,12 @@ export default {
   emits: ['close', 'created', 'notify'],
   data() {
     return {
+      successModalTitle: '',
+      successModalMessage: '',
+      successModalNext: null,
+      savingContact: false,
+      phoneTouched: false,
+      showMissingContactModal: false,
       alertMessage: '',
       showAlertModal: false,
       editingPhone: false,
@@ -210,7 +232,6 @@ export default {
       ],
       form: {
         estimated_delivery_date: '',
-        pose_number: null,
         notes: ''
       }
     };
@@ -237,11 +258,14 @@ export default {
     },
     canConfirmPhone() {
       const trimmed = this.customerPhone.trim();
-      return this.phoneChanged && trimmed.length === 10 && /^\d{10}$/.test(trimmed);
+      const original = ((this.selectedCustomer && this.selectedCustomer.phone) || '').trim();
+      if (trimmed === original) return false;
+      if (trimmed === '') return true;
+      return /^\d{10}$/.test(trimmed);
     },
     phoneError() {
       const trimmed = this.customerPhone.trim();
-      if (!trimmed) return null;
+      if (!trimmed || !this.phoneTouched) return null;
       if (!/^\d{10}$/.test(trimmed)) {
         return 'El teléfono debe tener exactamente 10 dígitos.';
       }
@@ -311,7 +335,6 @@ export default {
       return {
         customer: !hasCustomer,
         delivery_date: !this.form.estimated_delivery_date,
-        pose_number: !this.form.pose_number || this.form.pose_number < 1,
         photo_types: this.activeLines.length === 0,
         initial_payment_amount: this.payments.length === 0 || this.payments.some(p => !p.amount || p.amount <= 0),
         initial_payment_method: this.payments.some(p => !p.payment_method),
@@ -329,7 +352,7 @@ export default {
     currentStepValid() {
       const keysByStep = {
         1: ['customer'],
-        2: ['delivery_date', 'pose_number', 'photo_types'],
+        2: ['delivery_date', 'photo_types'],
         3: ['initial_payment_amount', 'initial_payment_method']
       };
       const keys = keysByStep[this.currentStep] || [];
@@ -340,6 +363,11 @@ export default {
     }
   },
   watch: {
+    customerPhone(val) {
+      if (/^\d{10}$/.test(val.trim())) {
+        this.phoneTouched = false;
+      }
+    },
     async show(val) {
       if (val) {
         await this.loadCatalogs();
@@ -380,12 +408,14 @@ export default {
       this.editingPhone = false;
       this.editingEmail = false;
     },
+    /*
     'form.notes'(newVal) {
       const words = newVal.trim().split(/\s+/).filter(Boolean);
       if (words.length > 1000) {
         this.form.notes = words.slice(0, 1000).join(' ');
       }
     },
+    */
     estimatedTotal() {
       if (this.liquidateAll && this.payments.length) {
         this.payments[0].amount = this.estimatedTotal;
@@ -393,6 +423,33 @@ export default {
     }
   },
   methods: {
+    openSuccess(title, message, next = null) {
+      this.successModalTitle = title;
+      this.successModalMessage = message;
+      this.successModalNext = next;
+      this.showSuccessModal = true;
+    },
+    clearPhone() {
+      this.customerPhone = '';
+      this.phoneTouched = false;
+    },
+    clearEmail() {
+      this.customerEmail = '';
+    },
+    onPhoneBlur() {
+      if (this.customerPhone.trim()) {
+        this.phoneTouched = true;
+      }
+    },
+    confirmContinueWithoutContact() {
+      this.showMissingContactModal = false;
+      this.stepAttempted[this.currentStep] = false;
+      this.navDirection = 'forward';
+      this.currentStep++;
+    },
+    cancelContinueWithoutContact() {
+      this.showMissingContactModal = false;
+    },
     openCustomerDropdown() {
       this.showCustomerDropdown = true;
     },
@@ -413,6 +470,13 @@ export default {
       this.stepAttempted[this.currentStep] = true;
 
       if (this.currentStep === 1) {
+        const trimmedPhone = this.customerPhone.trim();
+        if (trimmedPhone && !/^\d{10}$/.test(trimmedPhone)) {
+          this.alertMessage = 'El número de teléfono debe tener 10 dígitos. Bórralo o edítalo para continuar';
+          this.showAlertModal = true;
+          return;
+        }
+
         const conflictMessages = this.getCustomerConflictMessages();
         if (conflictMessages.length > 0) {
           this.alertMessage = conflictMessages.join('\n');
@@ -424,6 +488,11 @@ export default {
       if (!this.currentStepValid) {
         this.alertMessage = 'Por favor, completa todos los campos marcados con * antes de continuar.';
         this.showAlertModal = true;
+        return;
+      }
+
+      if (this.currentStep === 1 && !this.customerPhone.trim() && !this.customerEmail.trim()) {
+        this.showMissingContactModal = true;
         return;
       }
 
@@ -483,20 +552,67 @@ export default {
     toggleEditPhone() {
       this.editingPhone = true;
     },
-    confirmPhoneChange() {
-      this.editingPhone = false;
-      this.markDirty();
+    async confirmPhoneChange() {
+      if (this.savingContact) return;
+      const phone = this.customerPhone.trim() || null;
+      if (phone === (this.selectedCustomer.phone || null)) {
+        this.editingPhone = false;
+        this.phoneTouched = false;
+        return;
+      }
+      this.savingContact = true;
+      try {
+        const res = await axios.patch(`/customers/${this.selectedCustomer.id}/contact`, { phone });
+        const updated = res.data;
+        const idx = this.customers.findIndex(c => c.id === updated.id);
+        if (idx !== -1) this.customers.splice(idx, 1, updated);
+        this.selectedCustomer = updated;
+        this.editingPhone = false;
+        this.phoneTouched = false;
+        this.openSuccess('Teléfono actualizado', 'El teléfono del cliente se actualizó correctamente.');
+      } catch (error) {
+        this.$emit('notify', {
+          title: 'Error',
+          message: error.response?.data?.message || 'No se pudo actualizar el teléfono',
+          type: 'error'
+        });
+      } finally {
+        this.savingContact = false;
+      }
     },
     cancelPhoneEdit() {
+      this.phoneTouched = false;
       this.customerPhone = this.selectedCustomer ? (this.selectedCustomer.phone || '') : '';
       this.editingPhone = false;
     },
     toggleEditEmail() {
       this.editingEmail = true;
     },
-    confirmEmailChange() {
-      this.editingEmail = false;
-      this.markDirty();
+    async confirmEmailChange() {
+      if (this.savingContact) return;
+      const email = this.customerEmail.trim() || null;
+      if (email === (this.selectedCustomer.email || null)) {
+        this.editingEmail = false;
+        return;
+      }
+      this.savingContact = true;
+      try {
+        const res = await axios.patch(`/customers/${this.selectedCustomer.id}/contact`, { email });
+        const updated = res.data;
+        const idx = this.customers.findIndex(c => c.id === updated.id);
+        if (idx !== -1) this.customers.splice(idx, 1, updated);
+        this.selectedCustomer = updated;
+        this.editingEmail = false;
+        this.openSuccess('Correo actualizado', 'El correo del cliente se actualizó correctamente.');
+      } catch (error) {
+        this.$emit('notify', {
+          title: 'Error',
+          message: error.response?.data?.message || 'No se pudo actualizar el correo',
+          type: 'error'
+        });
+      } finally {
+        this.savingContact = false;
+      }
     },
     cancelEmailEdit() {
       this.customerEmail = this.selectedCustomer ? (this.selectedCustomer.email || '') : '';
@@ -516,7 +632,6 @@ export default {
         payments: JSON.parse(JSON.stringify(this.payments)),
         form: {
           estimated_delivery_date: this.form.estimated_delivery_date,
-          pose_number: this.form.pose_number,
           notes: this.form.notes,
         }
       };
@@ -640,6 +755,7 @@ export default {
       }
     },
     selectCustomer(c) {
+      this.phoneTouched = false;
       this.selectedCustomer = c;
       this.customerSearch = c.name;
       this.showCustomerDropdown = false;
@@ -655,6 +771,11 @@ export default {
       }, 200);
     },
     resetForm() {
+      this.successModalTitle = '';
+      this.successModalMessage = '';
+      this.successModalNext = null;
+      this.phoneTouched = false;
+      this.showMissingContactModal = false;
       this.selectedCustomer = null;
       this.customerSearch = '';
       this.customerPhone = '';
@@ -669,7 +790,6 @@ export default {
       this.editingEmail = false;
       this.form = {
         estimated_delivery_date: '',
-        pose_number: null,
         notes: ''
       };
       this.photoTypes.forEach(pt => {
@@ -699,6 +819,13 @@ export default {
       this.submittingAttempted = true;
       this.stepAttempted = {1: true, 2: true, 3: true};
 
+      const trimmedPhone = this.customerPhone.trim();
+      if (trimmedPhone && !/^\d{10}$/.test(trimmedPhone)) {
+        this.alertMessage = 'El número de teléfono debe tener 10 dígitos. Bórralo o edítalo para continuar';
+        this.showAlertModal = true;
+        return;
+      }
+
       const conflictMessages = this.getCustomerConflictMessages();
       if (conflictMessages.length > 0) {
         this.alertMessage = conflictMessages.join('\n');
@@ -715,16 +842,9 @@ export default {
       try {
         let customerId = null;
         let newCustomer = null;
-        let contactUpdate = null;
 
         if (this.selectedCustomer) {
           customerId = this.selectedCustomer.id;
-          if (this.phoneChanged || this.emailChanged) {
-            contactUpdate = {
-              phone: this.customerPhone.trim() || null,
-              email: this.customerEmail.trim() || null,
-            };
-          }
         } else if (this.customerSearch.trim()) {
           newCustomer = {
             name: this.customerSearch.trim(),
@@ -736,9 +856,7 @@ export default {
         const payload = {
           customer_id: customerId,
           new_customer: newCustomer,
-          contact_update: contactUpdate,
           estimated_delivery_date: this.form.estimated_delivery_date,
-          pose_number: this.form.pose_number,
           notes: this.form.notes,
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds,
@@ -752,7 +870,10 @@ export default {
         this._createdOrder = res.data.order;
         this.$emit('created', this._createdOrder);
 
-        this.showSuccessModal = true;
+        this.openSuccess('¡Orden creada!', 'La orden se registró correctamente.', () => {
+          this.isDirty = false;
+          this.close();
+        });
       } catch (error) {
         this.$emit('notify', {
           title: 'Error',
@@ -764,10 +885,11 @@ export default {
     },
     onSuccessClosed() {
       this.showSuccessModal = false;
-      this.isDirty = false;
-      this.close();
+      const next = this.successModalNext;
+      this.successModalNext = null;
       this.submitting = false;
       this._createdOrder = null;
+      if (typeof next === 'function') next();
     }
   }
 };

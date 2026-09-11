@@ -30,3 +30,6 @@ Route::get('/orders-table', [OrderController::class, 'index']);
 Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/orders/{order}/payments', [OrderController::class, 'addPayment']);
 Route::patch('/orders/{order}/deliver', [OrderController::class, 'deliver']);
+
+//Clientes
+Route::patch('/customers/{customer}/contact', [CustomerController::class, 'updateContact']);

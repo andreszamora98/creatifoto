@@ -5,41 +5,6 @@
       Datos de la orden
     </h4>
 
-    <div class="grid grid-cols-1 gap-6">
-      <div>
-        <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Fecha de entrega estimada <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <input
-            v-model="form.estimated_delivery_date"
-            type="date"
-            @click.prevent="toggleDatePicker($event)"
-            @change="closeDatePicker"
-            @blur="closeDatePicker"
-            class="form-control form-control-sm w-full text-lg p-4 pr-11 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 [&::-webkit-calendar-picker-indicator]:opacity-0"
-            :class="showErrors && fieldErrors.delivery_date
-              ? 'border-red-500 dark:border-red-500'
-              : 'border-gray-300 dark:border-gray-600'"
-          >
-          <i class="ti ti-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none text-xl"></i>
-        </div>
-        <p v-if="showErrors && fieldErrors.delivery_date" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-          Campo obligatorio*
-        </p>
-      </div>
-      <div>
-        <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Toma seleccionada <span class="text-red-500">*</span></label>
-        <input v-model.number="form.pose_number" type="number" min="1"
-               class="form-control form-control-sm w-full text-lg p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-               :class="showErrors && fieldErrors.pose_number
-                 ? 'border-red-500 dark:border-red-500'
-                 : 'border-gray-300 dark:border-gray-600'"
-               placeholder="Número de toma">
-        <p v-if="showErrors && fieldErrors.pose_number" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-          Campo obligatorio*
-        </p>
-      </div>
-    </div>
-
     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border-2"
          :class="showErrors && fieldErrors.photo_types ? 'border-red-500' : 'border-transparent'">
       <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
@@ -52,70 +17,70 @@
         <i class="ti ti-refresh animate-spin"></i> Cargando catálogo...
       </div>
       <div v-else
-           class="space-y-3 pr-1 mt-3"
-           :class="photoTypes.length > 4 ? 'max-h-80 overflow-y-auto' : ''">
+           class="grid grid-cols-1 md:grid-cols-2 gap-3 pr-1 mt-3"
+           :class="photoTypes.length > 4 ? 'max-h-[28rem] overflow-y-auto' : ''">
         <div v-for="pt in photoTypes" :key="pt.id"
             class="p-4 rounded border transition-all cursor-pointer"
             :class="lines[pt.id] && lines[pt.id].selected
               ? 'bg-white dark:bg-gray-800 border-blue-500 dark:border-blue-400'
               : 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600 opacity-60'"
             @click="togglePhotoType(pt.id)">
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3 flex-wrap">
             <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0"
                 :class="lines[pt.id] && lines[pt.id].selected
                   ? 'border-blue-500 bg-blue-500'
                   : 'border-gray-400 dark:border-gray-500'">
               <i v-if="lines[pt.id] && lines[pt.id].selected" class="ti ti-check text-white text-base"></i>
             </div>
-            <span class="flex-1 text-lg font-medium text-gray-700 dark:text-gray-300">{{ pt.name }}</span>
+            <span class="flex-1 text-lg font-medium text-gray-700 dark:text-gray-300 min-w-[8rem]">{{ pt.name }}</span>
             <span class="text-base text-gray-500 dark:text-gray-400">${{ Number(pt.base_price).toFixed(2) }} c/u</span>
             <input v-if="lines[pt.id] && lines[pt.id].selected"
                   type="number" min="1" v-model.number="lines[pt.id].quantity"
                   @click.stop
                   @blur="onQuantityBlur(pt.id)"
-                  class="form-control form-control-sm text-lg p-3 w-28 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                  class="form-control form-control-sm text-lg p-3 w-24 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
           </div>
-          <div v-if="lines[pt.id] && lines[pt.id].selected" class="grid grid-cols-1 gap-4 mt-3 pl-11" @click.stop>
+          <div v-if="lines[pt.id] && lines[pt.id].selected" class="grid grid-cols-2 gap-3 mt-3 pl-11" @click.stop>
             <div class="relative">
               <button
                 type="button"
                 @click="toggleFormatDropdown(pt.id)"
                 @blur="closeFormatDropdown(pt.id)"
-                class="w-full text-lg p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                class="w-full text-base p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 flex items-center justify-between"
               >
-                <span class="flex items-center gap-2">
-                  <i v-if="lines[pt.id].format === 'color'" class="ti ti-palette text-xl text-pink-500"></i>
-                  <span v-else class="inline-flex -space-x-1">
-                    <span class="w-4 h-4 rounded-full bg-white border border-gray-400 dark:border-gray-500"></span>
-                    <span class="w-4 h-4 rounded-full bg-black border border-gray-300 dark:border-gray-400"></span>
+                <span class="flex items-center gap-2 truncate">
+                  <i v-if="lines[pt.id].format === 'color'" class="ti ti-palette text-lg text-pink-500 flex-shrink-0"></i>
+                  <span v-else class="inline-flex -space-x-1 flex-shrink-0">
+                    <span class="w-3.5 h-3.5 rounded-full bg-white border border-gray-400 dark:border-gray-500"></span>
+                    <span class="w-3.5 h-3.5 rounded-full bg-black border border-gray-300 dark:border-gray-400"></span>
                   </span>
-                  <span>{{ lines[pt.id].format === 'color' ? 'Color' : 'Blanco y negro' }}</span>
+                  <span class="truncate">{{ lines[pt.id].format === 'color' ? 'Color' : 'B/N' }}</span>
                 </span>
-                <i class="ti ti-chevron-down text-base"></i>
+                <i class="ti ti-chevron-down text-sm flex-shrink-0"></i>
               </button>
 
               <div v-if="openFormatDropdownId === pt.id"
                    class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
                 <button
                   @mousedown.prevent="selectFormat(pt.id, 'color')"
-                  class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200"
+                  class="w-full px-3 py-2.5 text-base hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200"
                 >
-                  <i class="ti ti-palette text-xl text-pink-500"></i> Color
+                  <i class="ti ti-palette text-lg text-pink-500"></i> Color
                 </button>
                 <button
                   @mousedown.prevent="selectFormat(pt.id, 'bn')"
-                  class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200"
+                  class="w-full px-3 py-2.5 text-base hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200"
                 >
                   <span class="inline-flex -space-x-1">
-                    <span class="w-4 h-4 rounded-full bg-white border border-gray-400 dark:border-gray-500"></span>
-                    <span class="w-4 h-4 rounded-full bg-black border border-gray-300 dark:border-gray-400"></span>
+                    <span class="w-3.5 h-3.5 rounded-full bg-white border border-gray-400 dark:border-gray-500"></span>
+                    <span class="w-3.5 h-3.5 rounded-full bg-black border border-gray-300 dark:border-gray-400"></span>
                   </span>
                   Blanco y negro
                 </button>
               </div>
             </div>
 
-            <select v-model="lines[pt.id].paper_type_id" class="form-control form-control-sm text-lg p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+            <select v-model="lines[pt.id].paper_type_id" class="form-control form-control-sm text-base p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
               <option :value="null">Papel (opcional)</option>
               <option v-for="p in paperTypes" :key="p.id" :value="p.id" class="bg-white dark:bg-gray-800">{{ p.name }}</option>
             </select>
@@ -149,13 +114,44 @@
       <span class="text-2xl font-bold text-blue-800 dark:text-blue-300">${{ estimatedTotal.toFixed(2) }}</span>
     </div>
 
-    <div>
-      <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Observaciones</label>
-      <textarea v-model="form.notes" rows="4" class="form-control form-control-sm w-full text-lg p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none"></textarea>
-      <div class="flex justify-end mt-1">
-        <span class="text-sm" :class="notesWordCount >= 1000 ? 'text-red-500 dark:text-red-400 font-medium' : 'text-gray-400 dark:text-gray-500'">
-          {{ notesWordCount }}/1000 palabras
-        </span>
+
+    <div class="grid grid-cols-1 md:grid-cols-7 gap-6">
+      <div class="md:col-span-2">
+        <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Fecha de entrega estimada <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <input
+            v-model="form.estimated_delivery_date"
+            type="date"
+            :min="minDateStr"
+            @click.prevent="toggleDatePicker($event)"
+            @change="closeDatePicker"
+            @blur="closeDatePicker"
+            class="form-control form-control-sm w-full text-lg p-4 pr-11 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 [&::-webkit-calendar-picker-indicator]:opacity-0"
+            :class="showErrors && fieldErrors.delivery_date
+              ? 'border-red-500 dark:border-red-500'
+              : 'border-gray-300 dark:border-gray-600'"
+          >
+          <i class="ti ti-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none text-xl"></i>
+        </div>
+        <p v-if="showErrors && fieldErrors.delivery_date" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
+          Campo obligatorio*
+        </p>
+      </div>
+
+      <div class="md:col-span-5">
+        <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Observaciones</label>
+        <textarea
+          ref="notesTextarea"
+          :value="form.notes"
+          @input="onNotesInput"
+          rows="4"
+          class="form-control form-control-sm w-full text-lg p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none"
+        ></textarea>
+        <div class="flex justify-end mt-1">
+          <span class="text-sm" :class="wordCount >= 500 ? 'text-red-500 dark:text-red-400 font-medium' : 'text-gray-400 dark:text-gray-500'">
+            {{ wordCount }}/500 palabras
+          </span>
+        </div>
       </div>
     </div>
   </section>
@@ -175,7 +171,6 @@ export default {
     packages: { type: Array, default: () => [] },
     selectedPackageIds: { type: Array, required: true },
     estimatedTotal: { type: Number, default: 0 },
-    notesWordCount: { type: Number, default: 0 },
     openFormatDropdownId: { type: [Number, String], default: null },
     toggleDatePicker: { type: Function, required: true },
     closeDatePicker: { type: Function, required: true },
@@ -185,8 +180,19 @@ export default {
     closeFormatDropdown: { type: Function, required: true },
     selectFormat: { type: Function, required: true }
   },
-  emits: ['update:selectedPackageIds'],
+  emits: ['update:selectedPackageIds', 'update:form'],
   computed: {
+    minDateStr() {
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth() + 1).padStart(2, '0');
+      const d = String(today.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    },
+    wordCount() {
+      const trimmed = (this.form.notes || '').trim();
+      return trimmed === '' ? 0 : trimmed.split(/\s+/).filter(Boolean).length;
+    },
     selectedPackageIdsProxy: {
       get() {
         return this.selectedPackageIds;
@@ -194,6 +200,40 @@ export default {
       set(value) {
         this.$emit('update:selectedPackageIds', value);
       }
+    }
+  },
+  methods: {
+    onNotesInput(event) {
+      const previous = this.form.notes || '';
+      const previousWordCount = previous.trim() === ''
+        ? 0
+        : previous.trim().split(/\s+/).filter(Boolean).length;
+      const raw = event.target.value;
+
+      // Ya se alcanzó el límite: si el nuevo valor es más largo que el anterior,
+      // significa que se intentó agregar contenido (letra, espacio, pegado, etc.).
+      // Se revierte de inmediato en el propio DOM: no se deja pasar ni un carácter.
+      if (previousWordCount >= 500 && raw.length > previous.length) {
+        const addedChars = raw.length - previous.length;
+        const selStart = event.target.selectionStart ?? previous.length;
+        event.target.value = previous;
+        const restoredPos = Math.max(0, selStart - addedChars);
+        event.target.setSelectionRange(restoredPos, restoredPos);
+        return; // No se emite ningún cambio: el texto queda exactamente igual.
+      }
+
+      // Bajo el límite todavía: si un pegado grande empuja de golpe más allá
+      // de 500 palabras, se recorta duro a 500.
+      const words = raw.trim().split(/\s+/).filter(Boolean);
+      if (words.length > 500) {
+        const truncated = words.slice(0, 500).join(' ');
+        event.target.value = truncated;
+        event.target.setSelectionRange(truncated.length, truncated.length);
+        this.$emit('update:form', { ...this.form, notes: truncated });
+        return;
+      }
+
+      this.$emit('update:form', { ...this.form, notes: raw });
     }
   }
 };
