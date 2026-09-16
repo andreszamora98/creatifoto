@@ -23,6 +23,7 @@ class OrderController extends Controller
             'packages:id,package_number,name,total_price',
             'orderPhotoTypes.photoType:id,name,base_price',
             'orderPhotoTypes.paperType:id,name,extra_price',
+            'payments',
         ])
         ->orderBy('created_at', 'desc')
         ->get(['id', 'customer_id', 'total', 'balance_due', 'pose_number', 'notes',
@@ -98,5 +99,18 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+    }
+
+    public function show(Order $order)
+    {
+        $order->load([
+            'customer:id,name,phone,email',
+            'packages:id,package_number,name,total_price',
+            'orderPhotoTypes.photoType:id,name,base_price',
+            'orderPhotoTypes.paperType:id,name,extra_price',
+            'payments',
+        ]);
+
+        return response()->json($order);
     }
 }

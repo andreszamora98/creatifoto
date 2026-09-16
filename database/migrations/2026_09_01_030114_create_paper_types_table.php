@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('paper_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // mate, brillante, satinado, etc.
-            $table->decimal('extra_price', 10, 2)->nullable(); // costo adicional si ese papel lo amerita
+            $table->string('name'); //mate, brillante, satinado, etc.
+            $table->decimal('extra_price', 10, 2)->nullable(); //costo adicional si ese papel lo amerita
             $table->timestamps();
         });
     }

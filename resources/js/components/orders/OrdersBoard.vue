@@ -13,24 +13,20 @@
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
-            <button class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-filter text-sm"></i>
+            <button class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+              <i class="ti ti-filter text-base"></i>
               <span>Filtros avanzados</span>
             </button>
-            <button @click="toggleDateSort" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-sort-descending text-sm"></i>
-              <span>{{ dateSort === 'desc' ? 'Recientes' : 'Antiguas' }}</span>
-            </button>
-            <button @click="refreshOrders" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-refresh text-sm mr-1" :class="{ 'animate-spin': loading }"></i>
+            <button @click="refreshOrders" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+              <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
               Actualizar
             </button>
-            <button @click="showOrderModal = true" class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-plus text-sm"></i>
+            <button @click="showOrderModal = true" class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+              <i class="ti ti-plus text-base"></i>
               <span>Nueva orden</span>
             </button>
-            <button @click="showPhotoTypeManager = true" class="bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors">
-              <i class="ti ti-photo text-sm"></i>
+            <button @click="showPhotoTypeManager = true" class="bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+              <i class="ti ti-photo text-base"></i>
               <span>Tipos de fotografía</span>
             </button>
           </div>
@@ -54,7 +50,7 @@
       <div class="relative">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 px-1">
           <div v-for="(column, index) in columns" :key="index"
-              @click="activeColumn = index"
+              @click="selectColumn(index)"
               :class="[
                 'category-card relative p-3 rounded-lg cursor-pointer transition-all duration-200',
                 'flex flex-row items-center justify-center gap-4',
@@ -93,7 +89,7 @@
 
     <div class="flex-1 flex flex-col overflow-hidden min-h-0">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow flex-1 flex flex-col overflow-hidden min-h-0">
-        <div class="flex-shrink-0 p-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <div class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
           <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <span class="font-medium px-2 py-1 rounded-full text-xs"
                   :style="{
@@ -108,13 +104,20 @@
               (filtrado)
             </span>
           </div>
-          <button
-            @click="toggleViewMode"
-            class="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white text-xs"
-          >
-            <i :class="viewMode === 'cards' ? 'ti ti-table' : 'ti ti-layout-grid'" class="text-xs"></i>
-            <span>{{ viewMode === 'cards' ? 'Tabla' : 'Tarjetas' }}</span>
-          </button>
+
+          <div class="flex items-center gap-2">
+            <button @click="toggleDateSort" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+              <i class="ti ti-sort-descending text-base"></i>
+              <span>{{ dateSort === 'desc' ? 'Mostrando recientes' : 'Mostrando antiguas' }}</span>
+            </button>
+            <button
+              @click="toggleViewMode"
+              class="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white text-sm transition-colors"
+            >
+              <i :class="viewMode === 'cards' ? 'ti ti-table' : 'ti ti-layout-grid'" class="text-base"></i>
+              <span>{{ viewMode === 'cards' ? 'Tabla' : 'Tarjetas' }}</span>
+            </button>
+          </div>
         </div>
 
         <div class="flex-1 overflow-hidden min-h-0 relative">
@@ -142,10 +145,12 @@
 
           <div v-else class="h-full overflow-y-auto p-3">
             <div v-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div v-for="order in filteredOrders" :key="order.id"
+              <div v-for="order in paginatedOrders" :key="order.id"
                    :id="'order-card-' + order.id"
+                   @click="openOrderDetail(order)"
                    :class="[
-                     'bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden group',
+                     'bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 transition-all duration-200 cursor-pointer overflow-hidden group',
+                     `hover-bg-${activeColumn}`,
                      isBlinking(order.id) ? 'animate-blink' : ''
                    ]">
                 <div class="h-1.5" :style="{ backgroundColor: columns[activeColumn]?.color.active }"></div>
@@ -186,7 +191,7 @@
                   <div class="flex items-center justify-between text-xs">
                     <div class="flex items-center">
                       <i class="ti ti-calendar-event mr-1 text-gray-500"></i>
-                      <span class="text-gray-600 dark:text-gray-400">Entrega: {{ order.estimated_delivery_date }}</span>
+                      <span class="text-gray-600 dark:text-gray-400">Entrega: {{ formatDeliveryDate(order.estimated_delivery_date) }}</span>
                     </div>
                     <div class="flex items-center gap-1">
                       <i class="ti ti-check-circle text-green-500" v-if="order.status === 'delivered'"></i>
@@ -211,10 +216,14 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr v-for="order in filteredOrders" :key="order.id"
+                  <tr v-for="order in paginatedOrders" :key="order.id"
                       :id="'order-card-' + order.id"
-                      class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                      :class="isBlinking(order.id) ? 'animate-blink-row' : ''">
+                      @click="openOrderDetail(order)"
+                      class="transition-colors cursor-pointer"
+                      :class="[
+                        `hover-bg-row-${activeColumn}`,
+                        isBlinking(order.id) ? 'animate-blink-row' : ''
+                      ]">
                     <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">#{{ orderCode(order) }}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ order.customer?.name || 'Sin cliente' }}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ packagesSummary(order) }}</td>
@@ -224,7 +233,7 @@
                         {{ statusLabel(order.status) }}
                       </span>
                     </td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ order.estimated_delivery_date }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDeliveryDate(order.estimated_delivery_date) }}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <i :class="order.status === 'delivered' ? 'ti ti-check-circle text-green-500' : 'ti ti-clock text-yellow-500'"></i>
                     </td>
@@ -233,6 +242,51 @@
               </table>
             </div>
           </div>
+        </div>
+
+        <div class="flex-shrink-0 mt-3 flex items-center justify-center gap-2 pb-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+          <button
+            @click="prevPage"
+            :disabled="currentPage === 1 || totalPages === 0"
+            class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            :class="currentPage === 1 || totalPages === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
+          >
+            <i class="ti ti-chevron-left text-sm"></i> Anterior
+          </button>
+
+          <div class="flex items-center gap-1">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              @click="goToPage(page)"
+              class="w-8 h-8 rounded-md text-xs font-medium transition-colors"
+              :class="currentPage === page
+                ? 'bg-blue-500 text-white dark:bg-blue-600'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
+            >
+              {{ page }}
+            </button>
+            <span v-if="totalPages === 0" class="w-8 h-8 rounded-md bg-gray-100 text-gray-400 flex items-center justify-center text-xs dark:bg-gray-800 dark:text-gray-600">1</span>
+          </div>
+
+          <button
+            @click="nextPage"
+            :disabled="currentPage === totalPages || totalPages === 0"
+            class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            :class="currentPage === totalPages || totalPages === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
+          >
+            Siguiente <i class="ti ti-chevron-right text-sm"></i>
+          </button>
+        </div>
+
+        <div class="flex-shrink-0 flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400 pb-2">
+          <span>Mostrando {{ paginatedOrders.length }}/{{ filteredOrders.length }} {{ filteredOrders.length === 1 ? 'orden' : 'órdenes' }}</span>
+          <span v-if="totalPages > 0">Página {{ currentPage }} de {{ totalPages }}</span>
+          <span v-else>Página —</span>
         </div>
       </div>
     </div>
@@ -248,6 +302,16 @@
       :show="showPhotoTypeManager"
       @close="showPhotoTypeManager = false"
       @updated="handlePhotoTypesUpdated"
+    />
+
+    <OrderDetailModal
+      :show="showOrderDetailModal"
+      :order="selectedOrderForDetail"
+      :columns="columns"
+      :active-column="activeColumn"
+      @close="handleOrderDetailClosed"
+      @updated="handleOrderDetailUpdated"
+      @notify="handleNotify"
     />
 
     <transition name="fade-slide">
@@ -291,12 +355,15 @@ import axios from 'axios';
 import { setPageTitle } from '../../store';
 import OrderModal from './OrderModal.vue';
 import PhotoTypeManager from './PhotoTypeManager.vue';
+import OrderDetailModal from './OrderDetailModal.vue';
 
 export default {
   name: 'OrdersBoard',
-  components: { OrderModal, PhotoTypeManager },
+  components: { OrderModal, PhotoTypeManager, OrderDetailModal },
   data() {
     return {
+      showOrderDetailModal: false,
+      selectedOrderForDetail: null,
       pendingBlinkOrderId: null,
       showPhotoTypeManager: false,
       activeColumn: 0,
@@ -306,6 +373,9 @@ export default {
       searchQuery: '',
       dateSort: 'desc',
       showOrderModal: false,
+
+      currentPage: 1,
+      itemsPerPage: 15,
 
       newOrderId: null,
       blinkInterval: null,
@@ -373,6 +443,30 @@ export default {
         const dateB = new Date(b.created_at);
         return this.dateSort === 'desc' ? dateB - dateA : dateA - dateB;
       });
+    },
+    paginatedOrders() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.filteredOrders.slice(start, end);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredOrders.length / this.itemsPerPage);
+    }
+  },
+  watch: {
+    filteredOrders() {
+      if (this.currentPage > this.totalPages && this.totalPages > 0) {
+        this.currentPage = this.totalPages;
+      }
+    },
+    searchQuery() {
+      this.currentPage = 1;
+    },
+    activeColumn() {
+      this.currentPage = 1;
+    },
+    dateSort() {
+      this.currentPage = 1;
     }
   },
   mounted() {
@@ -386,6 +480,24 @@ export default {
     }
   },
   methods: {
+    openOrderDetail(order) {
+      this.selectedOrderForDetail = order;
+      this.showOrderDetailModal = true;
+    },
+    handleOrderDetailClosed() {
+      this.showOrderDetailModal = false;
+      this.selectedOrderForDetail = null;
+    },
+    async handleOrderDetailUpdated() {
+      await this.loadOrders();
+    },
+    formatDeliveryDate(dateString) {
+      if (!dateString) return '';
+      const datePart = String(dateString).substring(0, 10);
+      const [y, m, d] = datePart.split('-');
+      if (!y || !m || !d) return dateString;
+      return `${d}/${m}/${y}`;
+    },
     handlePhotoTypesUpdated() {
     },
     async loadOrders() {
@@ -403,6 +515,25 @@ export default {
     },
     refreshOrders() {
       this.loadOrders();
+    },
+    goToPage(page) {
+      if (this.totalPages > 0 && page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
+    },
+    nextPage() {
+      if (this.totalPages > 0 && this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    prevPage() {
+      if (this.totalPages > 0 && this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    selectColumn(index) {
+      this.activeColumn = index;
+      this.currentPage = 1;
     },
     async handleOrderCreated(order) {
       if (order && order.status) {
@@ -578,5 +709,52 @@ export default {
 @keyframes blinkRowDark {
   0%, 100% { background-color: transparent; }
   50% { background-color: #FFD700; }
+}
+
+.hover-bg-0:hover {
+  background-color: rgba(255, 235, 59, 0.15) !important;
+  box-shadow: 0 4px 10px -2px rgba(255, 235, 59, 0.75);
+}
+.hover-bg-1:hover {
+  background-color: rgba(251, 191, 36, 0.15) !important;
+  box-shadow: 0 4px 10px -2px rgba(251, 191, 36, 0.75);
+}
+.hover-bg-2:hover {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  box-shadow: 0 4px 10px -2px rgba(56, 189, 248, 0.75);
+}
+.hover-bg-3:hover {
+  background-color: rgba(52, 211, 153, 0.15) !important;
+  box-shadow: 0 4px 10px -2px rgba(52, 211, 153, 0.75);
+}
+
+.hover-bg-row-0:hover {
+  background-color: rgba(255, 235, 59, 0.15) !important;
+}
+.hover-bg-row-1:hover {
+  background-color: rgba(251, 191, 36, 0.15) !important;
+}
+.hover-bg-row-2:hover {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+}
+.hover-bg-row-3:hover {
+  background-color: rgba(52, 211, 153, 0.15) !important;
+}
+
+.dark .hover-bg-0:hover,
+.dark .hover-bg-row-0:hover {
+  background-color: rgba(255, 235, 59, 0.08) !important;
+}
+.dark .hover-bg-1:hover,
+.dark .hover-bg-row-1:hover {
+  background-color: rgba(251, 191, 36, 0.08) !important;
+}
+.dark .hover-bg-2:hover,
+.dark .hover-bg-row-2:hover {
+  background-color: rgba(56, 189, 248, 0.08) !important;
+}
+.dark .hover-bg-3:hover,
+.dark .hover-bg-row-3:hover {
+  background-color: rgba(52, 211, 153, 0.08) !important;
 }
 </style>

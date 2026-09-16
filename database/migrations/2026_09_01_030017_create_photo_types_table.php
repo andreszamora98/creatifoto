@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('photo_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // infantil, credencial, diploma, título, cartilla, filiación, visa, pasaporte, migración, postal
+            $table->string('name'); //infantil, credencial, diploma, título, cartilla, filiación, visa, pasaporte, migración, postal
             $table->string('slug')->unique();
             $table->decimal('base_price', 10, 2)->nullable();
             $table->timestamps();

@@ -209,21 +209,15 @@ export default {
         ? 0
         : previous.trim().split(/\s+/).filter(Boolean).length;
       const raw = event.target.value;
-
-      // Ya se alcanzó el límite: si el nuevo valor es más largo que el anterior,
-      // significa que se intentó agregar contenido (letra, espacio, pegado, etc.).
-      // Se revierte de inmediato en el propio DOM: no se deja pasar ni un carácter.
       if (previousWordCount >= 500 && raw.length > previous.length) {
         const addedChars = raw.length - previous.length;
         const selStart = event.target.selectionStart ?? previous.length;
         event.target.value = previous;
         const restoredPos = Math.max(0, selStart - addedChars);
         event.target.setSelectionRange(restoredPos, restoredPos);
-        return; // No se emite ningún cambio: el texto queda exactamente igual.
+        return;
       }
 
-      // Bajo el límite todavía: si un pegado grande empuja de golpe más allá
-      // de 500 palabras, se recorta duro a 500.
       const words = raw.trim().split(/\s+/).filter(Boolean);
       if (words.length > 500) {
         const truncated = words.slice(0, 500).join(' ');

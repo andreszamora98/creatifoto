@@ -12,31 +12,20 @@ use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
-    /**
-     * Crea una orden con cliente, líneas, paquetes y pagos.
-     */
     public function createOrder(array $data)
     {
         return DB::transaction(function () use ($data) {
-            // 1. Obtener o crear cliente
             $customer = $this->resolveCustomer($data);
-
-            // 2. Calcular total
             $total = $this->calculateTotal($data);
-
-            // 3. Validar que los pagos no superen el total
             $totalPayments = collect($data['payments'])->sum('amount');
             if ($totalPayments > $total) {
                 throw new \Exception(
                     'La suma de los pagos no puede exceder el total de la orden ($' . number_format($total, 2) . ').'
                 );
             }
-
-            // 4. Crear la orden
             $order = Order::create([
                 'customer_id' => $customer->id,
                 'total' => $total,
-                'balance_due' => $total, // el observer lo ajustará con los pagos
                 'pose_number' => $data['pose_number'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'estimated_delivery_date' => $data['estimated_delivery_date'],
@@ -45,7 +34,9 @@ class OrderService
                 'signature_id' => null,
             ]);
 
-            // 5. Guardar líneas de foto personalizadas
+            $order->balance_due = $total;
+            $order->save();
+
             foreach ($data['photo_types'] as $line) {
                 $photoType = PhotoType::find($line['photo_type_id']);
                 $order->orderPhotoTypes()->create([
@@ -57,7 +48,6 @@ class OrderService
                 ]);
             }
 
-            // 6. Asociar paquetes escolares (con snapshots)
             if (!empty($data['package_ids'])) {
                 $packages = Package::whereIn('id', $data['package_ids'])->get();
                 foreach ($packages as $pkg) {
@@ -68,7 +58,6 @@ class OrderService
                 }
             }
 
-            // 7. Registrar pagos
             $accumulated = 0;
             foreach ($data['payments'] as $i => $paymentData) {
                 $accumulated += $paymentData['amount'];
@@ -84,7 +73,6 @@ class OrderService
                 ]);
             }
 
-            // 8. Recargar la orden con relaciones (para la respuesta)
             $order->load([
                 'customer:id,name,phone',
                 'packages:id,package_number,name,total_price',
@@ -92,20 +80,16 @@ class OrderService
                 'orderPhotoTypes.paperType:id,name,extra_price',
                 'payments',
             ]);
-            $order->refresh(); // asegura balance_due actualizado por el observer
+            $order->refresh();
 
             return $order;
         });
     }
 
-    /**
-     * Resuelve el cliente: existente con posible actualización, o nuevo (con deduplicación por nombre).
-     */
     protected function resolveCustomer(array $data): Customer
     {
         if (!empty($data['customer_id'])) {
             $customer = Customer::findOrFail($data['customer_id']);
-            // Actualizar contacto si se envió
             if (!empty($data['contact_update'])) {
                 $customer->update(array_filter([
                     'phone' => $data['contact_update']['phone'] ?? null,
@@ -119,7 +103,6 @@ class OrderService
             $rawName = trim($data['new_customer']['name']);
             $normalizedName = mb_strtolower(preg_replace('/\s+/', ' ', $rawName));
 
-            // Bloquear fila para evitar duplicados en concurrencia
             $customer = Customer::whereRaw('LOWER(name) = ?', [$normalizedName])
                 ->lockForUpdate()
                 ->first();
@@ -132,11 +115,10 @@ class OrderService
                         'email' => $data['new_customer']['email'] ?? null,
                     ]);
                 } catch (\Illuminate\Database\QueryException $e) {
-                    // Si falla por duplicado, intentamos recuperar el existente
                     if ((int) $e->getCode() === 23000 || str_contains($e->getMessage(), 'Duplicate entry')) {
                         $customer = Customer::whereRaw('LOWER(name) = ?', [$normalizedName])->first();
                         if (!$customer) {
-                            throw $e; // si no existe, relanzamos
+                            throw $e;
                         }
                     } else {
                         throw $e;
@@ -149,9 +131,6 @@ class OrderService
         throw new \Exception('Debe seleccionar un cliente existente o crear uno nuevo.');
     }
 
-    /**
-     * Calcula el total sumando líneas personalizadas y paquetes.
-     */
     protected function calculateTotal(array $data): float
     {
         $total = 0;
@@ -169,9 +148,6 @@ class OrderService
         return $total;
     }
 
-    /**
-     * Agrega un pago adicional a una orden existente.
-     */
     public function addPayment(Order $order, array $data): array
     {
         if ($data['amount'] > $order->balance_due) {
@@ -189,7 +165,7 @@ class OrderService
             'paid_at' => now(),
         ]);
 
-        $order->refresh(); // actualiza balance_due vía observer
+        $order->refresh();
 
         return [
             'message' => 'Pago registrado correctamente',
@@ -198,9 +174,6 @@ class OrderService
         ];
     }
 
-    /**
-     * Marca la orden como entregada, validando que no tenga saldo pendiente.
-     */
     public function markAsDelivered(Order $order): array
     {
         if ($order->balance_due > 0) {
