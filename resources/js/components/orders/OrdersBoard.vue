@@ -362,6 +362,8 @@ export default {
   components: { OrderModal, PhotoTypeManager, OrderDetailModal },
   data() {
     return {
+      isDarkMode: false,
+      darkObserver: null,
       showOrderDetailModal: false,
       selectedOrderForDetail: null,
       pendingBlinkOrderId: null,
@@ -386,39 +388,73 @@ export default {
       notificationType: 'info',
       notificationTimeout: null,
 
-      columns: [
+      columnsBase: [
         {
           title: 'Pendientes',
           type: 'pending',
           icon: 'ti ti-clock',
-          color: { active: '#FFEB3B', inactive: '#FFFDE7', outline: '#FFEB3B' },
-          textColor: { active: '#D97706', inactive: '#F59E0B' }
+          color: {
+            light: { active: '#FFEB3B', inactive: '#FFFDE7', outline: '#FFEB3B' },
+            dark:  { active: '#7A6A2A', inactive: '#2A2416', outline: '#C4A547' }
+          },
+          textColor: {
+            light: { active: '#D97706', inactive: '#F59E0B' },
+            dark:  { active: '#E5D58A', inactive: '#C4A547' }
+          }
         },
         {
           title: 'En proceso',
           type: 'processing',
           icon: 'ti ti-progress',
-          color: { active: '#FFD8B1', inactive: '#FFF5EB', outline: '#FBBF24' },
-          textColor: { active: '#DD6B20', inactive: '#ED8936' }
+          color: {
+            light: { active: '#FFD8B1', inactive: '#FFF5EB', outline: '#FBBF24' },
+            dark:  { active: '#8B5A2B', inactive: '#2A1F14', outline: '#C4854C' }
+          },
+          textColor: {
+            light: { active: '#DD6B20', inactive: '#ED8936' },
+            dark:  { active: '#E5C19A', inactive: '#C4854C' }
+          }
         },
         {
           title: 'Listas',
           type: 'ready',
           icon: 'ti ti-check',
-          color: { active: '#B3E5FC', inactive: '#F0F9FF', outline: '#38BDF8' },
-          textColor: { active: '#2B6CB0', inactive: '#4299E1' }
+          color: {
+            light: { active: '#B3E5FC', inactive: '#F0F9FF', outline: '#38BDF8' },
+            dark:  { active: '#2C5A78', inactive: '#16232E', outline: '#5BA3CC' }
+          },
+          textColor: {
+            light: { active: '#2B6CB0', inactive: '#4299E1' },
+            dark:  { active: '#A8D0EB', inactive: '#5BA3CC' }
+          }
         },
         {
           title: 'Entregadas',
           type: 'delivered',
           icon: 'ti ti-checkbox',
-          color: { active: '#C6F6D5', inactive: '#F0FFF4', outline: '#34D399' },
-          textColor: { active: '#276749', inactive: '#38A169' }
+          color: {
+            light: { active: '#C6F6D5', inactive: '#F0FFF4', outline: '#34D399' },
+            dark:  { active: '#2F6B4A', inactive: '#152519', outline: '#5EB88A' }
+          },
+          textColor: {
+            light: { active: '#276749', inactive: '#38A169' },
+            dark:  { active: '#A8D9BF', inactive: '#5EB88A' }
+          }
         }
       ]
     };
   },
   computed: {
+    columns() {
+      const theme = this.isDarkMode ? 'dark' : 'light';
+      return this.columnsBase.map(col => ({
+        title: col.title,
+        type: col.type,
+        icon: col.icon,
+        color: col.color[theme],
+        textColor: col.textColor[theme]
+      }));
+    },
     columnCounts() {
       const counts = {};
       this.columns.forEach(col => {
@@ -471,12 +507,24 @@ export default {
   },
   mounted() {
     setPageTitle('Tablero de órdenes');
+    this.isDarkMode = document.documentElement.classList.contains('dark');
+    this.darkObserver = new MutationObserver(() => {
+      this.isDarkMode = document.documentElement.classList.contains('dark');
+    });
+    this.darkObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
     this.loadOrders();
   },
   beforeUnmount() {
     if (this.blinkInterval) {
       clearInterval(this.blinkInterval);
       this.blinkInterval = null;
+    }
+    if (this.darkObserver) {
+      this.darkObserver.disconnect();
+      this.darkObserver = null;
     }
   },
   methods: {
