@@ -395,7 +395,7 @@ export default {
           icon: 'ti ti-clock',
           color: {
             light: { active: '#FFEB3B', inactive: '#FFFDE7', outline: '#FFEB3B' },
-            dark:  { active: '#7A6A2A', inactive: '#2A2416', outline: '#C4A547' }
+            dark:  { active: '#B8A03D', inactive: '#4A3F1F', outline: '#E0C860' }
           },
           textColor: {
             light: { active: '#D97706', inactive: '#F59E0B' },

@@ -440,6 +440,66 @@ export default {
   }
   },
   methods: {
+
+    async loadOrderDetail() {
+      this.loading = true;
+      try {
+        const res = await axios.get(`/orders/${this.order.id}`);
+        this.localOrder = res.data;
+        return true;
+      } catch (error) {
+        console.error('Error cargando orden:', error);
+        this.$emit('notify', {
+          title: 'Error',
+          message: 'No se pudo actualizar el detalle de la orden',
+          type: 'error'
+        });
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async silentRefresh() {
+      try {
+        const res = await axios.get(`/orders/${this.order.id}`);
+        this.localOrder = res.data;
+      } catch (error) {
+        console.error('Error refrescando orden:', error);
+      }
+    },
+    async addPayment() {
+      if (!this.canAddPayment || this.addingPayment) return;
+      this.addingPayment = true;
+      try {
+        const amount = Number(this.newPayment.amount);
+        const balance = Number(this.localOrder.balance_due);
+        const type = amount >= balance ? 'settlement' : 'advance';
+
+        await axios.post(`/orders/${this.localOrder.id}/payments`, {
+          amount,
+          payment_method: this.newPayment.payment_method || null,
+          type,
+          notes: null
+        });
+
+        this.newPayment = { amount: null, payment_method: '' };
+        const refreshed = await this.loadOrderDetail();
+
+        this.successTitle = 'Pago registrado';
+        this.successMessage = refreshed
+          ? 'El pago se registró correctamente'
+          : 'El pago se registró correctamente, pero no se pudo actualizar la vista. Cierra y vuelve a abrir la orden.';
+        this.showSuccess = true;
+        this.$emit('updated', this.localOrder);
+      } catch (error) {
+        this.alertMessage = error.response?.data?.message || 'No se pudo registrar el pago';
+        this.showAlert = true;
+      } finally {
+        this.addingPayment = false;
+      }
+    },
+
+    /*
     async silentRefresh() {
       try {
         const res = await axios.get(`/orders/${this.order.id}`);
@@ -448,6 +508,7 @@ export default {
         console.error('Error refrescando orden:', error);s
       }
     },
+    
     async loadOrderDetail() {
       this.loading = true;
       try {
@@ -457,6 +518,7 @@ export default {
         this.loading = false;
       }
     },
+    */
     requestDeliver() {
       if (!this.canDeliver) {
         this.alertMessage = 'No se puede entregar la orden: tiene un saldo pendiente de ' + this.formatCurrency(this.localOrder.balance_due);
@@ -479,6 +541,7 @@ export default {
         this.showAlert = true;
       }
     },
+    /*
     async addPayment() {
       if (!this.canAddPayment || this.addingPayment) return;
       this.addingPayment = true;
@@ -505,6 +568,7 @@ export default {
         this.addingPayment = false;
       }
     },
+    */
     onSuccessClosed() {
       this.showSuccess = false;
     },

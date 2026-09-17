@@ -25,6 +25,8 @@ class PaymentObserver
     {
         $order = $payment->order;
         $totalPaid = $order->payments()->sum('amount');
-        $order->update(['balance_due' => round($order->total - $totalPaid, 2)]);
+
+        $order->balance_due = round($order->total - $totalPaid, 2);
+        $order->save();
     }
 }
