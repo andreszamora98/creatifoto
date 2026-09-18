@@ -16,6 +16,7 @@ class Order extends Model
 
     protected $fillable = [
         'customer_id',
+        'quote_id',
         'total',
         'pose_number',
         'notes',
@@ -66,6 +67,10 @@ class Order extends Model
             ->withPivot(['price', 'notes'])
             ->withTimestamps()
             ->using(Serviceable::class);
+    }
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
     }
 
     public function balance(): float
