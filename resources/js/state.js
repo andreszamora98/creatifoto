@@ -1,5 +1,11 @@
 import { reactive } from 'vue';
 
+const shouldClose = sessionStorage.getItem('sidebarShouldClose');
+if (shouldClose) {
+    sessionStorage.removeItem('sidebarShouldClose');
+    localStorage.setItem('sidebarOpen', JSON.stringify(false));
+}
+
 const storedSidebar = localStorage.getItem('sidebarOpen');
 const storedTheme = localStorage.getItem('darkMode');
 

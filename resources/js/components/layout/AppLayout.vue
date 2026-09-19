@@ -1,6 +1,10 @@
 <template>
   <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-    <Sidebar :is-open="sidebarOpen" @toggle="toggleSidebar" />
+    <Sidebar
+      :is-open="sidebarOpen"
+      @toggle="toggleSidebar"
+      @close-sidebar="closeSidebar"
+    />
 
     <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
       <Navbar
@@ -51,6 +55,10 @@ export default {
       setSidebarOpen(!sidebarOpen.value);
     }
 
+    function closeSidebar() {
+      setSidebarOpen(false);
+    }
+
     function toggleTheme() {
       setDarkMode(!darkMode.value);
     }
@@ -60,6 +68,7 @@ export default {
       darkMode,
       pageTitle,
       toggleSidebar,
+      closeSidebar,
       toggleTheme,
     };
   },

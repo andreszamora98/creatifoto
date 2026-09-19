@@ -18,7 +18,7 @@
                 :key="item.path"
                 :href="item.path"
                 :title="!isOpen ? item.title : ''"
-                @click="handleItemClick"
+                @click="handleItemClick(item.path)"
                 class="flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 :class="{ 'bg-gray-200 dark:bg-gray-700': isActiveRoute(item.path) }"
             >
@@ -32,8 +32,9 @@
             <a
                 href="/settings"
                 :title="!isOpen ? 'Ajustes' : ''"
-                @click="handleItemClick"
+                @click="handleItemClick('/settings')"
                 class="flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                :class="{ 'bg-gray-200 dark:bg-gray-700': isActiveRoute('/settings') }"
             >
                 <i class="ti ti-settings w-6 h-6 text-xl text-gray-600 dark:text-gray-400"></i>
                 <span v-if="isOpen" class="ml-3">Ajustes</span>
@@ -64,9 +65,19 @@ export default {
     },
     methods: {
         isActiveRoute(path) {
-            return window.location.pathname === path;
+            const current = window.location.pathname.replace(/\/$/, '') || '/';
+            const target = path.replace(/\/$/, '') || '/';
+            return current === target;
         },
-        handleItemClick() {
+        handleItemClick(path) {
+            const current = window.location.pathname.replace(/\/$/, '') || '/';
+            const target = path.replace(/\/$/, '') || '/';
+
+            if (current === target) {
+                this.$emit('close-sidebar');
+                return;
+            }
+            sessionStorage.setItem('sidebarShouldClose', '1');
             this.$emit('close-sidebar');
         },
     },
