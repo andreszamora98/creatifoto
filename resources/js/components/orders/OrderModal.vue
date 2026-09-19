@@ -180,9 +180,9 @@ import axios from 'axios';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
-import CustomerStep from './order-form/CustomerStep.vue';
-import OrderDetailsStep from './order-form/OrderDetailsStep.vue';
-import PaymentStep from './order-form/PaymentStep.vue';
+import CustomerStep from '../order-quote-shared/form-steps/CustomerStep.vue';
+import OrderDetailsStep from '../order-quote-shared/form-steps/OrderDetailsStep.vue';
+import PaymentStep from './form-steps/PaymentStep.vue';
 
 export default {
   name: 'OrderModal',

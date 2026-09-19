@@ -21,9 +21,9 @@
               <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
               Actualizar
             </button>
-            <button @click="showOrderModal = true" class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+            <button @click="showChoiceModal = true" class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
               <i class="ti ti-plus text-base"></i>
-              <span>Nueva orden</span>
+              <span>Nuevo</span>
             </button>
             <button @click="showPhotoTypeManager = true" class="bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
               <i class="ti ti-photo text-base"></i>
@@ -291,10 +291,23 @@
       </div>
     </div>
 
+    <NewRecordChoiceModal
+      :show="showChoiceModal"
+      @close="showChoiceModal = false"
+      @choose="handleChoiceSelected"
+    />
+
     <OrderModal
       :show="showOrderModal"
       @close="handleOrderModalClosed"
       @created="handleOrderCreated"
+      @notify="handleNotify"
+    />
+
+    <QuoteModal
+      :show="showQuoteModal"
+      @close="showQuoteModal = false"
+      @created="handleQuoteCreated"
       @notify="handleNotify"
     />
 
@@ -354,12 +367,14 @@
 import axios from 'axios';
 import { setPageTitle } from '../../store';
 import OrderModal from './OrderModal.vue';
-import PhotoTypeManager from './PhotoTypeManager.vue';
 import OrderDetailModal from './OrderDetailModal.vue';
+import QuoteModal from '../quotes/QuoteModal.vue';
+import NewRecordChoiceModal from '../order-quote-shared/NewRecordChoiceModal.vue';
+import PhotoTypeManager from '../catalog/PhotoTypeManager.vue';
 
 export default {
   name: 'OrdersBoard',
-  components: { OrderModal, PhotoTypeManager, OrderDetailModal },
+  components: { OrderModal, QuoteModal, NewRecordChoiceModal, PhotoTypeManager, OrderDetailModal },
   data() {
     return {
       isDarkMode: false,
@@ -375,6 +390,8 @@ export default {
       searchQuery: '',
       dateSort: 'desc',
       showOrderModal: false,
+      showQuoteModal: false,
+      showChoiceModal: false,
 
       currentPage: 1,
       itemsPerPage: 15,
@@ -528,6 +545,22 @@ export default {
     }
   },
   methods: {
+    handleChoiceSelected(type) {
+      this.showChoiceModal = false;
+      if (type === 'order') {
+        this.showOrderModal = true;
+      } else {
+        this.showQuoteModal = true;
+      }
+    },
+    handleQuoteCreated(quote) {
+      this.showQuoteModal = false;
+      this.handleNotify({
+        title: 'Cotización creada',
+        message: `La cotización C-${String(quote.id).padStart(3, '0')} se registró correctamente.`,
+        type: 'success'
+      });
+    },
     openOrderDetail(order) {
       this.selectedOrderForDetail = order;
       this.showOrderDetailModal = true;

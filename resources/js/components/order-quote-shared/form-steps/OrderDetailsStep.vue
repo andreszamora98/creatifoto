@@ -116,7 +116,7 @@
 
 
     <div class="grid grid-cols-1 md:grid-cols-7 gap-6">
-      <div class="md:col-span-2">
+      <div v-if="!hideDeliveryDate" class="md:col-span-2">
         <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Fecha de entrega estimada <span class="text-red-500">*</span></label>
         <div class="relative">
           <input
@@ -138,7 +138,7 @@
         </p>
       </div>
 
-      <div class="md:col-span-5">
+      <div :class="hideDeliveryDate ? 'md:col-span-7' : 'md:col-span-5'">
         <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Observaciones</label>
         <textarea
           ref="notesTextarea"
@@ -161,6 +161,7 @@
 export default {
   name: 'OrderDetailsStep',
   props: {
+    hideDeliveryDate: { type: Boolean, default: false },
     form: { type: Object, required: true },
     showErrors: { type: Boolean, default: false },
     fieldErrors: { type: Object, required: true },

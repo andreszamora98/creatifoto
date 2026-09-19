@@ -6,9 +6,14 @@ use App\Http\Controllers\PaperTypeController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\QuoteController;
 
 Route::get('/', function () {
     return view('layouts/app');
+});
+
+Route::get('/cotizaciones', function () {
+    return view('layouts/quotes');
 });
 
 /*
@@ -34,3 +39,10 @@ Route::get('/orders/{order}', [OrderController::class, 'show']);
 
 //Clientes
 Route::patch('/customers/{customer}/contact', [CustomerController::class, 'updateContact']);
+
+//Cotizaciones
+Route::get('/quotes', [QuoteController::class, 'index']);
+Route::post('/quotes', [QuoteController::class, 'store']);
+Route::get('/quotes/{quote}', [QuoteController::class, 'show']);
+Route::post('/quotes/{quote}/convert', [QuoteController::class, 'convert']);
+Route::patch('/quotes/{quote}/status', [QuoteController::class, 'updateStatus']);
