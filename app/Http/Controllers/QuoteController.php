@@ -82,6 +82,7 @@ class QuoteController extends Controller
     {
         $validated = $request->validate([
             'estimated_delivery_date' => 'required|date|after_or_equal:today',
+            'estimated_delivery_time' => 'required|date_format:H:i',
             'pose_number' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:1000',
             'photo_types' => 'nullable|array|min:1',

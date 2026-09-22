@@ -19,7 +19,7 @@ class OrderController extends Controller
     public function index()
     {
         return Order::with([
-            'customer:id,name,phone',
+            'customer:id,name,phone,email',
             'packages:id,package_number,name,total_price',
             'orderPhotoTypes.photoType:id,name,base_price',
             'orderPhotoTypes.paperType:id,name,extra_price',
@@ -27,7 +27,7 @@ class OrderController extends Controller
         ])
         ->orderBy('created_at', 'desc')
         ->get(['id', 'customer_id', 'total', 'balance_due', 'pose_number', 'notes',
-               'estimated_delivery_date', 'actual_delivery_date', 'status',
+               'estimated_delivery_date', 'estimated_delivery_time', 'actual_delivery_date', 'status',
                'signature_id', 'created_at']);
     }
 
@@ -47,6 +47,7 @@ class OrderController extends Controller
             ],
 
             'estimated_delivery_date' => 'required|date|after_or_equal:today',
+            'estimated_delivery_time' => 'nullable|date_format:H:i', 
             'pose_number' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:1000',
             'photo_types' => 'required|array|min:1',

@@ -36,6 +36,8 @@
             <span class="text-base text-gray-500 dark:text-gray-400">${{ Number(pt.base_price).toFixed(2) }} c/u</span>
             <input v-if="lines[pt.id] && lines[pt.id].selected"
                   type="number" min="1" v-model.number="lines[pt.id].quantity"
+                  v-blur-on-enter
+                  enterkeyhint="done"
                   @click.stop
                   @blur="onQuantityBlur(pt.id)"
                   class="form-control form-control-sm text-lg p-3 w-24 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
@@ -116,26 +118,97 @@
 
 
     <div class="grid grid-cols-1 md:grid-cols-7 gap-6">
-      <div v-if="!hideDeliveryDate" class="md:col-span-2">
-        <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Fecha de entrega estimada <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <input
-            v-model="form.estimated_delivery_date"
-            type="date"
-            :min="minDateStr"
-            @click.prevent="toggleDatePicker($event)"
-            @change="closeDatePicker"
-            @blur="closeDatePicker"
-            class="form-control form-control-sm w-full text-lg p-4 pr-11 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 [&::-webkit-calendar-picker-indicator]:opacity-0"
-            :class="showErrors && fieldErrors.delivery_date
-              ? 'border-red-500 dark:border-red-500'
-              : 'border-gray-300 dark:border-gray-600'"
-          >
-          <i class="ti ti-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none text-xl"></i>
+      <div v-if="!hideDeliveryDate" class="md:col-span-2 space-y-4">
+        <div>
+          <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Fecha de entrega estimada <span class="text-red-500">*</span></label>
+          <div class="relative">
+            <input
+              v-model="form.estimated_delivery_date"
+              type="date"
+              :min="minDateStr"
+              @click.prevent="toggleDatePicker($event)"
+              @change="closeDatePicker"
+              @blur="closeDatePicker"
+              class="form-control form-control-sm w-full text-lg p-4 pr-11 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 [&::-webkit-calendar-picker-indicator]:opacity-0"
+              :class="showErrors && fieldErrors.delivery_date
+                ? 'border-red-500 dark:border-red-500'
+                : 'border-gray-300 dark:border-gray-600'"
+            >
+            <i class="ti ti-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none text-xl"></i>
+          </div>
+          <p v-if="showErrors && fieldErrors.delivery_date" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
+            Campo obligatorio*
+          </p>
         </div>
-        <p v-if="showErrors && fieldErrors.delivery_date" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-          Campo obligatorio*
-        </p>
+
+        <!-- Hora: dropdown con dos columnas -->
+        <div>
+          <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Hora de entrega estimada <span class="text-red-500">*</span></label>
+          <div class="relative">
+            <button
+              type="button"
+              @click="toggleTimeDropdown"
+              @blur="closeTimeDropdown"
+              class="form-control form-control-sm w-full text-lg p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 flex items-center justify-between text-left"
+              :class="showErrors && fieldErrors.delivery_time
+                ? 'border-red-500 dark:border-red-500'
+                : 'border-gray-300 dark:border-gray-600'"
+            >
+              <span class="flex items-center gap-2 truncate">
+                <i class="ti ti-clock text-xl text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
+                <span v-if="form.estimated_delivery_time" class="truncate">
+                  {{ form.estimated_delivery_time }} <span class="text-gray-500 dark:text-gray-400">hrs</span>
+                </span>
+                <span v-else class="text-gray-400 dark:text-gray-500 truncate">Seleccionar hora</span>
+              </span>
+              <i class="ti ti-chevron-down text-sm flex-shrink-0"></i>
+            </button>
+
+            <div
+              v-if="openTimeDropdown"
+              class="absolute z-30 mt-1 left-0 min-w-[14rem] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden"
+            >
+              <div class="flex divide-x divide-gray-200 dark:divide-gray-700">
+                <!-- Horas -->
+                <div class="flex-1 max-h-56 overflow-y-auto">
+                  <div class="sticky top-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wide bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                    Hora
+                  </div>
+                  <button
+                    v-for="h in hourOptions"
+                    :key="h"
+                    type="button"
+                    @mousedown.prevent="selectHour(h)"
+                    class="w-full px-3 py-2 text-base text-center hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    :class="{ 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300': selectedHour === h }"
+                  >
+                    {{ h }}
+                  </button>
+                </div>
+
+                <!-- Minutos -->
+                <div class="flex-1 max-h-56 overflow-y-auto">
+                  <div class="sticky top-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wide bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                    Min
+                  </div>
+                  <button
+                    v-for="m in minuteOptions"
+                    :key="m"
+                    type="button"
+                    @mousedown.prevent="selectMinute(m)"
+                    class="w-full px-3 py-2 text-base text-center hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    :class="{ 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300': selectedMinute === m }"
+                  >
+                    {{ m }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p v-if="showErrors && fieldErrors.delivery_time" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
+            Campo obligatorio*
+          </p>
+        </div>
       </div>
 
       <div :class="hideDeliveryDate ? 'md:col-span-7' : 'md:col-span-5'">
@@ -144,6 +217,8 @@
           ref="notesTextarea"
           :value="form.notes"
           @input="onNotesInput"
+          v-blur-on-enter
+          enterkeyhint="done"
           rows="4"
           class="form-control form-control-sm w-full text-lg p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none"
         ></textarea>
@@ -182,6 +257,11 @@ export default {
     selectFormat: { type: Function, required: true }
   },
   emits: ['update:selectedPackageIds', 'update:form'],
+  data() {
+    return {
+      openTimeDropdown: false
+    };
+  },
   computed: {
     minDateStr() {
       const today = new Date();
@@ -189,6 +269,24 @@ export default {
       const m = String(today.getMonth() + 1).padStart(2, '0');
       const d = String(today.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
+    },
+    hourOptions() {
+      const arr = [];
+      for (let h = 0; h <= 23; h++) arr.push(String(h).padStart(2, '0'));
+      return arr;
+    },
+    minuteOptions() {
+      const arr = [];
+      for (let m = 0; m <= 59; m++) arr.push(String(m).padStart(2, '0'));
+      return arr;
+    },
+    selectedHour() {
+      const t = this.form.estimated_delivery_time;
+      return t ? t.split(':')[0] : null;
+    },
+    selectedMinute() {
+      const t = this.form.estimated_delivery_time;
+      return t ? t.split(':')[1] : null;
     },
     wordCount() {
       const trimmed = (this.form.notes || '').trim();
@@ -204,6 +302,24 @@ export default {
     }
   },
   methods: {
+    toggleTimeDropdown() {
+      this.openTimeDropdown = !this.openTimeDropdown;
+    },
+    closeTimeDropdown() {
+      // delay para que el mousedown.prevent alcance a ejecutarse
+      setTimeout(() => { this.openTimeDropdown = false; }, 200);
+    },
+    selectHour(h) {
+      const minute = this.selectedMinute || '00';
+      this.form.estimated_delivery_time = `${h}:${minute}`;
+      this.$emit('update:form', { ...this.form });
+    },
+    selectMinute(m) {
+      const hour = this.selectedHour || '16';
+      this.form.estimated_delivery_time = `${hour}:${m}`;
+      this.$emit('update:form', { ...this.form });
+      this.openTimeDropdown = false;
+    },
     onNotesInput(event) {
       const previous = this.form.notes || '';
       const previousWordCount = previous.trim() === ''

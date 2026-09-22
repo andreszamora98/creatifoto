@@ -15,6 +15,8 @@
           @input="$emit('update:customerSearch', $event.target.value)"
           @focus="openCustomerDropdown"
           @blur="hideCustomerDropdown"
+          v-blur-on-enter
+          enterkeyhint="next"
           placeholder="Escribe el nombre completo del cliente..."
           class="form-control form-control-sm w-full text-lg p-4 pl-11 pr-10 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           :class="showErrors && fieldErrors.customer
@@ -79,6 +81,8 @@
               :value="customerPhone"
               @input="onPhoneInput"
               @blur="onPhoneBlur"
+              v-blur-on-enter
+              enterkeyhint="next"
               maxlength="10"
               inputmode="numeric"
               :disabled="selectedCustomer && selectedCustomer.phone && !editingPhone"
@@ -136,6 +140,7 @@
               type="email"
               :value="customerEmail"
               @input="$emit('update:customerEmail', $event.target.value)"
+              v-blur-on-enter
               maxlength="255"
               :disabled="selectedCustomer && selectedCustomer.email && !editingEmail"
               placeholder="Ej. cliente@correo.com"

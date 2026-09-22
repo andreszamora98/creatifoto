@@ -21,6 +21,7 @@ class Order extends Model
         'pose_number',
         'notes',
         'estimated_delivery_date',
+        'estimated_delivery_time', 
         'actual_delivery_date',
         'status',
         'signature_id',
@@ -31,6 +32,7 @@ class Order extends Model
         'balance_due' => 'decimal:2',
         'estimated_delivery_date' => 'date',
         'actual_delivery_date' => 'date',
+        'estimated_delivery_time' => 'datetime:H:i',
     ];
 
     public function customer(): BelongsTo

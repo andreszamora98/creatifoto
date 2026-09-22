@@ -39,6 +39,8 @@
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-lg font-medium">$</span>
                 <input v-model.number="payment.amount" type="number" min="0" step="0.01"
                       @input="onPaymentAmountInput(idx)"
+                      v-blur-on-enter
+                      enterkeyhint="done"
                       placeholder="0.00"
                       class="form-control form-control-sm text-lg p-3 pl-7 rounded-lg border w-full text-gray-800 dark:text-gray-200"
                       :class="showErrors && (!payment.amount || payment.amount <= 0)

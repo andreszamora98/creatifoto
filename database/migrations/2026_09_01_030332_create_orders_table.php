@@ -27,6 +27,7 @@ return new class extends Migration
 
             $table->text('notes')->nullable();
             $table->date('estimated_delivery_date');
+            $table->time('estimated_delivery_time');
             $table->date('actual_delivery_date')->nullable();
             $table->enum('status', ['pending', 'processing', 'ready', 'delivered'])
                   ->default('pending');

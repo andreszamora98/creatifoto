@@ -29,6 +29,7 @@ class OrderService
                 'pose_number' => $data['pose_number'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'estimated_delivery_date' => $data['estimated_delivery_date'],
+                'estimated_delivery_time' => $data['estimated_delivery_time'],
                 'actual_delivery_date' => null,
                 'status' => 'pending',
                 'signature_id' => null,

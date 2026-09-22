@@ -4,11 +4,10 @@
       <div
         v-if="show"
         class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/40 backdrop-blur-[1px] modal-overlay"
-        @click="handleClose"
       >
-        <div class="modal-zoom w-full max-w-4xl" @click.stop>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-h-[85vh] overflow-y-auto">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <div class="modal-zoom w-full max-w-4xl">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-h-[85vh] overflow-y-auto isolate">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-30">
               <div>
                 <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-200">
                   <i class="ti ti-shopping-cart mr-2"></i>Orden: {{ orderCode }}
@@ -114,6 +113,7 @@
                       <span class="font-medium text-blue-800 dark:text-blue-300">Correo:</span>
                       <span class="font-bold text-blue-800 dark:text-blue-300 truncate ml-2">{{ localOrder.customer?.email || '—' }}</span>
                     </div>
+                    <!--
                     <div class="flex justify-between items-center py-2">
                       <span class="font-medium text-blue-800 dark:text-blue-300">Total:</span>
                       <span class="font-bold text-blue-800 dark:text-blue-300">{{ formatCurrency(localOrder.total) }}</span>
@@ -130,6 +130,7 @@
                         {{ formatCurrency(localOrder.balance_due) }}
                       </span>
                     </div>
+                    -->
                   </div>
                 </div>
               </div>
@@ -431,16 +432,15 @@ export default {
   },
   watch: {
     show(val) {
-    if (val && this.order) {
-      this.localOrder = this.order;
-      this.silentRefresh();
-    } else if (!val) {
-      this.resetState();
+      if (val && this.order) {
+        this.localOrder = this.order;
+        this.silentRefresh();
+      } else if (!val) {
+        this.resetState();
+      }
     }
-  }
   },
   methods: {
-
     async loadOrderDetail() {
       this.loading = true;
       try {
@@ -498,27 +498,6 @@ export default {
         this.addingPayment = false;
       }
     },
-
-    /*
-    async silentRefresh() {
-      try {
-        const res = await axios.get(`/orders/${this.order.id}`);
-        this.localOrder = res.data;
-      } catch (error) {
-        console.error('Error refrescando orden:', error);s
-      }
-    },
-    
-    async loadOrderDetail() {
-      this.loading = true;
-      try {
-        const res = await axios.get(`/orders/${this.order.id}`);
-        this.localOrder = res.data;
-      } finally {
-        this.loading = false;
-      }
-    },
-    */
     requestDeliver() {
       if (!this.canDeliver) {
         this.alertMessage = 'No se puede entregar la orden: tiene un saldo pendiente de ' + this.formatCurrency(this.localOrder.balance_due);
@@ -541,34 +520,6 @@ export default {
         this.showAlert = true;
       }
     },
-    /*
-    async addPayment() {
-      if (!this.canAddPayment || this.addingPayment) return;
-      this.addingPayment = true;
-      try {
-        const amount = Number(this.newPayment.amount);
-        const balance = Number(this.localOrder.balance_due);
-        const type = amount >= balance ? 'settlement' : 'advance';
-        const res = await axios.post(`/orders/${this.localOrder.id}/payments`, {
-          amount,
-          payment_method: this.newPayment.payment_method || null,
-          type,
-          notes: null
-        });
-        this.newPayment = { amount: null, payment_method: '' };
-        await this.loadOrderDetail();
-        this.successTitle = 'Pago registrado';
-        this.successMessage = 'El pago se registró correctamente';
-        this.showSuccess = true;
-        this.$emit('updated', this.localOrder);
-      } catch (error) {
-        this.alertMessage = error.response?.data?.message || 'No se pudo registrar el pago';
-        this.showAlert = true;
-      } finally {
-        this.addingPayment = false;
-      }
-    },
-    */
     onSuccessClosed() {
       this.showSuccess = false;
     },
@@ -642,15 +593,6 @@ export default {
 
 .modal-zoom {
   width: 100%;
-  transform: scale(1.02);
-  transform-origin: center center;
-  transition: transform 0.2s ease;
-}
-
-@media (max-width: 768px) {
-  .modal-zoom {
-    transform: scale(1);
-  }
 }
 
 .fade-enter-active,
