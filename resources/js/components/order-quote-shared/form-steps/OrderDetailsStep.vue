@@ -1,8 +1,8 @@
 <template>
   <section class="space-y-7">
-    <h4 class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
-      <span class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">2</span>
-      Datos de la orden
+    <h4 v-if="sectionTitle" class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
+      <span v-if="sectionBadge !== null" class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">{{ sectionBadge }}</span>
+      {{ sectionTitle }}
     </h4>
 
     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border-2"
@@ -116,99 +116,16 @@
       <span class="text-2xl font-bold text-blue-800 dark:text-blue-300">${{ estimatedTotal.toFixed(2) }}</span>
     </div>
 
-
     <div class="grid grid-cols-1 md:grid-cols-7 gap-6">
-      <div v-if="!hideDeliveryDate" class="md:col-span-2 space-y-4">
-        <div>
-          <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Fecha de entrega estimada <span class="text-red-500">*</span></label>
-          <div class="relative">
-            <input
-              v-model="form.estimated_delivery_date"
-              type="date"
-              :min="minDateStr"
-              @click.prevent="toggleDatePicker($event)"
-              @change="closeDatePicker"
-              @blur="closeDatePicker"
-              class="form-control form-control-sm w-full text-lg p-4 pr-11 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 [&::-webkit-calendar-picker-indicator]:opacity-0"
-              :class="showErrors && fieldErrors.delivery_date
-                ? 'border-red-500 dark:border-red-500'
-                : 'border-gray-300 dark:border-gray-600'"
-            >
-            <i class="ti ti-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none text-xl"></i>
-          </div>
-          <p v-if="showErrors && fieldErrors.delivery_date" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-            Campo obligatorio*
-          </p>
-        </div>
-
-        <!-- Hora: dropdown con dos columnas -->
-        <div>
-          <label class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">Hora de entrega estimada <span class="text-red-500">*</span></label>
-          <div class="relative">
-            <button
-              type="button"
-              @click="toggleTimeDropdown"
-              @blur="closeTimeDropdown"
-              class="form-control form-control-sm w-full text-lg p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 flex items-center justify-between text-left"
-              :class="showErrors && fieldErrors.delivery_time
-                ? 'border-red-500 dark:border-red-500'
-                : 'border-gray-300 dark:border-gray-600'"
-            >
-              <span class="flex items-center gap-2 truncate">
-                <i class="ti ti-clock text-xl text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
-                <span v-if="form.estimated_delivery_time" class="truncate">
-                  {{ form.estimated_delivery_time }} <span class="text-gray-500 dark:text-gray-400">hrs</span>
-                </span>
-                <span v-else class="text-gray-400 dark:text-gray-500 truncate">Seleccionar hora</span>
-              </span>
-              <i class="ti ti-chevron-down text-sm flex-shrink-0"></i>
-            </button>
-
-            <div
-              v-if="openTimeDropdown"
-              class="absolute z-30 mt-1 left-0 min-w-[14rem] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden"
-            >
-              <div class="flex divide-x divide-gray-200 dark:divide-gray-700">
-                <!-- Horas -->
-                <div class="flex-1 max-h-56 overflow-y-auto">
-                  <div class="sticky top-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wide bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                    Hora
-                  </div>
-                  <button
-                    v-for="h in hourOptions"
-                    :key="h"
-                    type="button"
-                    @mousedown.prevent="selectHour(h)"
-                    class="w-full px-3 py-2 text-base text-center hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
-                    :class="{ 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300': selectedHour === h }"
-                  >
-                    {{ h }}
-                  </button>
-                </div>
-
-                <!-- Minutos -->
-                <div class="flex-1 max-h-56 overflow-y-auto">
-                  <div class="sticky top-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wide bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                    Min
-                  </div>
-                  <button
-                    v-for="m in minuteOptions"
-                    :key="m"
-                    type="button"
-                    @mousedown.prevent="selectMinute(m)"
-                    class="w-full px-3 py-2 text-base text-center hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
-                    :class="{ 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300': selectedMinute === m }"
-                  >
-                    {{ m }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p v-if="showErrors && fieldErrors.delivery_time" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-            Campo obligatorio*
-          </p>
-        </div>
+      <div v-if="!hideDeliveryDate" class="md:col-span-2">
+        <DeliveryDateTimeFields
+          stacked
+          :delivery-date="form.estimated_delivery_date"
+          :delivery-time="form.estimated_delivery_time"
+          :show-errors="showErrors && (fieldErrors.delivery_date || fieldErrors.delivery_time)"
+          @update:deliveryDate="emitFormUpdate('estimated_delivery_date', $event)"
+          @update:deliveryTime="emitFormUpdate('estimated_delivery_time', $event)"
+        />
       </div>
 
       <div :class="hideDeliveryDate ? 'md:col-span-7' : 'md:col-span-5'">
@@ -233,9 +150,14 @@
 </template>
 
 <script>
+import DeliveryDateTimeFields from '../DeliveryDateTimeFields.vue';
+
 export default {
   name: 'OrderDetailsStep',
+  components: { DeliveryDateTimeFields },
   props: {
+    sectionBadge: { type: [Number, String], default: 2 },
+    sectionTitle: { type: String, default: 'Datos de la orden' },
     hideDeliveryDate: { type: Boolean, default: false },
     form: { type: Object, required: true },
     showErrors: { type: Boolean, default: false },
@@ -257,68 +179,19 @@ export default {
     selectFormat: { type: Function, required: true }
   },
   emits: ['update:selectedPackageIds', 'update:form'],
-  data() {
-    return {
-      openTimeDropdown: false
-    };
-  },
   computed: {
-    minDateStr() {
-      const today = new Date();
-      const y = today.getFullYear();
-      const m = String(today.getMonth() + 1).padStart(2, '0');
-      const d = String(today.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    },
-    hourOptions() {
-      const arr = [];
-      for (let h = 0; h <= 23; h++) arr.push(String(h).padStart(2, '0'));
-      return arr;
-    },
-    minuteOptions() {
-      const arr = [];
-      for (let m = 0; m <= 59; m++) arr.push(String(m).padStart(2, '0'));
-      return arr;
-    },
-    selectedHour() {
-      const t = this.form.estimated_delivery_time;
-      return t ? t.split(':')[0] : null;
-    },
-    selectedMinute() {
-      const t = this.form.estimated_delivery_time;
-      return t ? t.split(':')[1] : null;
-    },
     wordCount() {
       const trimmed = (this.form.notes || '').trim();
       return trimmed === '' ? 0 : trimmed.split(/\s+/).filter(Boolean).length;
     },
     selectedPackageIdsProxy: {
-      get() {
-        return this.selectedPackageIds;
-      },
-      set(value) {
-        this.$emit('update:selectedPackageIds', value);
-      }
+      get() { return this.selectedPackageIds; },
+      set(value) { this.$emit('update:selectedPackageIds', value); }
     }
   },
   methods: {
-    toggleTimeDropdown() {
-      this.openTimeDropdown = !this.openTimeDropdown;
-    },
-    closeTimeDropdown() {
-      // delay para que el mousedown.prevent alcance a ejecutarse
-      setTimeout(() => { this.openTimeDropdown = false; }, 200);
-    },
-    selectHour(h) {
-      const minute = this.selectedMinute || '00';
-      this.form.estimated_delivery_time = `${h}:${minute}`;
-      this.$emit('update:form', { ...this.form });
-    },
-    selectMinute(m) {
-      const hour = this.selectedHour || '16';
-      this.form.estimated_delivery_time = `${hour}:${m}`;
-      this.$emit('update:form', { ...this.form });
-      this.openTimeDropdown = false;
+    emitFormUpdate(key, value) {
+      this.$emit('update:form', { ...this.form, [key]: value });
     },
     onNotesInput(event) {
       const previous = this.form.notes || '';
@@ -334,7 +207,6 @@ export default {
         event.target.setSelectionRange(restoredPos, restoredPos);
         return;
       }
-
       const words = raw.trim().split(/\s+/).filter(Boolean);
       if (words.length > 500) {
         const truncated = words.slice(0, 500).join(' ');
@@ -343,7 +215,6 @@ export default {
         this.$emit('update:form', { ...this.form, notes: truncated });
         return;
       }
-
       this.$emit('update:form', { ...this.form, notes: raw });
     }
   }

@@ -46,3 +46,5 @@ Route::post('/quotes', [QuoteController::class, 'store']);
 Route::get('/quotes/{quote}', [QuoteController::class, 'show']);
 Route::post('/quotes/{quote}/convert', [QuoteController::class, 'convert']);
 Route::patch('/quotes/{quote}/status', [QuoteController::class, 'updateStatus']);
+Route::patch('/quotes/{quote}', [QuoteController::class, 'patch']);
+Route::put('/quotes/{quote}/concepts', [QuoteController::class, 'updateConcepts']);

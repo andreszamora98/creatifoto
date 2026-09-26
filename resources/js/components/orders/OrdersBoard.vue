@@ -306,7 +306,7 @@
 
     <QuoteModal
       :show="showQuoteModal"
-      @close="showQuoteModal = false"
+      @close="handleQuoteModalClosed"
       @created="handleQuoteCreated"
       @notify="handleNotify"
     />
@@ -392,6 +392,7 @@ export default {
       showOrderModal: false,
       showQuoteModal: false,
       showChoiceModal: false,
+      pendingNavigateToQuotes: false,
 
       currentPage: 1,
       itemsPerPage: 15,
@@ -554,12 +555,22 @@ export default {
       }
     },
     handleQuoteCreated(quote) {
+      if (quote && quote.id) {
+        sessionStorage.setItem('pendingBlinkQuoteId', String(quote.id));
+        sessionStorage.setItem('pendingQuoteNotification', JSON.stringify({
+          title: 'Cotización creada',
+          message: `La cotización C-${String(quote.id).padStart(3, '0')} se registró correctamente.`,
+          type: 'success'
+        }));
+      }
+      this.pendingNavigateToQuotes = true;
+    },
+    handleQuoteModalClosed() {
       this.showQuoteModal = false;
-      this.handleNotify({
-        title: 'Cotización creada',
-        message: `La cotización C-${String(quote.id).padStart(3, '0')} se registró correctamente.`,
-        type: 'success'
-      });
+      if (this.pendingNavigateToQuotes) {
+        this.pendingNavigateToQuotes = false;
+        window.location.href = '/cotizaciones';
+      }
     },
     openOrderDetail(order) {
       this.selectedOrderForDetail = order;

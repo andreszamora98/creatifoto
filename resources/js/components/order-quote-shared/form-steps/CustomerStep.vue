@@ -1,8 +1,8 @@
 <template>
   <section>
-    <h4 class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5 flex items-center gap-2">
-      <span class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">1</span>
-      Datos del cliente
+    <h4 v-if="sectionTitle" class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5 flex items-center gap-2">
+      <span v-if="sectionBadge !== null" class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">{{ sectionBadge }}</span>
+      {{ sectionTitle }}
     </h4>
 
     <div>
@@ -179,6 +179,9 @@
 export default {
   name: 'CustomerStep',
   props: {
+    // Si sectionTitle es '' se oculta el encabezado (útil al reutilizarlo dentro de otro panel)
+    sectionBadge: { type: [Number, String], default: 1 },
+    sectionTitle: { type: String, default: 'Datos del cliente' },
     onPhoneBlur: { type: Function, required: true },
     clearPhone: { type: Function, required: true },
     clearEmail: { type: Function, required: true },

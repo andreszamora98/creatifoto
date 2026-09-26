@@ -1,8 +1,8 @@
 <template>
   <section>
-    <h4 class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5 flex items-center gap-2">
-      <span class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">3</span>
-      Resumen y precio
+    <h4 v-if="sectionTitle" class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5 flex items-center gap-2">
+      <span v-if="sectionBadge !== null" class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">{{ sectionBadge }}</span>
+      {{ sectionTitle }}
     </h4>
 
     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 space-y-3">
@@ -39,6 +39,8 @@
 export default {
   name: 'SummaryStep',
   props: {
+    sectionBadge: { type: [Number, String], default: 3 },
+    sectionTitle: { type: String, default: 'Resumen y precio' },
     activeLines: { type: Array, required: true },
     photoTypes: { type: Array, required: true },
     selectedPackages: { type: Array, required: true },

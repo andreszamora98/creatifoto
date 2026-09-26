@@ -172,6 +172,10 @@ export default {
     // (OrderModal fija la fecha de entrega por defecto). No-op por defecto.
     afterCatalogsLoaded() {},
 
+    // Hook: se ejecuta tras guardar con éxito el teléfono o correo de un cliente
+    // (QuoteDetailModal avisa al padre para recargar la cotización). No-op por defecto.
+    afterContactUpdated() {},
+
     openSuccess(title, message, next = null) {
       this.successModalTitle = title;
       this.successModalMessage = message;
@@ -297,6 +301,7 @@ export default {
         this.selectedCustomer = updated;
         this.editingPhone = false;
         this.phoneTouched = false;
+        this.afterContactUpdated(updated);
         this.openSuccess('Teléfono actualizado', 'El teléfono del cliente se actualizó correctamente.');
       } catch (error) {
         this.$emit('notify', {
@@ -331,6 +336,7 @@ export default {
         if (idx !== -1) this.customers.splice(idx, 1, updated);
         this.selectedCustomer = updated;
         this.editingEmail = false;
+        this.afterContactUpdated(updated);
         this.openSuccess('Correo actualizado', 'El correo del cliente se actualizó correctamente.');
       } catch (error) {
         this.$emit('notify', {

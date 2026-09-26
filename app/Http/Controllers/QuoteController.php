@@ -121,4 +121,38 @@ class QuoteController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
+    public function patch(Request $request, Quote $quote)
+    {
+        $validated = $request->validate([
+            'valid_until' => 'nullable|date|after_or_equal:today',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $quote = $this->quoteService->patchQuote($quote, $validated);
+            return response()->json(['message' => 'Cotización actualizada', 'quote' => $quote]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function updateConcepts(Request $request, Quote $quote)
+    {
+        $validated = $request->validate([
+            'photo_types' => 'required|array|min:1',
+            'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
+            'photo_types.*.quantity' => 'required|integer|min:1',
+            'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
+            'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
+            'package_ids' => 'nullable|array',
+            'package_ids.*' => 'exists:packages,id',
+        ]);
+
+        try {
+            $quote = $this->quoteService->updateConcepts($quote, $validated);
+            return response()->json(['message' => 'Conceptos actualizados', 'quote' => $quote]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
 }

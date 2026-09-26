@@ -143,7 +143,9 @@
                   <p class="text-gray-700 dark:text-gray-300 text-base whitespace-pre-wrap break-words">{{ localOrder.notes }}</p>
                 </div>
               </div>
-
+              <PackagesSummaryList v-if="localOrder.packages && localOrder.packages.length" :packages="localOrder.packages" />
+              <PhotoTypesSummaryList v-if="localOrder.order_photo_types && localOrder.order_photo_types.length" :lines="localOrder.order_photo_types" />
+              <!--
               <div v-if="localOrder.packages && localOrder.packages.length" class="bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
                 <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center mb-3">
                   <i class="ti ti-package mr-2 text-xl"></i>Paquetes escolares
@@ -211,6 +213,7 @@
                   </div>
                 </div>
               </div>
+              -->
 
               <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
                 <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center mb-3">
@@ -359,10 +362,13 @@ import axios from 'axios';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
+import PackagesSummaryList from '../order-quote-shared/detail-parts/PackagesSummaryList.vue';
+import PhotoTypesSummaryList from '../order-quote-shared/detail-parts/PhotoTypesSummaryList.vue';
+
 
 export default {
   name: 'OrderDetailModal',
-  components: { ConfirmModal, SuccessModal, AlertModal },
+  components: { ConfirmModal, SuccessModal, AlertModal, PackagesSummaryList, PhotoTypesSummaryList },
   props: {
     show: { type: Boolean, default: false },
     order: { type: Object, default: null },

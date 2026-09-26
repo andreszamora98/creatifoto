@@ -57,13 +57,6 @@ class QuoteService
         });
     }
 
-    /**
-     * Convierte una cotización en una orden nueva. La cotización se
-     * conserva intacta; solo se marca como 'converted'. Los datos de
-     * la orden pueden diferir de la cotización si el cliente cambió
-     * algo al regresar (fecha de entrega y pagos siempre se piden de
-     * nuevo, ya que la cotización no los define).
-     */
     public function convertToOrder(Quote $quote, array $data): Order
     {
         if (!$quote->isConvertible()) {
@@ -73,11 +66,15 @@ class QuoteService
         return DB::transaction(function () use ($quote, $data) {
             $photoTypes = $data['photo_types'] ?? $this->quotePhotoTypesAsInput($quote);
             $packageIds = $data['package_ids'] ?? $quote->packages->pluck('id')->all();
+            $notes = array_key_exists('notes', $data) ? $data['notes'] : $quote->notes;
+
+            $this->syncQuoteContent($quote, $photoTypes, $packageIds, $notes);
 
             $orderData = array_merge($data, [
                 'customer_id' => $quote->customer_id,
                 'photo_types' => $photoTypes,
                 'package_ids' => $packageIds,
+                'notes' => $notes,
             ]);
 
             $order = app(OrderService::class)->createOrder($orderData);
@@ -105,6 +102,43 @@ class QuoteService
         $quote->update(['status' => $status]);
 
         return $quote;
+    }
+
+    protected function syncQuoteContent(Quote $quote, array $photoTypes, array $packageIds, ?string $notes): void
+    {
+        $quote->quotePhotoTypes()->delete();
+
+        foreach ($photoTypes as $line) {
+            $photoType = PhotoType::find($line['photo_type_id']);
+            $quote->quotePhotoTypes()->create([
+                'photo_type_id' => $line['photo_type_id'],
+                'quantity' => $line['quantity'],
+                'unit_price' => $photoType->base_price ?? 0,
+                'format' => $line['format'],
+                'paper_type_id' => $line['paper_type_id'] ?? null,
+            ]);
+        }
+
+        $quote->packages()->detach();
+        if (!empty($packageIds)) {
+            $packages = Package::whereIn('id', $packageIds)->get();
+            foreach ($packages as $pkg) {
+                $quote->packages()->attach($pkg->id, [
+                    'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->package_number),
+                    'price_snapshot' => $pkg->total_price,
+                ]);
+            }
+        }
+
+        $total = $this->calculateTotal([
+            'photo_types' => $photoTypes,
+            'package_ids' => $packageIds,
+        ]);
+
+        $quote->update([
+            'notes' => $notes,
+            'total' => $total,
+        ]);
     }
 
     protected function quotePhotoTypesAsInput(Quote $quote): array
@@ -160,5 +194,67 @@ class QuoteService
         }
 
         return $total;
+    }
+    public function patchQuote(Quote $quote, array $data): Quote
+    {
+        if ($quote->status === 'converted') {
+            throw new \Exception('No se puede editar una cotización ya convertida en orden.');
+        }
+
+        $quote->update([
+            'valid_until' => array_key_exists('valid_until', $data) ? $data['valid_until'] : $quote->valid_until,
+            'notes' => array_key_exists('notes', $data) ? $data['notes'] : $quote->notes,
+        ]);
+
+        return $quote->fresh([
+            'customer:id,name,phone,email',
+            'packages:id,package_number,name,total_price',
+            'quotePhotoTypes.photoType:id,name,base_price',
+            'quotePhotoTypes.paperType:id,name,extra_price',
+        ]);
+    }
+
+    public function updateConcepts(Quote $quote, array $data): Quote
+    {
+        if ($quote->status === 'converted') {
+            throw new \Exception('No se puede editar una cotización ya convertida en orden.');
+        }
+
+        return DB::transaction(function () use ($quote, $data) {
+            $total = $this->calculateTotal($data);
+
+            $quote->update(['total' => $total]);
+
+            $quote->quotePhotoTypes()->delete();
+            foreach ($data['photo_types'] as $line) {
+                $photoType = PhotoType::find($line['photo_type_id']);
+                $quote->quotePhotoTypes()->create([
+                    'photo_type_id' => $line['photo_type_id'],
+                    'quantity' => $line['quantity'],
+                    'unit_price' => $photoType->base_price ?? 0,
+                    'format' => $line['format'],
+                    'paper_type_id' => $line['paper_type_id'] ?? null,
+                ]);
+            }
+
+            $syncData = [];
+            if (!empty($data['package_ids'])) {
+                $packages = Package::whereIn('id', $data['package_ids'])->get();
+                foreach ($packages as $pkg) {
+                    $syncData[$pkg->id] = [
+                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->package_number),
+                        'price_snapshot' => $pkg->total_price,
+                    ];
+                }
+            }
+            $quote->packages()->sync($syncData);
+
+            return $quote->fresh([
+                'customer:id,name,phone,email',
+                'packages:id,package_number,name,total_price',
+                'quotePhotoTypes.photoType:id,name,base_price',
+                'quotePhotoTypes.paperType:id,name,extra_price',
+            ]);
+        });
     }
 }

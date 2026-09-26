@@ -32,7 +32,9 @@
         <tr
           v-for="q in quotes"
           :key="q.id"
+          :id="'quote-card-' + q.id"
           class="border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+          :class="{ 'animate-blink-row': isBlinking(q.id) }"
           @click="openDetail(q)"
         >
           <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200">C-{{ String(q.id).padStart(3, '0') }}</td>
@@ -51,8 +53,8 @@
 
     <QuoteModal
       :show="showQuoteModal"
-      @close="showQuoteModal = false"
-      @created="loadQuotes"
+      @close="handleQuoteModalClosed"
+      @created="handleQuoteCreated"
       @notify="handleNotify"
     />
 
@@ -60,7 +62,16 @@
       :show="showDetailModal"
       :quote="selectedQuote"
       @close="showDetailModal = false"
-      @converted="loadQuotes"
+      @updated="handleQuoteUpdated"
+      @convert="handleConvertRequest"
+      @notify="handleNotify"
+    />
+
+    <ConvertQuoteModal
+      :show="showConvertModal"
+      :quote="selectedQuote"
+      @close="handleConvertCancelled"
+      @converted="handleQuoteConverted"
       @notify="handleNotify"
     />
 
@@ -90,10 +101,11 @@ import axios from 'axios';
 import { setPageTitle } from '../../store';
 import QuoteModal from './QuoteModal.vue';
 import QuoteDetailModal from './QuoteDetailModal.vue';
+import ConvertQuoteModal from './ConvertQuoteModal.vue';
 
 export default {
   name: 'QuotesBoard',
-  components: { QuoteModal, QuoteDetailModal },
+  components: { QuoteModal, QuoteDetailModal, ConvertQuoteModal  },
   data() {
     return {
       quotes: [],
@@ -105,17 +117,75 @@ export default {
       notificationTitle: '',
       notificationMessage: '',
       notificationType: 'info',
-      notificationTimeout: null
+      notificationTimeout: null,
+      newQuoteId: null,
+      blinkInterval: null,
+      pendingBlinkQuoteId: null,
+      showConvertModal: false
     };
   },
-  mounted() {
+  async mounted() {
     setPageTitle('Cotizaciones');
-    this.loadQuotes();
+    await this.loadQuotes();
+
+    const pendingNotif = sessionStorage.getItem('pendingQuoteNotification');
+    if (pendingNotif) {
+      sessionStorage.removeItem('pendingQuoteNotification');
+      try {
+        const notif = JSON.parse(pendingNotif);
+        this.handleNotify(notif);
+      } catch (e) { /* ignorar JSON inválido */ }
+    }
+
+    const pendingId = sessionStorage.getItem('pendingBlinkQuoteId');
+    if (pendingId) {
+      sessionStorage.removeItem('pendingBlinkQuoteId');
+      const id = Number(pendingId);
+      this.$nextTick(() => {
+        this.startBlink(id);
+        setTimeout(() => {
+          const el = document.getElementById('quote-card-' + id);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      });
+    }
+  },
+  beforeUnmount() {
+    if (this.blinkInterval) {
+      clearInterval(this.blinkInterval);
+      this.blinkInterval = null;
+    }
   },
   methods: {
+    handleConvertRequest(quote) {
+      this.showDetailModal = false;
+      this.selectedQuote = quote;
+      this.showConvertModal = true;
+    },
+    // El usuario confirmó que cancela la conversión: se cierra y se regresa al detalle de la cotización
+    handleConvertCancelled() {
+      this.showConvertModal = false;
+      this.showDetailModal = true;
+    },
+    async handleQuoteConverted(order) {
+      this.showConvertModal = false;
+      await this.loadQuotes();
+      this.handleNotify({
+        title: 'Orden creada',
+        message: `Se generó la orden ORD-${String(order.id).padStart(3, '0')} a partir de la cotización.`,
+        type: 'success'
+      });
+    },
+    async handleQuoteUpdated() {
+      await this.loadQuotes();
+      // Se refresca la cotización abierta para que el detalle muestre los datos recién guardados
+      if (this.selectedQuote) {
+        const fresh = this.quotes.find(q => q.id === this.selectedQuote.id);
+        if (fresh) this.selectedQuote = fresh;
+      }
+    },
     async loadQuotes() {
       this.loading = true;
-      this.showQuoteModal = false;
       try {
         const res = await axios.get('/quotes');
         this.quotes = res.data;
@@ -129,6 +199,31 @@ export default {
       this.selectedQuote = q;
       this.showDetailModal = true;
     },
+    async handleQuoteCreated(quote) {
+      if (quote && quote.id) {
+        this.pendingBlinkQuoteId = quote.id;
+      }
+      await this.loadQuotes();
+      this.handleNotify({
+        title: 'Cotización creada',
+        message: `La cotización C-${String(quote.id).padStart(3, '0')} se registró correctamente.`,
+        type: 'success'
+      });
+    },
+    handleQuoteModalClosed() {
+      this.showQuoteModal = false;
+      if (this.pendingBlinkQuoteId) {
+        const idToBlink = this.pendingBlinkQuoteId;
+        this.pendingBlinkQuoteId = null;
+        this.$nextTick(() => {
+          this.startBlink(idToBlink);
+          setTimeout(() => {
+            const el = document.getElementById('quote-card-' + idToBlink);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 50);
+        });
+      }
+    },
     handleNotify({ title, message, type }) {
       this.notificationTitle = title;
       this.notificationMessage = message;
@@ -136,6 +231,26 @@ export default {
       this.showNotification = true;
       if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
       this.notificationTimeout = setTimeout(() => { this.showNotification = false; }, 3000);
+    },
+    startBlink(quoteId) {
+      if (this.blinkInterval) {
+        clearInterval(this.blinkInterval);
+        this.blinkInterval = null;
+      }
+      this.newQuoteId = quoteId;
+      let count = 0;
+      const maxCount = 8;
+      this.blinkInterval = setInterval(() => {
+        count++;
+        if (count >= maxCount) {
+          clearInterval(this.blinkInterval);
+          this.blinkInterval = null;
+          this.newQuoteId = null;
+        }
+      }, 400);
+    },
+    isBlinking(quoteId) {
+      return this.newQuoteId === quoteId && this.blinkInterval !== null;
     },
     statusLabel(status) {
       const labels = { pending: 'Pendiente', accepted: 'Aceptada', rejected: 'Rechazada', expired: 'Vencida', converted: 'Convertida' };
@@ -169,4 +284,20 @@ export default {
 <style scoped>
 .fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.3s ease; }
 .fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateX(20px); }
+
+.animate-blink-row {
+  animation: blinkRow 0.8s ease-in-out 4;
+}
+.dark .animate-blink-row {
+  animation: blinkRowDark 0.8s ease-in-out 4;
+}
+
+@keyframes blinkRow {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: #FFF9C4; }
+}
+@keyframes blinkRowDark {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: #FFD700; }
+}
 </style>

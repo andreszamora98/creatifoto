@@ -1,8 +1,8 @@
 <template>
   <section>
-    <h4 class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5 flex items-center gap-2">
-      <span class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">3</span>
-      Pago
+    <h4 v-if="sectionTitle" class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5 flex items-center gap-2">
+      <span v-if="sectionBadge !== null" class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">{{ sectionBadge }}</span>
+      {{ sectionTitle }}
     </h4>
 
     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5">
@@ -38,9 +38,9 @@
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-lg font-medium">$</span>
                 <input v-model.number="payment.amount" type="number" min="0" step="0.01"
-                      @input="onPaymentAmountInput(idx)"
                       v-blur-on-enter
                       enterkeyhint="done"
+                      @input="onPaymentAmountInput(idx)"
                       placeholder="0.00"
                       class="form-control form-control-sm text-lg p-3 pl-7 rounded-lg border w-full text-gray-800 dark:text-gray-200"
                       :class="showErrors && (!payment.amount || payment.amount <= 0)
@@ -107,6 +107,8 @@
 export default {
   name: 'PaymentStep',
   props: {
+    sectionBadge: { type: [Number, String], default: 3 },
+    sectionTitle: { type: String, default: 'Pago' },
     payments: { type: Array, required: true },
     estimatedTotal: { type: Number, default: 0 },
     remainingBalance: { type: Number, default: 0 },
