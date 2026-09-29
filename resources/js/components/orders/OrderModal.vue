@@ -1,23 +1,23 @@
 <template>
   <transition name="fade">
     <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-6">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden">
 
         <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg flex-shrink-0">
-          <div class="flex justify-between items-center p-6">
+          <div class="flex justify-between items-center px-6 py-3">
             <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
               <i class="ti ti-plus mr-2"></i>Nueva orden
             </h3>
             <button
               @click="handleClose"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               <i class="ti ti-x text-2xl"></i>
             </button>
           </div>
         </div>
 
-        <div class="px-6 pt-6 pb-4 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-6 pt-6 pb-0 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
           <StepIndicator :steps="stepLabels" :current-step="currentStep" />
         </div>
 
@@ -71,58 +71,74 @@
               :field-errors="fieldErrors"
               :loading-catalogs="loadingCatalogs"
               :photo-types="photoTypes"
-              :lines="lines"
+              :photo-lines="photoLines"
               :paper-types="paperTypes"
               :packages="packages"
               v-model:selected-package-ids="selectedPackageIds"
               :estimated-total="estimatedTotal"
               :open-format-dropdown-id="openFormatDropdownId"
+              :open-photo-type-dropdown-idx="openPhotoTypeDropdownIdx"
               :toggle-date-picker="toggleDatePicker"
               :close-date-picker="closeDatePicker"
-              :toggle-photo-type="togglePhotoType"
-              :on-quantity-blur="onQuantityBlur"
+              :add-photo-line="addPhotoLine"
+              :remove-photo-line="removePhotoLine"
+              :select-photo-type="selectPhotoType"
+              :toggle-photo-type-dropdown="togglePhotoTypeDropdown"
+              :close-photo-type-dropdown="closePhotoTypeDropdown"
+              :photo-type-name="photoTypeName"
               :toggle-format-dropdown="toggleFormatDropdown"
               :close-format-dropdown="closeFormatDropdown"
               :select-format="selectFormat"
               @update:form="form = $event"
             />
 
-            <PaymentStep
-              v-else
-              key="step-3"
-              section-title=""
-              :payments="payments"
-              :estimated-total="estimatedTotal"
-              :remaining-balance="remainingBalance"
-              :liquidate-all="liquidateAll"
-              :show-errors="showErrorsStep3"
-              :payment-concept="paymentConcept"
-              :show-balance-badge="showBalanceBadge"
-              :open-payment-method-dropdown-idx="openPaymentMethodDropdownIdx"
-              :toggle-liquidate-all="toggleLiquidateAll"
-              :on-payment-amount-input="onPaymentAmountInput"
-              :toggle-payment-method-dropdown="togglePaymentMethodDropdown"
-              :close-payment-method-dropdown="closePaymentMethodDropdown"
-              :select-line-payment-method="selectLinePaymentMethod"
-              :add-payment="addPayment"
-              :remove-payment="removePayment"
-            />
+            <ChargePaymentLayout v-else key="step-3">
+              <template #summary>
+                <OrderChargeSummary
+                  :active-lines="activeLines"
+                  :photo-types="photoTypes"
+                  :selected-packages="selectedPackagesData"
+                  :estimated-total="estimatedTotal"
+                />
+              </template>
+
+              <template #payment>
+                <PaymentStep
+                  section-title=""
+                  :payments="payments"
+                  :estimated-total="estimatedTotal"
+                  :remaining-balance="remainingBalance"
+                  :liquidate-all="liquidateAll"
+                  :show-errors="showErrorsStep3"
+                  :payment-concept="paymentConcept"
+                  :show-balance-badge="showBalanceBadge"
+                  :open-payment-method-dropdown-idx="openPaymentMethodDropdownIdx"
+                  :toggle-liquidate-all="toggleLiquidateAll"
+                  :on-payment-amount-input="onPaymentAmountInput"
+                  :toggle-payment-method-dropdown="togglePaymentMethodDropdown"
+                  :close-payment-method-dropdown="closePaymentMethodDropdown"
+                  :select-line-payment-method="selectLinePaymentMethod"
+                  :add-payment="addPayment"
+                  :remove-payment="removePayment"
+                />
+              </template>
+            </ChargePaymentLayout>
           </transition>
         </div>
 
-        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-4 p-6 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
-          <button @click="handleClose" class="flex-1 btn btn-light py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors">
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-4 px-6 py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+          <button @click="handleClose" class="flex-1 btn btn-light py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors">
             Cancelar
           </button>
           <button v-if="currentStep > 1" @click="goBack" type="button"
-                  class="flex-1 btn btn-light py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors font-medium">
+                  class="flex-1 btn btn-light py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors font-medium">
             <i class="ti ti-chevron-left mr-1"></i>Atrás
           </button>
           <button v-if="currentStep < 3" @click="goNext" type="button"
-                  class="flex-1 btn btn-primary py-4 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors">
+                  class="flex-1 btn btn-primary py-3 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors">
             Siguiente<i class="ti ti-chevron-right ml-1"></i>
           </button>
-          <button v-else @click="submit" :disabled="submitting" class="flex-1 btn btn-primary py-4 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <button v-else @click="submit" :disabled="submitting" class="flex-1 btn btn-primary py-3 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <span v-if="submitting"><i class="ti ti-refresh animate-spin mr-2"></i>Creando...</span>
             <span v-else><i class="ti ti-check mr-2"></i>Crear orden</span>
           </button>
@@ -174,6 +190,8 @@ import AlertModal from '../common/AlertModal.vue';
 import CustomerStep from '../order-quote-shared/form-steps/CustomerStep.vue';
 import OrderDetailsStep from '../order-quote-shared/form-steps/OrderDetailsStep.vue';
 import StepIndicator from '../order-quote-shared/StepIndicator.vue';
+import ChargePaymentLayout from '../order-quote-shared/ChargePaymentLayout.vue';
+import OrderChargeSummary from './form-steps/OrderChargeSummary.vue';
 import PaymentStep from './form-steps/PaymentStep.vue';
 import orderQuoteFormMixin from '../order-quote-shared/orderQuoteFormMixin.js';
 import paymentsMixin from '../order-quote-shared/paymentsMixin.js';
@@ -181,14 +199,17 @@ import paymentsMixin from '../order-quote-shared/paymentsMixin.js';
 export default {
   name: 'OrderModal',
   mixins: [orderQuoteFormMixin, paymentsMixin],
-  components: { ConfirmModal, SuccessModal, AlertModal, CustomerStep, OrderDetailsStep, StepIndicator, PaymentStep },
+  components: {
+    ConfirmModal, SuccessModal, AlertModal, CustomerStep, OrderDetailsStep,
+    StepIndicator, ChargePaymentLayout, OrderChargeSummary, PaymentStep
+  },
   props: {
     show: { type: Boolean, default: false }
   },
   emits: ['close', 'created', 'notify'],
   data() {
     return {
-      payments: [{ amount: null, payment_method: '' }],
+      payments: [{ amount: null, payment_method: 'tarjeta' }],
       form: {
         estimated_delivery_date: '',
         estimated_delivery_time: '',
@@ -209,11 +230,13 @@ export default {
     },
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
+      const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
+      const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
         delivery_date: !this.form.estimated_delivery_date,
         delivery_time: !this.form.estimated_delivery_time,
-        photo_types: this.activeLines.length === 0,
+        photo_types: hasEmptyPhotoLine || !hasContent,
         initial_payment_amount: this.payments.length === 0 || this.payments.some(p => !p.amount || p.amount <= 0),
         initial_payment_method: this.payments.some(p => !p.payment_method),
       };
@@ -270,7 +293,7 @@ export default {
     resetForm() {
       this.resetSharedFields();
       this.liquidateAll = false;
-      this.payments = [{ amount: null, payment_method: '' }];
+      this.payments = [{ amount: null, payment_method: 'tarjeta' }];
       this.openPaymentMethodDropdownIdx = null;
       this.form = { estimated_delivery_date: '', estimated_delivery_time: '', notes: '' };
     },

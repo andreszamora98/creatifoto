@@ -33,7 +33,7 @@ export default {
     toggleLiquidateAll() {
       this.liquidateAll = !this.liquidateAll;
       if (this.liquidateAll) {
-        const method = this.payments[0]?.payment_method || '';
+        const method = this.payments[0]?.payment_method || 'tarjeta';
         this.payments = [{ amount: this.estimatedTotal, payment_method: method }];
       } else {
         this.payments[0].amount = 0;
@@ -59,7 +59,7 @@ export default {
     },
     addPayment() {
       if (this.remainingBalance <= 0 || this.liquidateAll) return;
-      this.payments.push({ amount: null, payment_method: '' });
+      this.payments.push({ amount: null, payment_method: 'tarjeta' });
       this.safeMarkDirty();
     },
     removePayment(idx) {

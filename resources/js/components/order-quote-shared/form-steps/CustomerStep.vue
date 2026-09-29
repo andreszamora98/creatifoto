@@ -24,7 +24,7 @@
             : 'border-gray-300 dark:border-gray-600'"
         />
         <button v-if="customerSearch" @click="clearCustomerSearch" type="button"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors">
           <i class="ti ti-x text-xl"></i>
         </button>
         <div v-if="showCustomerDropdown && filteredCustomers.length"

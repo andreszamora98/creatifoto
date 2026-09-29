@@ -20,8 +20,6 @@ return new class extends Migration
             $table->foreignId('paper_type_id')->nullable()->constrained()->restrictOnDelete();
 
             $table->timestamps();
-
-            $table->unique(['order_id', 'photo_type_id']);
         });
     }
 

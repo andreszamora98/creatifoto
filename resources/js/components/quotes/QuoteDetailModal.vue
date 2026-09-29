@@ -307,20 +307,13 @@ export default {
     },
     populateConceptsFromQuote() {
       if (!this.quote) return;
-      this.photoTypes.forEach(pt => {
-        this.lines[pt.id] = { selected: false, quantity: 0, format: 'bn', paper_type_id: null };
-      });
-      (this.quote.quote_photo_types || []).forEach(line => {
-        const ptId = line.photo_type_id;
-        if (this.lines[ptId]) {
-          this.lines[ptId] = {
-            selected: true,
-            quantity: line.quantity,
-            format: line.format,
-            paper_type_id: line.paper_type_id
-          };
-        }
-      });
+      this.photoLines = (this.quote.quote_photo_types || []).map(line => ({
+        photo_type_id: line.photo_type_id,
+        quantity: line.quantity,
+        format: line.format,
+        paper_type_id: line.paper_type_id
+      }));
+
       this.selectedPackageIds = (this.quote.packages || []).map(p => p.id);
     },
     getCurrentState() {

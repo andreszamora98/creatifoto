@@ -19,6 +19,7 @@ export default {
       isDirty: false,
       showConfirmModal: false,
       openFormatDropdownId: null,
+      openPhotoTypeDropdownIdx: null,
       dateInputOpen: false,
       submittingAttempted: false,
       stepAttempted: { 1: false, 2: false, 3: false },
@@ -37,7 +38,7 @@ export default {
       selectedCustomer: null,
 
       selectedPackageIds: [],
-      lines: {},
+      photoLines: [],
 
       initialState: null
     };
@@ -96,10 +97,10 @@ export default {
       return this.customerEmail.trim() !== (this.selectedCustomer.email || '').trim();
     },
     activeLines() {
-      return Object.entries(this.lines)
-        .filter(([, l]) => l.selected)
-        .map(([photo_type_id, l]) => ({
-          photo_type_id: Number(photo_type_id),
+      return this.photoLines
+        .filter(l => l.photo_type_id)
+        .map(l => ({
+          photo_type_id: l.photo_type_id,
           quantity: l.quantity,
           format: l.format,
           paper_type_id: l.paper_type_id
@@ -168,12 +169,7 @@ export default {
     }
   },
   methods: {
-    // Hook: cada componente puede ejecutar algo extra tras cargar catálogos
-    // (OrderModal fija la fecha de entrega por defecto). No-op por defecto.
     afterCatalogsLoaded() {},
-
-    // Hook: se ejecuta tras guardar con éxito el teléfono o correo de un cliente
-    // (QuoteDetailModal avisa al padre para recargar la cotización). No-op por defecto.
     afterContactUpdated() {},
 
     openSuccess(title, message, next = null) {
@@ -355,38 +351,56 @@ export default {
     markDirty() {
       this.isDirty = true;
     },
-    togglePhotoType(id) {
-      const line = this.lines[id];
-      if (!line) return;
-      line.selected = !line.selected;
-      if (line.selected) {
-        if (!line.quantity || line.quantity < 1) line.quantity = 1;
-      } else {
-        line.quantity = 0;
-      }
+
+    emptyPhotoLine() {
+      return { photo_type_id: null, quantity: 1, format: 'bn', paper_type_id: null };
+    },
+    addPhotoLine() {
+      this.photoLines.push(this.emptyPhotoLine());
       this.markDirty();
     },
-    onQuantityBlur(id) {
-      const line = this.lines[id];
-      if (!line) return;
-      if (!line.quantity || line.quantity < 1) {
-        line.selected = false;
-        line.quantity = 0;
-      }
+    removePhotoLine(idx) {
+      if (idx < 0 || idx >= this.photoLines.length) return;
+      this.photoLines.splice(idx, 1);
+      this.markDirty();
     },
-    toggleFormatDropdown(id) {
-      this.openFormatDropdownId = this.openFormatDropdownId === id ? null : id;
+    selectPhotoType(idx, photoTypeId) {
+      this.photoLines[idx].photo_type_id = photoTypeId;
+      this.openPhotoTypeDropdownIdx = null;
+      this.markDirty();
     },
-    closeFormatDropdown(id) {
+    togglePhotoTypeDropdown(idx) {
+      this.openPhotoTypeDropdownIdx = this.openPhotoTypeDropdownIdx === idx ? null : idx;
+    },
+    closePhotoTypeDropdown(idx) {
       setTimeout(() => {
-        if (this.openFormatDropdownId === id) this.openFormatDropdownId = null;
+        if (this.openPhotoTypeDropdownIdx === idx) this.openPhotoTypeDropdownIdx = null;
       }, 200);
     },
-    selectFormat(id, value) {
-      this.lines[id].format = value;
+    photoTypeName(id) {
+      return this.photoTypes.find(p => p.id === id)?.name || '';
+    },
+    availablePhotoTypesFor(idx) {
+      const used = this.photoLines
+        .map((l, i) => (i === idx ? null : l.photo_type_id))
+        .filter(Boolean);
+      return this.photoTypes.filter(pt => !used.includes(pt.id));
+    },
+
+    toggleFormatDropdown(idx) {
+      this.openFormatDropdownId = this.openFormatDropdownId === idx ? null : idx;
+    },
+    closeFormatDropdown(idx) {
+      setTimeout(() => {
+        if (this.openFormatDropdownId === idx) this.openFormatDropdownId = null;
+      }, 200);
+    },
+    selectFormat(idx, value) {
+      this.photoLines[idx].format = value;
       this.openFormatDropdownId = null;
       this.markDirty();
     },
+
     async loadCatalogs() {
       this.loadingCatalogs = true;
       try {
@@ -401,10 +415,7 @@ export default {
         this.packages = pkgRes.data;
         this.customers = custRes.data;
 
-        this.lines = {};
-        this.photoTypes.forEach(pt => {
-          this.lines[pt.id] = { selected: false, quantity: 0, format: 'bn', paper_type_id: null };
-        });
+        this.photoLines = [];
       } catch (error) {
         this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los catálogos', type: 'error' });
       } finally {
@@ -426,8 +437,6 @@ export default {
       setTimeout(() => { this.showCustomerDropdown = false; }, 200);
     },
 
-    // Cada wizard llama esto desde su propio resetForm() y luego resetea
-    // lo que le es exclusivo (payments/liquidateAll en orden, validUntil en cotización).
     resetSharedFields() {
       this.successModalTitle = '';
       this.successModalMessage = '';
@@ -443,16 +452,14 @@ export default {
       this.navDirection = 'forward';
       this.editingPhone = false;
       this.editingEmail = false;
-      this.photoTypes.forEach(pt => {
-        this.lines[pt.id] = { selected: false, quantity: 0, format: 'bn', paper_type_id: null };
-      });
+      this.photoLines = [];
+      this.openPhotoTypeDropdownIdx = null;
+      this.openFormatDropdownId = null;
       this.isDirty = false;
       this.submittingAttempted = false;
       this.stepAttempted = { 1: false, 2: false, 3: false };
     },
 
-    // Estado base para el dirty-check al cerrar. Cada componente lo extiende
-    // con sus propios campos (payments, validUntil, etc).
     getSharedState() {
       return {
         customerSearch: this.customerSearch,
@@ -460,12 +467,10 @@ export default {
         customerPhone: this.customerPhone,
         customerEmail: this.customerEmail,
         selectedPackageIds: [...this.selectedPackageIds],
-        lines: JSON.parse(JSON.stringify(this.lines))
+        photoLines: JSON.parse(JSON.stringify(this.photoLines))
       };
     },
 
-    // Validaciones comunes antes de enviar: formato de teléfono, datos
-    // duplicados y campos obligatorios genéricos.
     runSharedSubmitChecks() {
       this.submittingAttempted = true;
       this.stepAttempted = { 1: true, 2: true, 3: true };

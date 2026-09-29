@@ -28,7 +28,7 @@
           <div class="flex items-center justify-between">
             <span class="text-base font-semibold text-gray-500 dark:text-gray-400">Pago {{ idx + 1 }}</span>
             <button v-if="payments.length > 1" @click="removePayment(idx)" type="button"
-                    class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0">
+                    class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors flex-shrink-0">
               <i class="ti ti-trash text-xl"></i>
             </button>
           </div>
@@ -65,8 +65,10 @@
                 <span class="flex items-center gap-2">
                   <i v-if="payment.payment_method === 'efectivo'" class="ti ti-cash text-xl text-green-600 dark:text-green-400"></i>
                   <i v-else-if="payment.payment_method === 'tarjeta'" class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i>
+                  <i v-else-if="payment.payment_method === 'transferencia'" class="ti ti-device-mobile text-xl text-purple-600 dark:text-purple-400"></i>
                   <span v-if="payment.payment_method === 'efectivo'">Efectivo</span>
                   <span v-else-if="payment.payment_method === 'tarjeta'">Tarjeta</span>
+                  <span v-else-if="payment.payment_method === 'transferencia'">Transferencia</span>
                   <span v-else class="text-gray-400 dark:text-gray-500">Método</span>
                 </span>
                 <i class="ti ti-chevron-down text-base"></i>
@@ -81,6 +83,10 @@
                 <button @mousedown.prevent="selectLinePaymentMethod(idx, 'tarjeta')"
                         class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
                   <i class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i> Tarjeta
+                </button>
+                <button @mousedown.prevent="selectLinePaymentMethod(idx, 'transferencia')"
+                        class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                  <i class="ti ti-device-mobile text-xl text-purple-600 dark:text-purple-400"></i> Transferencia
                 </button>
               </div>
               <p v-if="showErrors && !payment.payment_method" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">

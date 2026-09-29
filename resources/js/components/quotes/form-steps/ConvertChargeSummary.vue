@@ -1,30 +1,19 @@
 <template>
-  <section>
-    <h4 class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5">
-      Resumen de la cotización
-    </h4>
-
-    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 space-y-3">
-      <div v-for="line in summaryLines" :key="line.key" class="flex justify-between items-center text-lg text-gray-700 dark:text-gray-300">
-        <span>{{ line.label }}</span>
-        <span class="font-medium">${{ line.amount.toFixed(2) }}</span>
-      </div>
-
-      <div v-if="!summaryLines.length" class="text-lg text-gray-400 dark:text-gray-500 italic">
-        Esta cotización no tiene conceptos registrados.
-      </div>
-
-      <div class="border-t border-gray-300 dark:border-gray-600 pt-3 flex justify-between items-center">
-        <span class="text-xl font-semibold text-gray-800 dark:text-gray-200">Total a cobrar</span>
-        <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">${{ estimatedTotal.toFixed(2) }}</span>
-      </div>
-    </div>
-  </section>
+  <ChargeSummary
+    title="Resumen de la cotización"
+    :lines="summaryLines"
+    :estimated-total="estimatedTotal"
+    total-label="Total a cobrar"
+    empty-message="Esta cotización no tiene conceptos registrados."
+  />
 </template>
 
 <script>
+import ChargeSummary from '../../order-quote-shared/ChargeSummary.vue';
+
 export default {
   name: 'ConvertChargeSummary',
+  components: { ChargeSummary },
   props: {
     quote: { type: Object, default: null },
     estimatedTotal: { type: Number, default: 0 }

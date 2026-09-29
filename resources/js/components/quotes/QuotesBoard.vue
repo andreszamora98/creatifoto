@@ -1,55 +1,148 @@
 <template>
-  <div class="p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Cotizaciones</h2>
-      <button @click="showQuoteModal = true" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm flex items-center gap-2 transition-colors">
-        <i class="ti ti-plus text-base"></i>
-        <span>Nueva cotización</span>
-      </button>
+  <div class="h-full flex flex-col overflow-hidden">
+    <div class="flex-shrink-0 mb-4 mt-2 ml-4 flex flex-col md:flex-row items-start md:items-center gap-3">
+      <div class="flex-1 max-w-xl w-full md:w-auto">
+        <div class="relative">
+          <i class="ti ti-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input v-model="searchQuery" type="text"
+                placeholder="Buscar por folio, cliente, teléfono, correo, estado..."
+                class="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <button @click="loadQuotes" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+          <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
+          Actualizar
+        </button>
+        <button @click="showQuoteModal = true" class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
+          <i class="ti ti-plus text-base"></i>
+          <span>Nueva cotización</span>
+        </button>
+      </div>
     </div>
 
-    <div v-if="loading" class="text-center py-8">
-      <i class="ti ti-refresh animate-spin text-xl text-blue-500"></i>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Cargando cotizaciones...</p>
-    </div>
+    <div class="flex-1 flex flex-col overflow-hidden min-h-0">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow flex-1 flex flex-col overflow-hidden min-h-0">
 
-    <div v-else-if="quotes.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-      No hay cotizaciones registradas.
-    </div>
+        <div class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span>{{ filteredQuotes.length }} {{ filteredQuotes.length === 1 ? 'cotización' : 'cotizaciones' }}</span>
+            <span v-if="searchQuery" class="text-gray-400 ml-2">(filtrado)</span>
+          </div>
+        </div>
 
-    <table v-else class="w-full text-left text-sm bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <thead>
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
-          <th class="py-3 px-4">Folio</th>
-          <th class="px-4">Cliente</th>
-          <th class="px-4">Total</th>
-          <th class="px-4">Vigencia</th>
-          <th class="px-4">Estado</th>
-          <th class="px-4"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="q in quotes"
-          :key="q.id"
-          :id="'quote-card-' + q.id"
-          class="border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-          :class="{ 'animate-blink-row': isBlinking(q.id) }"
-          @click="openDetail(q)"
-        >
-          <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200">C-{{ String(q.id).padStart(3, '0') }}</td>
-          <td class="px-4 text-gray-600 dark:text-gray-400">{{ q.customer?.name || 'Sin cliente' }}</td>
-          <td class="px-4 text-gray-600 dark:text-gray-400">{{ formatCurrency(q.total) }}</td>
-          <td class="px-4 text-gray-600 dark:text-gray-400">{{ formatDate(q.valid_until) }}</td>
-          <td class="px-4">
-            <span class="px-2 py-0.5 text-xs rounded-full" :class="statusClass(q.status)">
-              {{ statusLabel(q.status) }}
-            </span>
-          </td>
-          <td class="px-4 text-gray-400"><i class="ti ti-chevron-right"></i></td>
-        </tr>
-      </tbody>
-    </table>
+        <div class="flex-1 overflow-hidden min-h-0 relative">
+          <div v-if="loading" class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="text-center">
+              <i class="ti ti-refresh animate-spin text-xl text-blue-500 mb-2"></i>
+              <p class="text-gray-600 dark:text-gray-400 text-sm">Cargando cotizaciones...</p>
+            </div>
+          </div>
+
+          <div v-else-if="filteredQuotes.length === 0" class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="text-center max-w-xs">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                <i class="ti ti-file-off text-lg text-gray-400 dark:text-gray-500"></i>
+              </div>
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                {{ searchQuery ? 'No se encontraron resultados' : 'No hay cotizaciones' }}
+              </h3>
+              <p class="text-gray-500 dark:text-gray-400 text-xs">
+                {{ searchQuery ? 'Intenta con otros términos de búsqueda.' : 'Aún no hay cotizaciones registradas.' }}
+              </p>
+            </div>
+          </div>
+
+          <div v-else class="h-full overflow-y-auto px-3 pb-3">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+              <thead class="sticky top-0 z-20 bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Folio</th>
+                  <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Cliente</th>
+                  <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Teléfono</th>
+                  <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Correo</th>
+                  <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Total</th>
+                  <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Vigencia</th>
+                  <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Estado</th>
+                  <th class="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr
+                  v-for="q in paginatedQuotes"
+                  :key="q.id"
+                  :id="'quote-card-' + q.id"
+                  @click="openDetail(q)"
+                  class="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  :class="{ 'animate-blink-row': isBlinking(q.id) }"
+                >
+                  <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">C-{{ String(q.id).padStart(3, '0') }}</td>
+                  <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ q.customer?.name || 'Sin cliente' }}</td>
+                  <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ q.customer?.phone || '—' }}</td>
+                  <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ q.customer?.email || '—' }}</td>
+                  <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatCurrency(q.total) }}</td>
+                  <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDate(q.valid_until) }}</td>
+                  <td class="px-3 py-2 whitespace-nowrap">
+                    <span class="px-2 py-0.5 text-xs rounded-full" :class="statusClass(q.status)">
+                      {{ statusLabel(q.status) }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-2 whitespace-nowrap text-gray-400">
+                    <i class="ti ti-chevron-right"></i>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex-shrink-0 mt-3 flex items-center justify-center gap-2 pb-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+          <button
+            @click="prevPage"
+            :disabled="currentPage === 1 || totalPages === 0"
+            class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            :class="currentPage === 1 || totalPages === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
+          >
+            <i class="ti ti-chevron-left text-sm"></i> Anterior
+          </button>
+
+          <div class="flex items-center gap-1">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              @click="goToPage(page)"
+              class="w-8 h-8 rounded-md text-xs font-medium transition-colors"
+              :class="currentPage === page
+                ? 'bg-blue-500 text-white dark:bg-blue-600'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
+            >
+              {{ page }}
+            </button>
+            <span v-if="totalPages === 0" class="w-8 h-8 rounded-md bg-gray-100 text-gray-400 flex items-center justify-center text-xs dark:bg-gray-800 dark:text-gray-600">1</span>
+          </div>
+
+          <button
+            @click="nextPage"
+            :disabled="currentPage === totalPages || totalPages === 0"
+            class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            :class="currentPage === totalPages || totalPages === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
+          >
+            Siguiente <i class="ti ti-chevron-right text-sm"></i>
+          </button>
+        </div>
+
+        <div class="flex-shrink-0 flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400 pb-2">
+          <span>Mostrando {{ paginatedQuotes.length }}/{{ filteredQuotes.length }} {{ filteredQuotes.length === 1 ? 'cotización' : 'cotizaciones' }}</span>
+          <span v-if="totalPages > 0">Página {{ currentPage }} de {{ totalPages }}</span>
+          <span v-else>Página —</span>
+        </div>
+      </div>
+    </div>
 
     <QuoteModal
       :show="showQuoteModal"
@@ -105,7 +198,7 @@ import ConvertQuoteModal from './ConvertQuoteModal.vue';
 
 export default {
   name: 'QuotesBoard',
-  components: { QuoteModal, QuoteDetailModal, ConvertQuoteModal  },
+  components: { QuoteModal, QuoteDetailModal, ConvertQuoteModal },
   data() {
     return {
       quotes: [],
@@ -121,8 +214,60 @@ export default {
       newQuoteId: null,
       blinkInterval: null,
       pendingBlinkQuoteId: null,
-      showConvertModal: false
+      showConvertModal: false,
+
+      searchQuery: '',
+      currentPage: 1,
+      itemsPerPage: 15
     };
+  },
+  computed: {
+    filteredQuotes() {
+      const q = this.searchQuery.toLowerCase().trim();
+      if (!q) return this.quotes;
+
+      return this.quotes.filter(quote => {
+        const folio = `c-${String(quote.id).padStart(3, '0')}`;
+        const customerName = (quote.customer?.name || '').toLowerCase();
+        const customerPhone = (quote.customer?.phone || '').toLowerCase();
+        const customerEmail = (quote.customer?.email || '').toLowerCase();
+        const total = String(quote.total ?? '');
+        const statusLabel = this.statusLabel(quote.status).toLowerCase();
+        const status = (quote.status || '').toLowerCase();
+        const validUntil = (quote.valid_until || '').toLowerCase();
+        const validUntilFormatted = this.formatDate(quote.valid_until).toLowerCase();
+
+        return (
+          folio.includes(q) ||
+          customerName.includes(q) ||
+          customerPhone.includes(q) ||
+          customerEmail.includes(q) ||
+          total.includes(q) ||
+          statusLabel.includes(q) ||
+          status.includes(q) ||
+          validUntil.includes(q) ||
+          validUntilFormatted.includes(q)
+        );
+      });
+    },
+    paginatedQuotes() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.filteredQuotes.slice(start, end);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredQuotes.length / this.itemsPerPage);
+    }
+  },
+  watch: {
+    filteredQuotes() {
+      if (this.currentPage > this.totalPages && this.totalPages > 0) {
+        this.currentPage = this.totalPages;
+      }
+    },
+    searchQuery() {
+      this.currentPage = 1;
+    }
   },
   async mounted() {
     setPageTitle('Cotizaciones');
@@ -162,7 +307,6 @@ export default {
       this.selectedQuote = quote;
       this.showConvertModal = true;
     },
-    // El usuario confirmó que cancela la conversión: se cierra y se regresa al detalle de la cotización
     handleConvertCancelled() {
       this.showConvertModal = false;
       this.showDetailModal = true;
@@ -178,7 +322,6 @@ export default {
     },
     async handleQuoteUpdated() {
       await this.loadQuotes();
-      // Se refresca la cotización abierta para que el detalle muestre los datos recién guardados
       if (this.selectedQuote) {
         const fresh = this.quotes.find(q => q.id === this.selectedQuote.id);
         if (fresh) this.selectedQuote = fresh;
@@ -251,6 +394,21 @@ export default {
     },
     isBlinking(quoteId) {
       return this.newQuoteId === quoteId && this.blinkInterval !== null;
+    },
+    goToPage(page) {
+      if (this.totalPages > 0 && page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
+    },
+    nextPage() {
+      if (this.totalPages > 0 && this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    prevPage() {
+      if (this.totalPages > 0 && this.currentPage > 1) {
+        this.currentPage--;
+      }
     },
     statusLabel(status) {
       const labels = { pending: 'Pendiente', accepted: 'Aceptada', rejected: 'Rechazada', expired: 'Vencida', converted: 'Convertida' };

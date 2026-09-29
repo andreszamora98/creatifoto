@@ -1,18 +1,18 @@
 <template>
   <transition name="fade">
     <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-6" @click="handleOverlayClick">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[85vh] flex flex-col overflow-hidden" @click.stop>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden" @click.stop>
 
         <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg flex-shrink-0">
-          <div class="flex justify-between items-center p-6">
+          <div class="flex justify-between items-center px-6 py-3">
             <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Convertir {{ quoteCode }} a orden</h3>
-            <button @click="requestCancel" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <button @click="requestCancel" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
               <i class="ti ti-x text-2xl"></i>
             </button>
           </div>
         </div>
 
-        <div class="px-6 pt-6 pb-2 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-6 pt-6 pb-1 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
           <StepIndicator :steps="stepLabels" :current-step="currentStep" />
         </div>
 
@@ -28,15 +28,15 @@
               @update:deliveryTime="deliveryTime = $event"
             />
 
-            <div v-else key="step-2" class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-              <div class="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+            <ChargePaymentLayout v-else key="step-2">
+              <template #summary>
                 <ConvertChargeSummary
                   :quote="quote"
                   :estimated-total="estimatedTotal"
                 />
-              </div>
+              </template>
 
-              <div class="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+              <template #payment>
                 <PaymentStep
                   :section-badge="null"
                   section-title=""
@@ -56,19 +56,19 @@
                   :add-payment="addPayment"
                   :remove-payment="removePayment"
                 />
-              </div>
-            </div>
+              </template>
+            </ChargePaymentLayout>
           </transition>
         </div>
 
-        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-3 p-6 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
-          <button v-if="currentStep === 1" @click="requestCancel" class="flex-1 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-          <button v-else @click="goBack" class="flex-1 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-3 px-6 py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+          <button v-if="currentStep === 1" @click="requestCancel" class="flex-1 py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+          <button v-else @click="goBack" class="flex-1 py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
             <i class="ti ti-chevron-left mr-1"></i>Atrás
           </button>
 
-          <button v-if="currentStep === 1" @click="goNext" class="flex-1 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white">Continuar</button>
-          <button v-else @click="confirmConvert" :disabled="submitting" class="flex-1 py-3 rounded-lg bg-blue-500 text-white disabled:opacity-50">
+          <button v-if="currentStep === 1" @click="goNext" class="flex-1 py-3 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 text-white">Continuar</button>
+          <button v-else @click="confirmConvert" :disabled="submitting" class="flex-1 py-3 text-lg rounded-lg bg-blue-500 text-white disabled:opacity-50">
             {{ submitting ? 'Creando...' : 'Confirmar y crear orden' }}
           </button>
         </div>
@@ -94,6 +94,7 @@
 import axios from 'axios';
 import paymentsMixin from '../order-quote-shared/paymentsMixin.js';
 import StepIndicator from '../order-quote-shared/StepIndicator.vue';
+import ChargePaymentLayout from '../order-quote-shared/ChargePaymentLayout.vue';
 import ConvertDeliveryStep from './form-steps/ConvertDeliveryStep.vue';
 import ConvertChargeSummary from './form-steps/ConvertChargeSummary.vue';
 import PaymentStep from '../orders/form-steps/PaymentStep.vue';
@@ -104,7 +105,10 @@ import AlertModal from '../common/AlertModal.vue';
 export default {
   name: 'ConvertQuoteModal',
   mixins: [paymentsMixin],
-  components: { StepIndicator, ConvertDeliveryStep, ConvertChargeSummary, PaymentStep, ConfirmModal, SuccessModal, AlertModal },
+  components: {
+    StepIndicator, ChargePaymentLayout, ConvertDeliveryStep, ConvertChargeSummary,
+    PaymentStep, ConfirmModal, SuccessModal, AlertModal
+  },
   props: {
     show: { type: Boolean, default: false },
     quote: { type: Object, default: null }
@@ -116,7 +120,7 @@ export default {
       navDirection: 'forward',
       deliveryDate: '',
       deliveryTime: '16:00',
-      payments: [{ amount: null, payment_method: '' }],
+      payments: [{ amount: null, payment_method: 'tarjeta' }],
       submitting: false,
       stepAttempted: { 1: false, 2: false },
       showCancelConfirm: false,
@@ -164,7 +168,7 @@ export default {
         this.navDirection = 'forward';
         this.deliveryDate = this.getNextBusinessDay();
         this.deliveryTime = '16:00';
-        this.payments = [{ amount: null, payment_method: '' }];
+        this.payments = [{ amount: null, payment_method: 'tarjeta' }];
         this.liquidateAll = false;
         this.openPaymentMethodDropdownIdx = null;
         this.stepAttempted = { 1: false, 2: false };

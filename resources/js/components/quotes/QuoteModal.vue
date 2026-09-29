@@ -4,20 +4,20 @@
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[85vh] flex flex-col overflow-hidden">
 
         <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg flex-shrink-0">
-          <div class="flex justify-between items-center p-6">
+          <div class="flex justify-between items-center px-6 py-3">
             <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
               <i class="ti ti-file-description mr-2"></i>Nueva cotización
             </h3>
             <button
-                @click="handleClose"
-                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                <i class="ti ti-x text-2xl"></i>
+              @click="handleClose"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <i class="ti ti-x text-2xl"></i>
             </button>
           </div>
         </div>
 
-        <div class="px-6 pt-6 pb-4 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-6 pt-6 pb-0 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
           <StepIndicator :steps="stepLabels" :current-step="currentStep" />
         </div>
 
@@ -71,23 +71,27 @@
               :field-errors="fieldErrors"
               :loading-catalogs="loadingCatalogs"
               :photo-types="photoTypes"
-              :lines="lines"
+              :photo-lines="photoLines"
               :paper-types="paperTypes"
               :packages="packages"
               v-model:selected-package-ids="selectedPackageIds"
               :estimated-total="estimatedTotal"
               :open-format-dropdown-id="openFormatDropdownId"
+              :open-photo-type-dropdown-idx="openPhotoTypeDropdownIdx"
               :toggle-date-picker="toggleDatePicker"
               :close-date-picker="closeDatePicker"
-              :toggle-photo-type="togglePhotoType"
-              :on-quantity-blur="onQuantityBlur"
+              :add-photo-line="addPhotoLine"
+              :remove-photo-line="removePhotoLine"
+              :select-photo-type="selectPhotoType"
+              :toggle-photo-type-dropdown="togglePhotoTypeDropdown"
+              :close-photo-type-dropdown="closePhotoTypeDropdown"
+              :photo-type-name="photoTypeName"
               :toggle-format-dropdown="toggleFormatDropdown"
               :close-format-dropdown="closeFormatDropdown"
               :select-format="selectFormat"
               @update:form="form = $event"
               hide-delivery-date
             />
-
             <SummaryStep
               v-else
               key="step-3"
@@ -102,7 +106,7 @@
           </transition>
         </div>
 
-        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-4 p-6 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-4 px-6 py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
           <button @click="handleClose" class="flex-1 btn btn-light py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors">
             Cancelar
           </button>
@@ -193,9 +197,11 @@ export default {
     },
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
+      const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
+      const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
-        photo_types: this.activeLines.length === 0
+        photo_types: hasEmptyPhotoLine || !hasContent,
       };
     },
     currentStepValid() {
