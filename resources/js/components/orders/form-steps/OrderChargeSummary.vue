@@ -25,10 +25,10 @@ export default {
       const photoLines = this.activeLines.map((l, idx) => {
         const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
         return {
-          // idx evita llaves duplicadas si el mismo tipo aparece en varias líneas
           key: `pt-${l.photo_type_id}-${idx}`,
           label: `${pt?.name || 'Tipo de foto'} x${l.quantity}`,
-          amount: Number(pt?.base_price || 0) * Number(l.quantity || 0)
+          amount: Number(pt?.base_price || 0) * Number(l.quantity || 0),
+          format: l.format
         };
       });
       const packageLines = this.selectedPackages.map(pkg => ({
