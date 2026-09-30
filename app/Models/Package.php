@@ -27,39 +27,39 @@ class Package extends Model
         'men_features' => 'array',
     ];
 
-    /**
-     * package_id es cascadeOnDelete: si la escuela muere, sus paquetes
-     * mueren con ella.
-     */
+    protected $appends = [
+        'women_features_text',
+        'men_features_text',
+    ];
+
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
     }
 
-    /**
-     * La "plantilla" del paquete: qué tipos de foto trae y en qué
-     * cantidad. package_id es cascadeOnDelete, photo_type_id es
-     * restrictOnDelete (protege el catálogo).
-     */
     public function photoTypes(): BelongsToMany
     {
-        return $this->belongsToMany(PhotoType::class, 'package_photo_type')
+        return $this->belongsToMany(PhotoType::class, 'package_photo_types')
             ->withPivot('quantity')
             ->withTimestamps()
             ->using(PackagePhotoType::class);
     }
 
-    /**
-     * Órdenes que han vendido este paquete. package_id es
-     * restrictOnDelete aquí a propósito: un paquete ya vendido no se
-     * debe poder borrar sin romper el historial. Para retirarlo de
-     * oferta se usa soft-delete, no un delete físico.
-     */
     public function orders(): BelongsToMany
     {
         return $this->belongsToMany(Order::class, 'order_packages')
             ->withPivot(['package_name_snapshot', 'price_snapshot'])
             ->withTimestamps()
             ->using(OrderPackage::class);
+    }
+
+    public function getWomenFeaturesTextAttribute(): string
+    {
+        return $this->women_features['text'] ?? '';
+    }
+
+    public function getMenFeaturesTextAttribute(): string
+    {
+        return $this->men_features['text'] ?? '';
     }
 }

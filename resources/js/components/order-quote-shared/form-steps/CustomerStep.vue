@@ -58,7 +58,7 @@
           <div class="flex items-center justify-between mb-2">
             <label class="form-label text-lg font-medium block text-gray-700 dark:text-gray-300">Teléfono</label>
             <div class="flex items-center gap-3">
-              <button v-if="selectedCustomer && selectedCustomer.phone && !editingPhone" @click="toggleEditPhone" type="button"
+              <button v-if="selectedCustomer && !editingPhone" @click="toggleEditPhone" type="button"
                       class="text-gray-400 hover:text-blue-500 transition-colors">
                 <i class="ti ti-pencil text-xl"></i>
               </button>
@@ -85,7 +85,7 @@
               enterkeyhint="next"
               maxlength="10"
               inputmode="numeric"
-              :disabled="selectedCustomer && selectedCustomer.phone && !editingPhone"
+              :disabled="selectedCustomer && !editingPhone"
               placeholder="Ej. 4421234567"
               class="form-control form-control-sm w-full text-lg p-4 pl-11 pr-10 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
               :class="phoneError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'"
@@ -118,7 +118,7 @@
           <div class="flex items-center justify-between mb-2">
             <label class="form-label text-lg font-medium block text-gray-700 dark:text-gray-300">Correo</label>
             <div class="flex items-center gap-3">
-              <button v-if="selectedCustomer && selectedCustomer.email && !editingEmail" @click="toggleEditEmail" type="button"
+              <button v-if="selectedCustomer && !editingEmail" @click="toggleEditEmail" type="button"
                       class="text-gray-400 hover:text-blue-500 transition-colors">
                 <i class="ti ti-pencil text-xl"></i>
               </button>
@@ -142,7 +142,7 @@
               @input="$emit('update:customerEmail', $event.target.value)"
               v-blur-on-enter
               maxlength="255"
-              :disabled="selectedCustomer && selectedCustomer.email && !editingEmail"
+              :disabled="selectedCustomer && !editingEmail"
               placeholder="Ej. cliente@correo.com"
               class="form-control form-control-sm w-full text-lg p-4 pl-11 pr-10 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
               :class="emailError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'"
@@ -179,7 +179,6 @@
 export default {
   name: 'CustomerStep',
   props: {
-    // Si sectionTitle es '' se oculta el encabezado (útil al reutilizarlo dentro de otro panel)
     sectionBadge: { type: [Number, String], default: 1 },
     sectionTitle: { type: String, default: 'Datos del cliente' },
     onPhoneBlur: { type: Function, required: true },

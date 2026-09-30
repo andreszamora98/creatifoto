@@ -59,7 +59,7 @@ export default {
                 { title: 'Órdenes', path: '/', icon: 'ti ti-ticket' },
                 { title: 'Cotizaciones', path: '/cotizaciones', icon: 'ti ti-file-description' },
                 // { title: 'Clientes', path: '/customers', icon: 'ti ti-users' },
-                // { title: 'Paquetes', path: '/packages', icon: 'ti ti-package' },
+                 { title: 'Paquetes', path: '/paquetes', icon: 'ti ti-package' },
             ],
         };
     },
@@ -70,6 +70,7 @@ export default {
             return current === target;
         },
         handleItemClick(path) {
+            /*
             const current = window.location.pathname.replace(/\/$/, '') || '/';
             const target = path.replace(/\/$/, '') || '/';
 
@@ -79,6 +80,7 @@ export default {
             }
             sessionStorage.setItem('sidebarShouldClose', '1');
             this.$emit('close-sidebar');
+            */
         },
     },
 };

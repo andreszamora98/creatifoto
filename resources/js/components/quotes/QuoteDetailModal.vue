@@ -17,10 +17,8 @@
 
         <div class="flex-1 overflow-y-auto p-6 space-y-5">
 
-          <!-- Dos tarjetas lado a lado (mismo esquema que OrderDetailModal): Vigencia y observaciones | Cliente -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-            <!-- Vigencia y observaciones (se oculta mientras se edita el cliente para darle todo el ancho) -->
             <div v-show="!editingCustomer"
                  class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600"
                  style="border-left-width:4px;">
@@ -69,7 +67,6 @@
               </template>
             </div>
 
-            <!-- Cliente (ocupa todo el ancho mientras se edita con CustomerStep) -->
             <div class="rounded-lg p-5 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600"
                  :class="editingCustomer ? 'lg:col-span-2' : ''"
                  style="border-left-width:4px;">
@@ -150,49 +147,42 @@
               <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center">
                 <i class="ti ti-photo mr-2 text-xl"></i>Conceptos
               </h4>
-              <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" class="text-gray-400 hover:text-blue-600"><i class="ti ti-pencil"></i></button>
             </div>
 
-            <template v-if="!editingConcepts">
-              <PackagesSummaryList v-if="quote?.packages?.length" :packages="quote.packages" />
-              <PhotoTypesSummaryList v-if="quote?.quote_photo_types?.length" :lines="quote.quote_photo_types" />
-              <p v-if="!quote?.packages?.length && !quote?.quote_photo_types?.length" class="text-base text-gray-500 dark:text-gray-400 italic">
-                Sin conceptos registrados.
-              </p>
-            </template>
+            <PackagesSummaryList v-if="quote?.packages?.length" :packages="quote.packages" />
 
-            <template v-else>
-              <OrderDetailsStep
-                :section-badge="null"
-                section-title=""
-                :form="conceptsForm"
-                :show-errors="conceptsSubmittingAttempted"
-                :field-errors="fieldErrors"
-                :loading-catalogs="loadingCatalogs"
-                :photo-types="photoTypes"
-                :lines="lines"
-                :paper-types="paperTypes"
-                :packages="packages"
-                v-model:selected-package-ids="selectedPackageIds"
-                :estimated-total="estimatedTotal"
-                :open-format-dropdown-id="openFormatDropdownId"
-                :toggle-date-picker="toggleDatePicker"
-                :close-date-picker="closeDatePicker"
-                :toggle-photo-type="togglePhotoType"
-                :on-quantity-blur="onQuantityBlur"
-                :toggle-format-dropdown="toggleFormatDropdown"
-                :close-format-dropdown="closeFormatDropdown"
-                :select-format="selectFormat"
-                @update:form="conceptsForm = $event"
-                hide-delivery-date
-              />
-              <div class="flex gap-3 mt-4">
-                <button @click="cancelEditingConcepts" type="button" class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                <button @click="saveConcepts" :disabled="savingConcepts" type="button" class="flex-1 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
-                  {{ savingConcepts ? 'Guardando...' : 'Guardar' }}
-                </button>
+            <div class="mt-4">
+              <div class="flex items-center justify-between mb-3">
+                <h5 class="font-medium text-gray-700 dark:text-gray-300">Tipos de fotografía</h5>
+                <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" class="text-gray-400 hover:text-blue-600"><i class="ti ti-pencil"></i></button>
               </div>
-            </template>
+
+              <template v-if="!editingConcepts">
+                <PhotoTypesSummaryList v-if="quote?.quote_photo_types?.length" :lines="quote.quote_photo_types" />
+                <p v-else class="text-base text-gray-500 dark:text-gray-400 italic">
+                  Sin tipos de fotografía registrados.
+                </p>
+              </template>
+
+              <template v-else>
+                <PhotoTypeLinesEditor
+                  :lines="photoLines"
+                  :photo-types="photoTypes"
+                  :paper-types="paperTypes"
+                  :loading="loadingCatalogs"
+                  :show-errors="conceptsSubmittingAttempted"
+                  :error="fieldErrors.photo_types"
+                  title=""
+                  empty-hint="Sin tipos de fotografía."
+                />
+                <div class="flex gap-3 mt-4">
+                  <button @click="cancelEditingConcepts" type="button" class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+                  <button @click="saveConcepts" :disabled="savingConcepts" type="button" class="flex-1 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
+                    {{ savingConcepts ? 'Guardando...' : 'Guardar' }}
+                  </button>
+                </div>
+              </template>
+            </div>
           </div>
 
         </div>
@@ -231,9 +221,9 @@
 import axios from 'axios';
 import orderQuoteFormMixin from '../order-quote-shared/orderQuoteFormMixin.js';
 import CustomerStep from '../order-quote-shared/form-steps/CustomerStep.vue';
-import OrderDetailsStep from '../order-quote-shared/form-steps/OrderDetailsStep.vue';
 import PackagesSummaryList from '../order-quote-shared/detail-parts/PackagesSummaryList.vue';
 import PhotoTypesSummaryList from '../order-quote-shared/detail-parts/PhotoTypesSummaryList.vue';
+import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLinesEditor.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
@@ -241,7 +231,7 @@ import AlertModal from '../common/AlertModal.vue';
 export default {
   name: 'QuoteDetailModal',
   mixins: [orderQuoteFormMixin],
-  components: { CustomerStep, OrderDetailsStep, PackagesSummaryList, PhotoTypesSummaryList, ConfirmModal, SuccessModal, AlertModal },
+  components: { CustomerStep, PackagesSummaryList, PhotoTypesSummaryList, PhotoTypeLinesEditor, ConfirmModal, SuccessModal, AlertModal },
   props: {
     show: { type: Boolean, default: false },
     quote: { type: Object, default: null }
@@ -261,8 +251,7 @@ export default {
       showSuccessModal: false,
       successModalTitle: '',
       successModalMessage: '',
-      detailsForm: { validUntil: '', notes: '' },
-      conceptsForm: { notes: '' }
+      detailsForm: { validUntil: '', notes: '' }
     };
   },
   computed: {
@@ -300,8 +289,6 @@ export default {
     afterCatalogsLoaded() {
       this.populateConceptsFromQuote();
     },
-    // Hook del mixin: tras guardar teléfono/correo en el registro del cliente,
-    // se avisa al padre para que recargue la cotización y el detalle no quede desactualizado.
     afterContactUpdated() {
       this.$emit('updated');
     },
@@ -332,17 +319,20 @@ export default {
       this.showConfirmModal = false;
     },
 
-    // ── Cliente ──────────────────────────────────────────────
     startEditingCustomer() {
       const current = this.quote?.customer || null;
       this.customerSubmittingAttempted = false;
       this.phoneTouched = false;
       this.editingPhone = false;
       this.editingEmail = false;
+      this.showCustomerDropdown = false;
+
       if (current) {
-        // Se prefiere el objeto del catálogo (ya cargado) para que coincida con el resto de la lista
-        this.selectedCustomer = this.customers.find(c => c.id === current.id) || current;
-        this.customerSearch = this.selectedCustomer.name || '';
+        const catalogCustomer = this.customers.find(c => c.id === current.id) || current;
+        this.selectedCustomer = catalogCustomer;
+        this.customerSearch = catalogCustomer.name || '';
+        this.customerPhone = catalogCustomer.phone || '';
+        this.customerEmail = catalogCustomer.email || '';
       } else {
         this.selectedCustomer = null;
         this.customerSearch = '';
@@ -358,7 +348,6 @@ export default {
       this.editingPhone = false;
       this.editingEmail = false;
       this.showCustomerDropdown = false;
-      // Al limpiar el cliente seleccionado, el watcher del mixin vacía teléfono y correo
       this.customerSearch = '';
       this.selectedCustomer = null;
     },
@@ -366,7 +355,7 @@ export default {
       if (this.savingCustomer) return;
       this.customerSubmittingAttempted = true;
 
-      if (this.fieldErrors.customer) return; // CustomerStep ya marca el campo como obligatorio
+      if (this.fieldErrors.customer) return;
 
       if (this.editingPhone || this.editingEmail) {
         this.alertMessage = 'Confirma o descarta el cambio de teléfono o correo antes de guardar.';
@@ -389,18 +378,40 @@ export default {
       }
 
       const payload = this.resolveCustomerPayload();
-
-      // Sigue siendo el mismo cliente: los cambios de contacto ya se guardaron desde CustomerStep
-      if (payload.customer_id && payload.customer_id === this.quote?.customer?.id) {
-        this.cancelEditingCustomer();
-        return;
-      }
+      const isSameCustomer =
+        payload.customer_id && payload.customer_id === this.quote?.customer?.id;
 
       this.savingCustomer = true;
       try {
+        if (isSameCustomer) {
+          const currentPhone = (this.selectedCustomer?.phone || '').trim() || null;
+          const currentEmail = (this.selectedCustomer?.email || '').trim() || null;
+          const newPhone = trimmedPhone || null;
+          const newEmail = this.customerEmail.trim() || null;
+
+          if (newPhone !== currentPhone || newEmail !== currentEmail) {
+            const contactRes = await axios.patch(
+              `/customers/${this.selectedCustomer.id}/contact`,
+              { phone: newPhone, email: newEmail }
+            );
+            const updatedCustomer = contactRes.data;
+            const idx = this.customers.findIndex(c => c.id === updatedCustomer.id);
+            if (idx !== -1) this.customers.splice(idx, 1, updatedCustomer);
+            this.selectedCustomer = updatedCustomer;
+          }
+
+          this.cancelEditingCustomer();
+          this.$emit('updated');
+          this.successModalTitle = 'Actualizado';
+          this.successModalMessage = 'Los datos del cliente se actualizaron correctamente.';
+          this.showSuccessModal = true;
+          return;
+        }
+
         const res = await axios.put(`/quotes/${this.quote.id}/customer`, payload);
+        const updatedQuote = res.data.quote || res.data;
         this.cancelEditingCustomer();
-        this.$emit('updated', res.data.quote);
+        this.$emit('updated', updatedQuote);
         this.successModalTitle = 'Actualizado';
         this.successModalMessage = 'El cliente de la cotización se actualizó correctamente.';
         this.showSuccessModal = true;
@@ -412,7 +423,6 @@ export default {
       }
     },
 
-    // ── Vigencia y observaciones ─────────────────────────────
     startEditingDetails() {
       this.detailsForm = {
         validUntil: this.quote.valid_until ? String(this.quote.valid_until).substring(0, 10) : '',
@@ -430,8 +440,9 @@ export default {
           valid_until: this.detailsForm.validUntil || null,
           notes: this.detailsForm.notes || null
         });
+        const updatedQuote = res.data.quote || res.data;
         this.editingDetails = false;
-        this.$emit('updated', res.data.quote);
+        this.$emit('updated', updatedQuote);
         this.successModalTitle = 'Actualizado';
         this.successModalMessage = 'La vigencia y observaciones se actualizaron correctamente.';
         this.showSuccessModal = true;
@@ -443,7 +454,6 @@ export default {
       }
     },
 
-    // ── Conceptos ────────────────────────────────────────────
     startEditingConcepts() {
       this.populateConceptsFromQuote();
       this.conceptsSubmittingAttempted = false;
@@ -466,10 +476,11 @@ export default {
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds
         });
+        const updatedQuote = res.data.quote || res.data;
         this.editingConcepts = false;
-        this.$emit('updated', res.data.quote);
+        this.$emit('updated', updatedQuote);
         this.successModalTitle = 'Actualizado';
-        this.successModalMessage = 'Los conceptos se actualizaron correctamente.';
+        this.successModalMessage = 'Los tipos de fotografía se actualizaron correctamente.';
         this.showSuccessModal = true;
       } catch (error) {
         this.alertMessage = error.response?.data?.message || 'No se pudieron actualizar los conceptos';
@@ -479,7 +490,6 @@ export default {
       }
     },
 
-    // ── Cierre y acciones ────────────────────────────────────
     handleOverlayClick() {
       if (!this.anyEditingActive) this.close();
     },

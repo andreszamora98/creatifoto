@@ -18,8 +18,6 @@ export default {
       submitting: false,
       isDirty: false,
       showConfirmModal: false,
-      openFormatDropdownId: null,
-      openPhotoTypeDropdownIdx: null,
       dateInputOpen: false,
       submittingAttempted: false,
       stepAttempted: { 1: false, 2: false, 3: false },
@@ -352,55 +350,6 @@ export default {
       this.isDirty = true;
     },
 
-    emptyPhotoLine() {
-      return { photo_type_id: null, quantity: 1, format: 'bn', paper_type_id: null };
-    },
-    addPhotoLine() {
-      this.photoLines.push(this.emptyPhotoLine());
-      this.markDirty();
-    },
-    removePhotoLine(idx) {
-      if (idx < 0 || idx >= this.photoLines.length) return;
-      this.photoLines.splice(idx, 1);
-      this.markDirty();
-    },
-    selectPhotoType(idx, photoTypeId) {
-      this.photoLines[idx].photo_type_id = photoTypeId;
-      this.openPhotoTypeDropdownIdx = null;
-      this.markDirty();
-    },
-    togglePhotoTypeDropdown(idx) {
-      this.openPhotoTypeDropdownIdx = this.openPhotoTypeDropdownIdx === idx ? null : idx;
-    },
-    closePhotoTypeDropdown(idx) {
-      setTimeout(() => {
-        if (this.openPhotoTypeDropdownIdx === idx) this.openPhotoTypeDropdownIdx = null;
-      }, 200);
-    },
-    photoTypeName(id) {
-      return this.photoTypes.find(p => p.id === id)?.name || '';
-    },
-    availablePhotoTypesFor(idx) {
-      const used = this.photoLines
-        .map((l, i) => (i === idx ? null : l.photo_type_id))
-        .filter(Boolean);
-      return this.photoTypes.filter(pt => !used.includes(pt.id));
-    },
-
-    toggleFormatDropdown(idx) {
-      this.openFormatDropdownId = this.openFormatDropdownId === idx ? null : idx;
-    },
-    closeFormatDropdown(idx) {
-      setTimeout(() => {
-        if (this.openFormatDropdownId === idx) this.openFormatDropdownId = null;
-      }, 200);
-    },
-    selectFormat(idx, value) {
-      this.photoLines[idx].format = value;
-      this.openFormatDropdownId = null;
-      this.markDirty();
-    },
-
     async loadCatalogs() {
       this.loadingCatalogs = true;
       try {
@@ -453,8 +402,6 @@ export default {
       this.editingPhone = false;
       this.editingEmail = false;
       this.photoLines = [];
-      this.openPhotoTypeDropdownIdx = null;
-      this.openFormatDropdownId = null;
       this.isDirty = false;
       this.submittingAttempted = false;
       this.stepAttempted = { 1: false, 2: false, 3: false };

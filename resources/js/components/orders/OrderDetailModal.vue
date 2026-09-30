@@ -113,24 +113,6 @@
                       <span class="font-medium text-blue-800 dark:text-blue-300">Correo:</span>
                       <span class="font-bold text-blue-800 dark:text-blue-300 truncate ml-2">{{ localOrder.customer?.email || '—' }}</span>
                     </div>
-                    <!--
-                    <div class="flex justify-between items-center py-2">
-                      <span class="font-medium text-blue-800 dark:text-blue-300">Total:</span>
-                      <span class="font-bold text-blue-800 dark:text-blue-300">{{ formatCurrency(localOrder.total) }}</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2">
-                      <span class="font-medium text-blue-800 dark:text-blue-300">Pagado:</span>
-                      <span class="font-bold text-blue-800 dark:text-blue-300">{{ formatCurrency(totalPaid) }}</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2">
-                      <span class="font-medium" :class="localOrder.balance_due > 0 ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'">
-                        Saldo pendiente:
-                      </span>
-                      <span class="font-bold" :class="localOrder.balance_due > 0 ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'">
-                        {{ formatCurrency(localOrder.balance_due) }}
-                      </span>
-                    </div>
-                    -->
                   </div>
                 </div>
               </div>

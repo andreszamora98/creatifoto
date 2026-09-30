@@ -257,4 +257,32 @@ class QuoteService
             ]);
         });
     }
+
+    public function updateCustomer(Quote $quote, array $data): Quote
+    {
+        if (!empty($data['customer_id'])) {
+            $customerId = $data['customer_id'];
+        } elseif (!empty($data['new_customer'])) {
+            $customer = \App\Models\Customer::create([
+                'name'  => $data['new_customer']['name'],
+                'phone' => $data['new_customer']['phone'] ?? null,
+                'email' => $data['new_customer']['email'] ?? null,
+            ]);
+            $customerId = $customer->id;
+        } else {
+            throw new \Exception('Debes proporcionar un cliente existente o uno nuevo.');
+        }
+
+        $quote->customer_id = $customerId;
+        $quote->save();
+
+        return $quote->fresh()->load([
+            'customer:id,name,phone,email',
+            'packages:id,package_number,name,total_price',
+            'quotePhotoTypes.photoType:id,name,base_price',
+            'quotePhotoTypes.paperType:id,name,extra_price',
+            'order:id,quote_id,status,total,balance_due',
+        ]);
+    }
+
 }

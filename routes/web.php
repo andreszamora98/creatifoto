@@ -7,6 +7,8 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\SchoolController;
+
 
 Route::get('/', function () {
     return view('layouts/app');
@@ -14,6 +16,10 @@ Route::get('/', function () {
 
 Route::get('/cotizaciones', function () {
     return view('layouts/quotes');
+});
+
+Route::get('/paquetes', function () {
+    return view('layouts/packages');
 });
 
 /*
@@ -25,7 +31,6 @@ Route::put('/photo-types/{id}', [PhotoTypeController::class, 'update']);
 Route::delete('/photo-types/{id}', [PhotoTypeController::class, 'destroy']);
 
 Route::get('/paper-types', [PaperTypeController::class, 'index']);
-Route::get('/packages', [PackageController::class, 'index']);
 Route::get('/customers', [CustomerController::class, 'index']);
 
 /*
@@ -48,3 +53,14 @@ Route::post('/quotes/{quote}/convert', [QuoteController::class, 'convert']);
 Route::patch('/quotes/{quote}/status', [QuoteController::class, 'updateStatus']);
 Route::patch('/quotes/{quote}', [QuoteController::class, 'patch']);
 Route::put('/quotes/{quote}/concepts', [QuoteController::class, 'updateConcepts']);
+Route::put('/quotes/{quote}/customer', [QuoteController::class, 'updateCustomer'])
+    ->name('quotes.updateCustomer');
+
+Route::get('/schools', [SchoolController::class, 'index']);
+Route::post('/schools', [SchoolController::class, 'store']);
+
+Route::get('/packages', [PackageController::class, 'index']);
+Route::get('/packages/{package}', [PackageController::class, 'show']);
+Route::post('/packages', [PackageController::class, 'store']);
+Route::put('/packages/{package}', [PackageController::class, 'update']);
+Route::delete('/packages/{package}', [PackageController::class, 'destroy']);

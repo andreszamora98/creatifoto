@@ -155,4 +155,26 @@ class QuoteController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
+
+    public function updateCustomer(Request $request, Quote $quote)
+    {
+        $validated = $request->validate([
+            'customer_id' => 'nullable|exists:customers,id',
+            'new_customer' => 'nullable|array',
+            'new_customer.name' => 'required_with:new_customer|string|max:255',
+            'new_customer.phone' => 'nullable|digits:10',
+            'new_customer.email' => 'nullable|email|max:255|unique:customers,email',
+        ]);
+
+        try {
+            $quote = $this->quoteService->updateCustomer($quote, $validated);
+            return response()->json([
+                'message' => 'Cliente actualizado',
+                'quote' => $quote,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
 }
