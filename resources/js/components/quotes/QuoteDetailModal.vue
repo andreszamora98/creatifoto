@@ -20,7 +20,7 @@
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             <div v-show="!editingCustomer"
-                 class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600"
+                 class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border-2 border-gray-300 dark:border-gray-600 shadow-sm"
                  style="border-left-width:4px;">
               <div class="flex items-center justify-between mb-3">
                 <h4 class="font-semibold text-lg flex items-center text-gray-700 dark:text-gray-300">
@@ -142,7 +142,7 @@
 
           </div>
 
-          <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
+          <div class="bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 rounded-lg p-5 shadow-sm">
             <div class="flex items-center justify-between mb-3">
               <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center">
                 <i class="ti ti-photo mr-2 text-xl"></i>Conceptos
@@ -151,7 +151,7 @@
 
             <PackagesSummaryList v-if="quote?.packages?.length" :packages="quote.packages" />
 
-            <div class="mt-4">
+            <div class="mt-4 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
               <div class="flex items-center justify-between mb-3">
                 <h5 class="font-medium text-gray-700 dark:text-gray-300">Tipos de fotografía</h5>
                 <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" class="text-gray-400 hover:text-blue-600"><i class="ti ti-pencil"></i></button>

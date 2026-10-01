@@ -117,32 +117,45 @@
                 </div>
               </div>
 
-              <div v-if="localOrder.notes" class="bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
-                <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center mb-3">
+              <div v-if="localOrder.notes" class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-lg flex items-center mb-3">
                   <i class="ti ti-notes mr-2 text-xl"></i>Observaciones
                 </h4>
-                <div class="bg-white dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-700">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                   <p class="text-gray-700 dark:text-gray-300 text-base whitespace-pre-wrap break-words">{{ localOrder.notes }}</p>
                 </div>
               </div>
-              <PackagesSummaryList v-if="localOrder.packages && localOrder.packages.length" :packages="localOrder.packages" />
-              <PhotoTypesSummaryList v-if="localOrder.order_photo_types && localOrder.order_photo_types.length" :lines="localOrder.order_photo_types" />
-              <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
+
+              <div
+                v-if="localOrder.packages && localOrder.packages.length"
+                class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
+              >
+                <PackagesSummaryList :packages="localOrder.packages" />
+              </div>
+
+              <div
+                v-if="localOrder.order_photo_types && localOrder.order_photo_types.length"
+                class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
+              >
+                <PhotoTypesSummaryList :lines="localOrder.order_photo_types" />
+              </div>
+
+              <div class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
                 <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center mb-3">
                   <i class="ti ti-cash mr-2 text-xl"></i>Pagos
                   <span class="ml-2 text-base px-3 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300 rounded">{{ payments.length }}</span>
                 </h4>
 
                 <div class="grid grid-cols-3 gap-3 mb-4">
-                  <div class="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700 text-center">
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
                     <p class="text-base text-gray-500 dark:text-gray-400">Total</p>
                     <p class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200">{{ formatCurrency(localOrder.total) }}</p>
                   </div>
-                  <div class="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700 text-center">
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
                     <p class="text-base text-gray-500 dark:text-gray-400">Pagado</p>
                     <p class="text-lg sm:text-xl font-bold text-green-600 dark:text-green-400">{{ formatCurrency(totalPaid) }}</p>
                   </div>
-                  <div class="bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700 text-center">
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
                     <p class="text-base text-gray-500 dark:text-gray-400">Saldo</p>
                     <p class="text-lg sm:text-xl font-bold" :class="localOrder.balance_due > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
                       {{ formatCurrency(localOrder.balance_due) }}
@@ -154,7 +167,7 @@
                   <div
                     v-for="payment in payments"
                     :key="payment.id"
-                    class="flex items-center justify-between p-4 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                    class="flex items-center justify-between p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
                   >
                     <div class="flex items-center min-w-0 flex-1">
                       <div class="w-11 h-11 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
