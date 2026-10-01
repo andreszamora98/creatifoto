@@ -162,7 +162,9 @@ export default {
     },
     selectAndReset(idx, line, photoTypeId) {
       line.photo_type_id = photoTypeId;
-      if (!line.quantity || line.quantity < 1) line.quantity = 1;
+      const photoType = this.photoTypes.find(p => p.id === photoTypeId);
+      const base = Number(photoType?.base_quantity);
+      line.quantity = Number.isFinite(base) && base >= 1 ? base : 1;
       this.closeDropdown();
     },
     clearLine(idx) {

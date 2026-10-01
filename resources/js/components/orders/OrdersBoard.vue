@@ -25,10 +25,6 @@
               <i class="ti ti-plus text-base"></i>
               <span>Nuevo</span>
             </button>
-            <button @click="showPhotoTypeManager = true" class="bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors">
-              <i class="ti ti-photo text-base"></i>
-              <span>Tipos de fotografía</span>
-            </button>
           </div>
         </div>
       </div>
@@ -311,12 +307,6 @@
       @notify="handleNotify"
     />
 
-    <PhotoTypeManager
-      :show="showPhotoTypeManager"
-      @close="showPhotoTypeManager = false"
-      @updated="handlePhotoTypesUpdated"
-    />
-
     <OrderDetailModal
       :show="showOrderDetailModal"
       :order="selectedOrderForDetail"
@@ -370,11 +360,10 @@ import OrderModal from './OrderModal.vue';
 import OrderDetailModal from './OrderDetailModal.vue';
 import QuoteModal from '../quotes/QuoteModal.vue';
 import NewRecordChoiceModal from '../order-quote-shared/NewRecordChoiceModal.vue';
-import PhotoTypeManager from '../catalog/PhotoTypeManager.vue';
 
 export default {
   name: 'OrdersBoard',
-  components: { OrderModal, QuoteModal, NewRecordChoiceModal, PhotoTypeManager, OrderDetailModal },
+  components: { OrderModal, QuoteModal, NewRecordChoiceModal, OrderDetailModal },
   data() {
     return {
       isDarkMode: false,
@@ -382,7 +371,6 @@ export default {
       showOrderDetailModal: false,
       selectedOrderForDetail: null,
       pendingBlinkOrderId: null,
-      showPhotoTypeManager: false,
       activeColumn: 0,
       viewMode: 'cards',
       loading: false,
@@ -546,6 +534,9 @@ export default {
     }
   },
   methods: {
+    goToPhotoTypesCatalog() {
+      window.location.href = '/catalogos?tab=photo-types';
+    },
     handleChoiceSelected(type) {
       this.showChoiceModal = false;
       if (type === 'order') {
@@ -589,8 +580,6 @@ export default {
       const [y, m, d] = datePart.split('-');
       if (!y || !m || !d) return dateString;
       return `${d}/${m}/${y}`;
-    },
-    handlePhotoTypesUpdated() {
     },
     async loadOrders() {
       this.loading = true;

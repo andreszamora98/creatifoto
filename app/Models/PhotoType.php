@@ -16,6 +16,7 @@ class PhotoType extends Model
         'name',
         'slug',
         'base_price',
+        'base_quantity',
     ];
 
     protected $casts = [

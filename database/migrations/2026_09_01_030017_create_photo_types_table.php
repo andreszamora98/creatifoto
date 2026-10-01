@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name'); //infantil, credencial, diploma, título, cartilla, filiación, visa, pasaporte, migración, postal
             $table->string('slug')->unique();
             $table->decimal('base_price', 10, 2)->nullable();
+             $table->unsignedInteger('base_quantity')->default(1);
             $table->timestamps();
         });
     }

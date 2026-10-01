@@ -8,6 +8,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SchoolController;
+use App\Http\Controllers\AdditionalServiceController;
 
 
 Route::get('/', function () {
@@ -20,6 +21,10 @@ Route::get('/cotizaciones', function () {
 
 Route::get('/paquetes', function () {
     return view('layouts/packages');
+});
+
+Route::get('/catalogos', function () {
+    return view('layouts/catalogs');
 });
 
 /*
@@ -56,11 +61,20 @@ Route::put('/quotes/{quote}/concepts', [QuoteController::class, 'updateConcepts'
 Route::put('/quotes/{quote}/customer', [QuoteController::class, 'updateCustomer'])
     ->name('quotes.updateCustomer');
 
+
+//Escuelas
 Route::get('/schools', [SchoolController::class, 'index']);
 Route::post('/schools', [SchoolController::class, 'store']);
 
+//Paquetes escolares
 Route::get('/packages', [PackageController::class, 'index']);
 Route::get('/packages/{package}', [PackageController::class, 'show']);
 Route::post('/packages', [PackageController::class, 'store']);
 Route::put('/packages/{package}', [PackageController::class, 'update']);
 Route::delete('/packages/{package}', [PackageController::class, 'destroy']);
+
+//Servicios adicionales
+Route::get('/additional-services', [AdditionalServiceController::class, 'index']);
+Route::post('/additional-services', [AdditionalServiceController::class, 'store']);
+Route::put('/additional-services/{id}', [AdditionalServiceController::class, 'update']);
+Route::delete('/additional-services/{id}', [AdditionalServiceController::class, 'destroy']);

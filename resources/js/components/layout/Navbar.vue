@@ -1,12 +1,27 @@
 <template>
     <nav class="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div class="flex items-center gap-3">
-            <button
-                @click="$emit('toggle-sidebar')"
-                class="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+            <div
+                class="relative"
+                @mouseenter="sidebarTooltipHover = true"
+                @mouseleave="sidebarTooltipHover = false"
             >
-                <i class="ti ti-menu-2 text-xl"></i>
-            </button>
+                <button
+                    @click="$emit('toggle-sidebar')"
+                    class="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                    <i class="ti ti-menu-2 text-xl"></i>
+                </button>
+                <transition name="tooltip" mode="out-in">
+                    <span
+                        v-if="sidebarTooltipHover"
+                        :key="sidebarOpen ? 'open' : 'closed'"
+                        class="absolute left-0 top-full mt-1.5 px-2 py-1 text-xs font-medium rounded-md bg-gray-800 text-white dark:bg-gray-700 dark:text-gray-200 whitespace-nowrap pointer-events-none z-50 shadow-lg"
+                    >
+                        {{ sidebarOpen ? 'Ocultar' : 'Desplegar' }}
+                    </span>
+                </transition>
+            </div>
             <h1 class="text-lg font-semibold text-gray-800 dark:text-white">{{ pageTitle }}</h1>
         </div>
 
@@ -52,10 +67,12 @@ export default {
         profilePic: { type: String, default: 'https://ui-avatars.com/api/?name=User&background=random' },
         isDark: { type: Boolean, default: false },
         pageTitle: { type: String, default: 'CreatiFoto' },
+        sidebarOpen: { type: Boolean, default: true },
     },
     data() {
         return {
             dropdownOpen: false,
+            sidebarTooltipHover: false,
         };
     },
     methods: {
@@ -70,3 +87,16 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.tooltip-enter-active {
+    transition: opacity 0.15s ease;
+}
+.tooltip-leave-active {
+    transition: opacity 0.04s ease;
+}
+.tooltip-enter-from,
+.tooltip-leave-to {
+    opacity: 0;
+}
+</style>

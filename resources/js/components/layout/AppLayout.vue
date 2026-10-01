@@ -4,8 +4,6 @@
       :is-open="sidebarOpen"
       @toggle="toggleSidebar"
     />
-    <!--dentro de sidebar para volverlo a habilitar-->
-    <!-- @close-sidebar="closeSidebar" -->
     <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
       <Navbar
         :user-name="userName"
@@ -13,6 +11,7 @@
         :profile-pic="profilePic"
         :is-dark="darkMode"
         :page-title="pageTitle"
+        :sidebar-open="sidebarOpen"
         @toggle-sidebar="toggleSidebar"
         @toggle-theme="toggleTheme"
       />
@@ -55,12 +54,6 @@ export default {
       setSidebarOpen(!sidebarOpen.value);
     }
 
-    /*
-    function closeSidebar() {
-      setSidebarOpen(false);
-    }
-    */
-
     function toggleTheme() {
       setDarkMode(!darkMode.value);
     }
@@ -70,7 +63,6 @@ export default {
       darkMode,
       pageTitle,
       toggleSidebar,
-      //closeSidebar,
       toggleTheme,
     };
   },
