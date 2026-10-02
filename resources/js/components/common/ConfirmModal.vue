@@ -7,11 +7,11 @@
             <i class="ti ti-alert-triangle text-3xl text-yellow-700 dark:text-yellow-300"></i>
           </div>
 
-          <h3 class="text-xl font-bold text-yellow-800 dark:text-yellow-300 mb-2">
+          <h3 class="text-xl font-bold text-yellow-800 dark:text-yellow-300 mb-2 w-full break-words">
             {{ title }}
           </h3>
 
-          <p class="text-base text-yellow-700 dark:text-yellow-200/80 mb-6 max-w-xs">
+          <p class="text-base text-yellow-700 dark:text-yellow-200/80 mb-6 w-full max-w-full break-words">
             {{ message }}
           </p>
 
