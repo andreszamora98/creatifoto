@@ -23,6 +23,7 @@ class QuoteController extends Controller
             'packages:id,package_number,name,total_price',
             'quotePhotoTypes.photoType:id,name,base_price',
             'order:id,quote_id,status',
+            'additionalServices',
         ])->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
@@ -43,14 +44,16 @@ class QuoteController extends Controller
 
             'valid_until' => 'nullable|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
-            'photo_types' => 'required|array|min:1',
+
+            // Al menos un tipo de fotografía O un paquete escolar
+            'photo_types' => 'nullable|array|required_without:package_ids',
             'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
             'photo_types.*.quantity' => 'required|integer|min:1',
             'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
             'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
-            'package_ids' => 'nullable|array',
+            'package_ids' => 'nullable|array|required_without:photo_types',
             'package_ids.*' => 'exists:packages,id',
-        ]);
+        ], $this->contentMessages());
 
         try {
             $quote = $this->quoteService->createQuote($validated);
@@ -58,9 +61,12 @@ class QuoteController extends Controller
                 'message' => 'Cotización creada exitosamente',
                 'quote' => $quote,
             ], 201);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
-                'message' => 'Error al crear la cotización: ' . $e->getMessage(),
+                'message' => 'Error al crear la cotización. Inténtalo de nuevo.',
             ], 500);
         }
     }
@@ -73,6 +79,7 @@ class QuoteController extends Controller
             'quotePhotoTypes.photoType:id,name,base_price',
             'quotePhotoTypes.paperType:id,name,extra_price',
             'order:id,quote_id,status,total,balance_due',
+            'additionalServices',
         ]);
 
         return response()->json($quote);
@@ -85,7 +92,8 @@ class QuoteController extends Controller
             'estimated_delivery_time' => 'required|date_format:H:i',
             'pose_number' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:1000',
-            'photo_types' => 'nullable|array|min:1',
+            // Si no se envían, se usa el contenido guardado en la cotización
+            'photo_types' => 'nullable|array',
             'photo_types.*.photo_type_id' => 'required_with:photo_types|exists:photo_types,id',
             'photo_types.*.quantity' => 'required_with:photo_types|integer|min:1',
             'photo_types.*.format' => ['required_with:photo_types', Rule::in(['color', 'bn'])],
@@ -103,8 +111,13 @@ class QuoteController extends Controller
                 'message' => 'Orden creada a partir de la cotización',
                 'order' => $order,
             ], 201);
-        } catch (\Exception $e) {
+        } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'message' => 'Error al convertir la cotización. Inténtalo de nuevo.',
+            ], 500);
         }
     }
 
@@ -121,6 +134,7 @@ class QuoteController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
+
     public function patch(Request $request, Quote $quote)
     {
         $validated = $request->validate([
@@ -139,20 +153,25 @@ class QuoteController extends Controller
     public function updateConcepts(Request $request, Quote $quote)
     {
         $validated = $request->validate([
-            'photo_types' => 'required|array|min:1',
+            'photo_types' => 'nullable|array|required_without:package_ids',
             'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
             'photo_types.*.quantity' => 'required|integer|min:1',
             'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
             'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
-            'package_ids' => 'nullable|array',
+            'package_ids' => 'nullable|array|required_without:photo_types',
             'package_ids.*' => 'exists:packages,id',
-        ]);
+        ], $this->contentMessages());
 
         try {
             $quote = $this->quoteService->updateConcepts($quote, $validated);
             return response()->json(['message' => 'Conceptos actualizados', 'quote' => $quote]);
-        } catch (\Exception $e) {
+        } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'message' => 'Error al actualizar los conceptos. Inténtalo de nuevo.',
+            ], 500);
         }
     }
 
@@ -177,4 +196,13 @@ class QuoteController extends Controller
         }
     }
 
+    private function contentMessages(): array
+    {
+        $message = 'Agrega al menos un tipo de fotografía o un paquete escolar.';
+
+        return [
+            'photo_types.required_without' => $message,
+            'package_ids.required_without' => $message,
+        ];
+    }
 }

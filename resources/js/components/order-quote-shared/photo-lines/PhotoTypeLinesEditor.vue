@@ -10,43 +10,45 @@
       <i class="ti ti-refresh animate-spin"></i> Cargando catálogo...
     </div>
 
-    <div v-else class="space-y-3 mt-3">
+    <div v-else class="mt-3">
       <p v-if="lines.length === 0 && emptyHint" class="text-base text-gray-400 dark:text-gray-500 italic">{{ emptyHint }}</p>
 
-      <PhotoTypeLineCard
-        v-for="(line, idx) in lines"
-        :key="lineKey(line)"
-        :line="line"
-        :index="idx"
-        :editor-id="editorId"
-        :paper-types="paperTypes"
-        :show-format-and-paper="showFormatAndPaper"
-        :can-remove="canRemove"
-        :is-open="openDropdownKey === lineKey(line)"
-        :format-open="openFormatKey === lineKey(line)"
-        :input-value="inputValueFor(line)"
-        :highlighted-idx="highlightedIdx"
-        :filtered-photo-types="filteredPhotoTypes"
-        :photo-type-price="photoTypePrice"
-        :show-error="showErrors && error"
-        :on-open="() => openDropdown(line)"
-        :on-input="(v) => onInput(line, v)"
-        :on-esc="() => closeDropdown()"
-        :on-move-highlight="moveHighlight"
-        :on-select-highlighted="() => selectHighlighted(idx, line)"
-        :on-select="(id) => selectAndReset(idx, line, id)"
-        :on-clear="() => clearLine(idx)"
-        :on-focus-out="(e) => onFocusOut(line, e)"
-        :on-highlight="(i) => (highlightedIdx = i)"
-        :on-quantity-blur="() => sanitizeQuantity(line)"
-        :on-remove="() => removeLine(idx)"
-        :on-toggle-format="() => toggleFormat(line)"
-        :on-close-format="() => closeFormat(line)"
-        :on-select-format="(v) => selectFormat(line, v)"
-      />
+      <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <PhotoTypeLineCard
+          v-for="(line, idx) in lines"
+          :key="lineKey(line)"
+          :line="line"
+          :index="idx"
+          :editor-id="editorId"
+          :paper-types="paperTypes"
+          :show-format-and-paper="showFormatAndPaper"
+          :can-remove="canRemove"
+          :is-open="openDropdownKey === lineKey(line)"
+          :format-open="openFormatKey === lineKey(line)"
+          :input-value="inputValueFor(line)"
+          :highlighted-idx="highlightedIdx"
+          :filtered-photo-types="filteredPhotoTypes"
+          :photo-type-price="photoTypePrice"
+          :show-error="showErrors && error"
+          :on-open="() => openDropdown(line)"
+          :on-input="(v) => onInput(line, v)"
+          :on-esc="() => closeDropdown()"
+          :on-move-highlight="moveHighlight"
+          :on-select-highlighted="() => selectHighlighted(idx, line)"
+          :on-select="(id) => selectAndReset(idx, line, id)"
+          :on-clear="() => clearLine(idx)"
+          :on-focus-out="(e) => onFocusOut(line, e)"
+          :on-highlight="(i) => (highlightedIdx = i)"
+          :on-quantity-blur="() => sanitizeQuantity(line)"
+          :on-remove="() => removeLine(idx)"
+          :on-toggle-format="() => toggleFormat(line)"
+          :on-close-format="() => closeFormat(line)"
+          :on-select-format="(v) => selectFormat(line, v)"
+        />
+      </div>
 
       <button type="button" @click="addLine"
-              class="mt-2 text-base font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
+              class="mt-3 text-base font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
         <i class="ti ti-plus text-lg"></i> {{ lines.length === 0 ? addLabelFirst : addLabel }}
       </button>
     </div>

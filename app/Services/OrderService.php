@@ -8,7 +8,6 @@ use App\Models\PhotoType;
 use App\Models\Package;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
@@ -17,12 +16,14 @@ class OrderService
         return DB::transaction(function () use ($data) {
             $customer = $this->resolveCustomer($data);
             $total = $this->calculateTotal($data);
-            $totalPayments = collect($data['payments'])->sum('amount');
-            if ($totalPayments > $total) {
-                throw new \Exception(
+            $totalPayments = (float) collect($data['payments'])->sum('amount');
+
+            if (round($totalPayments, 2) > round($total, 2)) {
+                throw new \DomainException(
                     'La suma de los pagos no puede exceder el total de la orden ($' . number_format($total, 2) . ').'
                 );
             }
+
             $order = Order::create([
                 'customer_id' => $customer->id,
                 'total' => $total,
@@ -38,7 +39,7 @@ class OrderService
             $order->balance_due = $total;
             $order->save();
 
-            foreach ($data['photo_types'] as $line) {
+            foreach ($data['photo_types'] ?? [] as $line) {
                 $photoType = PhotoType::find($line['photo_type_id']);
                 $order->orderPhotoTypes()->create([
                     'photo_type_id' => $line['photo_type_id'],
@@ -59,10 +60,22 @@ class OrderService
                 }
             }
 
+            if (!empty($data['additional_services'])) {
+                $services = collect($data['additional_services'])
+                    ->mapWithKeys(fn ($s) => [
+                        $s['additional_service_id'] => [
+                            'price' => $s['price'],
+                            'notes' => $s['notes'] ?? null,
+                        ],
+                    ])
+                    ->all();
+                $order->additionalServices()->attach($services);
+            }
+
             $accumulated = 0;
             foreach ($data['payments'] as $i => $paymentData) {
                 $accumulated += $paymentData['amount'];
-                $isSettlement = $accumulated >= $total;
+                $isSettlement = round($accumulated, 2) >= round($total, 2);
 
                 Payment::create([
                     'order_id' => $order->id,
@@ -79,6 +92,7 @@ class OrderService
                 'packages:id,package_number,name,total_price',
                 'orderPhotoTypes.photoType:id,name,base_price',
                 'orderPhotoTypes.paperType:id,name,extra_price',
+                'additionalServices',
                 'payments',
             ]);
             $order->refresh();
@@ -129,14 +143,14 @@ class OrderService
             return $customer;
         }
 
-        throw new \Exception('Debe seleccionar un cliente existente o crear uno nuevo.');
+        throw new \DomainException('Debe seleccionar un cliente existente o crear uno nuevo.');
     }
 
     protected function calculateTotal(array $data): float
     {
         $total = 0;
 
-        foreach ($data['photo_types'] as $line) {
+        foreach ($data['photo_types'] ?? [] as $line) {
             $photoType = PhotoType::find($line['photo_type_id']);
             $total += ($photoType->base_price ?? 0) * $line['quantity'];
         }
@@ -146,13 +160,17 @@ class OrderService
             $total += $packages->sum('total_price');
         }
 
-        return $total;
+        if (!empty($data['additional_services'])) {
+            $total += collect($data['additional_services'])->sum('price');
+        }
+
+        return (float) $total;
     }
 
     public function addPayment(Order $order, array $data): array
     {
-        if ($data['amount'] > $order->balance_due) {
-            throw new \Exception(
+        if (round((float) $data['amount'], 2) > round((float) $order->balance_due, 2)) {
+            throw new \DomainException(
                 'El monto excede el saldo pendiente de la orden ($' . number_format($order->balance_due, 2) . ').'
             );
         }
@@ -178,7 +196,7 @@ class OrderService
     public function markAsDelivered(Order $order): array
     {
         if ($order->balance_due > 0) {
-            throw new \Exception(
+            throw new \DomainException(
                 'No se puede entregar la orden: tiene un saldo pendiente de $' . number_format($order->balance_due, 2) . '.'
             );
         }

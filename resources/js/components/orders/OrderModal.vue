@@ -75,7 +75,10 @@
               :paper-types="paperTypes"
               :packages="packages"
               v-model:selected-package-ids="selectedPackageIds"
-              :estimated-total="estimatedTotal"
+              show-additional-services
+              :additional-services="additionalServices"
+              v-model:selected-services="selectedServices"
+              :show-estimated-total="false"
               @update:form="form = $event"
             />
 
@@ -85,6 +88,8 @@
                   :active-lines="activeLines"
                   :photo-types="photoTypes"
                   :selected-packages="selectedPackagesData"
+                  :selected-services="selectedServices"
+                  :additional-services="additionalServices"
                   :estimated-total="estimatedTotal"
                 />
               </template>
@@ -218,20 +223,25 @@ export default {
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
       const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
+      // Regla de negocio: al menos una fotografía O un paquete
       const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
         delivery_date: !this.form.estimated_delivery_date,
         delivery_time: !this.form.estimated_delivery_time,
-        photo_types: hasEmptyPhotoLine || !hasContent,
+        order_content: !hasContent,
+        photo_lines: hasEmptyPhotoLine,
+        service_prices: this.selectedServices.some(s =>
+          s.price === '' || s.price === null || Number.isNaN(Number(s.price)) || Number(s.price) < 0
+        ),
         initial_payment_amount: this.payments.length === 0 || this.payments.some(p => !p.amount || p.amount <= 0),
-        initial_payment_method: this.payments.some(p => !p.payment_method),
+        initial_payment_method: this.payments.some(p => !p.payment_method)
       };
     },
     currentStepValid() {
       const keysByStep = {
         1: ['customer'],
-        2: ['delivery_date', 'delivery_time', 'photo_types'],
+        2: ['delivery_date', 'delivery_time', 'order_content', 'photo_lines', 'service_prices'],
         3: ['initial_payment_amount', 'initial_payment_method']
       };
       return this.keysValid(keysByStep[this.currentStep] || []);
@@ -296,6 +306,7 @@ export default {
           notes: this.form.notes,
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds,
+          additional_services: this.activeServices,
           payments: this.payments.map(p => ({
             amount: p.amount,
             payment_method: p.payment_method,

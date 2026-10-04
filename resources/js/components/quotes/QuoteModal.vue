@@ -75,9 +75,9 @@
               :paper-types="paperTypes"
               :packages="packages"
               v-model:selected-package-ids="selectedPackageIds"
-              :estimated-total="estimatedTotal"
-              @update:form="form = $event"
+              :show-estimated-total="false"
               hide-delivery-date
+              @update:form="form = $event"
             />
             <SummaryStep
               v-else
@@ -185,14 +185,16 @@ export default {
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
       const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
+      // Regla de negocio: al menos una fotografía O un paquete
       const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
-        photo_types: hasEmptyPhotoLine || !hasContent,
+        order_content: !hasContent,
+        photo_lines: hasEmptyPhotoLine
       };
     },
     currentStepValid() {
-      const keysByStep = { 1: ['customer'], 2: ['photo_types'], 3: [] };
+      const keysByStep = { 1: ['customer'], 2: ['order_content', 'photo_lines'], 3: [] };
       return this.keysValid(keysByStep[this.currentStep] || []);
     }
   },
@@ -228,7 +230,13 @@ export default {
           this.close();
         });
       } catch (error) {
-        this.$emit('notify', { title: 'Error', message: error.response?.data?.message || 'No se pudo crear la cotización', type: 'error' });
+        const data = error.response?.data;
+        const firstValidationError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+        this.$emit('notify', {
+          title: 'Error',
+          message: firstValidationError || data?.message || 'No se pudo crear la cotización',
+          type: 'error'
+        });
         this.submitting = false;
       }
     }

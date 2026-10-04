@@ -3,6 +3,8 @@ import axios from 'axios';
 export default {
   data() {
     return {
+      additionalServices: [],
+      selectedServices: [],
       successModalTitle: '',
       successModalMessage: '',
       successModalNext: null,
@@ -42,6 +44,18 @@ export default {
     };
   },
   computed: {
+
+    servicesTotal() {
+      return this.selectedServices.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+    },
+    activeServices() {
+      return this.selectedServices.map(s => ({
+        additional_service_id: s.additional_service_id,
+        price: Number(s.price) || 0,
+        notes: (s.notes || '').trim() || null
+      }));
+    },
+
     transitionName() {
       return this.navDirection === 'forward' ? 'slide-next' : 'slide-prev';
     },
@@ -113,7 +127,7 @@ export default {
         return sum + (Number(pt?.base_price || 0) * l.quantity);
       }, 0);
       const packagesTotal = this.selectedPackagesData.reduce((sum, p) => sum + Number(p.total_price || 0), 0);
-      return linesTotal + packagesTotal;
+      return linesTotal + packagesTotal + this.servicesTotal;
     },
     showErrorsStep1() {
       return this.submittingAttempted || this.stepAttempted[1];
@@ -363,10 +377,19 @@ export default {
         this.paperTypes = paperRes.data;
         this.packages = pkgRes.data;
         this.customers = custRes.data;
-
         this.photoLines = [];
       } catch (error) {
+        console.error('Error cargando catálogos:', error);
         this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los catálogos', type: 'error' });
+      }
+
+      try {
+        const svcRes = await axios.get('/additional-services');
+        this.additionalServices = svcRes.data;
+      } catch (error) {
+        console.error('Error cargando servicios adicionales:', error);
+        this.additionalServices = [];
+        this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los servicios adicionales', type: 'error' });
       } finally {
         this.loadingCatalogs = false;
       }
@@ -387,6 +410,7 @@ export default {
     },
 
     resetSharedFields() {
+      this.selectedServices = [];
       this.successModalTitle = '';
       this.successModalMessage = '';
       this.successModalNext = null;
@@ -409,6 +433,7 @@ export default {
 
     getSharedState() {
       return {
+        selectedServices: JSON.parse(JSON.stringify(this.selectedServices)),
         customerSearch: this.customerSearch,
         selectedCustomerId: this.selectedCustomer ? this.selectedCustomer.id : null,
         customerPhone: this.customerPhone,

@@ -116,7 +116,7 @@
                   </div>
                 </div>
               </div>
-
+              
               <div v-if="localOrder.notes" class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
                 <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-lg flex items-center mb-3">
                   <i class="ti ti-notes mr-2 text-xl"></i>Observaciones
@@ -138,6 +138,13 @@
                 class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
               >
                 <PhotoTypesSummaryList :lines="localOrder.order_photo_types" />
+              </div>
+
+              <div
+                v-if="localOrder.additional_services && localOrder.additional_services.length"
+                class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
+              >
+                <AdditionalServicesSummaryList :services="localOrder.additional_services" />
               </div>
 
               <div class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
@@ -289,11 +296,11 @@ import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
 import PackagesSummaryList from '../order-quote-shared/detail-parts/PackagesSummaryList.vue';
 import PhotoTypesSummaryList from '../order-quote-shared/detail-parts/PhotoTypesSummaryList.vue';
-
+import AdditionalServicesSummaryList from '../order-quote-shared/detail-parts/AdditionalServicesSummaryList.vue';
 
 export default {
   name: 'OrderDetailModal',
-  components: { ConfirmModal, SuccessModal, AlertModal, PackagesSummaryList, PhotoTypesSummaryList },
+  components: { ConfirmModal, SuccessModal, AlertModal, PackagesSummaryList, PhotoTypesSummaryList, AdditionalServicesSummaryList },
   props: {
     show: { type: Boolean, default: false },
     order: { type: Object, default: null },

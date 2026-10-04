@@ -35,17 +35,32 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-lg font-medium">$</span>
-                <input v-model.number="payment.amount" type="number" min="0" step="0.01"
-                      v-blur-on-enter
-                      enterkeyhint="done"
-                      @input="onPaymentAmountInput(idx)"
-                      placeholder="0.00"
-                      class="form-control form-control-sm text-lg p-3 pl-7 rounded-lg border w-full text-gray-800 dark:text-gray-200"
-                      :class="showErrors && (!payment.amount || payment.amount <= 0)
-                        ? 'border-red-500 dark:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'">
+              <div class="flex items-center gap-4">
+                <div
+                  class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800"
+                  :class="remainingBalance > 0
+                    ? 'bg-blue-100 dark:bg-blue-900/40 ring-blue-200 dark:ring-blue-800'
+                    : 'bg-green-100 dark:bg-green-900/40 ring-green-200 dark:ring-green-800'"
+                >
+                  <i
+                    :class="remainingBalance > 0
+                      ? 'ti ti-coin text-blue-600 dark:text-blue-300'
+                      : 'ti ti-check text-green-600 dark:text-green-300'"
+                    class="text-xl"
+                  ></i>
+                </div>
+                <div class="relative flex-1">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-lg font-medium">$</span>
+                  <input v-model.number="payment.amount" type="number" min="0" step="0.01"
+                        v-blur-on-enter
+                        enterkeyhint="done"
+                        @input="onPaymentAmountInput(idx)"
+                        placeholder="0.00"
+                        class="form-control form-control-sm text-lg p-3 pl-7 rounded-lg border w-full text-gray-800 dark:text-gray-200"
+                        :class="showErrors && (!payment.amount || payment.amount <= 0)
+                          ? 'border-red-500 dark:border-red-500'
+                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'">
+                </div>
               </div>
               <p v-if="showErrors && (!payment.amount || payment.amount <= 0)" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
                 Campo obligatorio*

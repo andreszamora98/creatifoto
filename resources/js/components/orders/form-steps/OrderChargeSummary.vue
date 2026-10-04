@@ -18,6 +18,8 @@ export default {
     activeLines: { type: Array, required: true },
     photoTypes: { type: Array, required: true },
     selectedPackages: { type: Array, required: true },
+    selectedServices: { type: Array, default: () => [] },
+    additionalServices: { type: Array, default: () => [] },
     estimatedTotal: { type: Number, default: 0 }
   },
   computed: {
@@ -36,7 +38,15 @@ export default {
         label: pkg.name || ('Paquete ' + pkg.package_number),
         amount: Number(pkg.total_price || 0)
       }));
-      return [...photoLines, ...packageLines];
+      const serviceLines = this.selectedServices.map(s => {
+        const svc = this.additionalServices.find(a => a.id === s.additional_service_id);
+        return {
+          key: 'svc-' + s.additional_service_id,
+          label: svc?.name || 'Servicio adicional',
+          amount: Number(s.price) || 0
+        };
+      });
+      return [...photoLines, ...packageLines, ...serviceLines];
     }
   }
 };

@@ -24,6 +24,7 @@ class OrderController extends Controller
             'orderPhotoTypes.photoType:id,name,base_price',
             'orderPhotoTypes.paperType:id,name,extra_price',
             'payments',
+            'additionalServices'
         ])
         ->orderBy('created_at', 'desc')
         ->get(['id', 'customer_id', 'total', 'balance_due', 'pose_number', 'notes',
@@ -47,19 +48,30 @@ class OrderController extends Controller
             ],
 
             'estimated_delivery_date' => 'required|date|after_or_equal:today',
-            'estimated_delivery_time' => 'nullable|date_format:H:i', 
+            'estimated_delivery_time' => 'nullable|date_format:H:i',
             'pose_number' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:1000',
-            'photo_types' => 'required|array|min:1',
+
+            // Al menos un tipo de fotografía O un paquete escolar
+            'photo_types' => 'nullable|array|required_without:package_ids',
             'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
             'photo_types.*.quantity' => 'required|integer|min:1',
             'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
             'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
-            'package_ids' => 'nullable|array',
+            'package_ids' => 'nullable|array|required_without:photo_types',
             'package_ids.*' => 'exists:packages,id',
+
+            'additional_services' => 'nullable|array',
+            'additional_services.*.additional_service_id' => 'required|exists:additional_services,id|distinct',
+            'additional_services.*.price' => 'required|numeric|min:0',
+            'additional_services.*.notes' => 'nullable|string|max:255',
+
             'payments' => 'required|array|min:1',
             'payments.*.amount' => 'required|numeric|min:0.01',
             'payments.*.payment_method' => 'nullable|string|max:50',
+        ], [
+            'photo_types.required_without' => 'Agrega al menos un tipo de fotografía o un paquete escolar.',
+            'package_ids.required_without' => 'Agrega al menos un tipo de fotografía o un paquete escolar.',
         ]);
 
         try {
@@ -110,6 +122,7 @@ class OrderController extends Controller
             'orderPhotoTypes.photoType:id,name,base_price',
             'orderPhotoTypes.paperType:id,name,extra_price',
             'payments',
+            'additionalServices',
         ]);
 
         return response()->json($order);

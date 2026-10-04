@@ -171,7 +171,7 @@
                   :paper-types="paperTypes"
                   :loading="loadingCatalogs"
                   :show-errors="conceptsSubmittingAttempted"
-                  :error="fieldErrors.photo_types"
+                  :error="fieldErrors.photo_lines || fieldErrors.order_content"
                   title=""
                   empty-hint="Sin tipos de fotografía."
                 />
@@ -182,6 +182,13 @@
                   </button>
                 </div>
               </template>
+            </div>
+
+            <div
+              v-if="quote?.additional_services?.length"
+              class="mt-4 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+            >
+              <AdditionalServicesSummaryList :services="quote.additional_services" nested />
             </div>
           </div>
 
@@ -223,6 +230,7 @@ import orderQuoteFormMixin from '../order-quote-shared/orderQuoteFormMixin.js';
 import CustomerStep from '../order-quote-shared/form-steps/CustomerStep.vue';
 import PackagesSummaryList from '../order-quote-shared/detail-parts/PackagesSummaryList.vue';
 import PhotoTypesSummaryList from '../order-quote-shared/detail-parts/PhotoTypesSummaryList.vue';
+import AdditionalServicesSummaryList from '../order-quote-shared/detail-parts/AdditionalServicesSummaryList.vue';
 import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLinesEditor.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
@@ -231,7 +239,10 @@ import AlertModal from '../common/AlertModal.vue';
 export default {
   name: 'QuoteDetailModal',
   mixins: [orderQuoteFormMixin],
-  components: { CustomerStep, PackagesSummaryList, PhotoTypesSummaryList, PhotoTypeLinesEditor, ConfirmModal, SuccessModal, AlertModal },
+  components: {
+    CustomerStep, PackagesSummaryList, PhotoTypesSummaryList, AdditionalServicesSummaryList,
+    PhotoTypeLinesEditor, ConfirmModal, SuccessModal, AlertModal
+  },
   props: {
     show: { type: Boolean, default: false },
     quote: { type: Object, default: null }
@@ -269,9 +280,13 @@ export default {
     },
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
+      const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
+      // Regla de negocio: al menos una fotografía O un paquete
+      const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
-        photo_types: this.activeLines.length === 0
+        order_content: !hasContent,
+        photo_lines: hasEmptyPhotoLine
       };
     },
     minDateStr() {
@@ -465,13 +480,22 @@ export default {
     },
     async saveConcepts() {
       this.conceptsSubmittingAttempted = true;
-      if (this.activeLines.length === 0) {
-        this.alertMessage = 'Selecciona al menos un tipo de fotografía';
+
+      if (this.fieldErrors.photo_lines) {
+        this.alertMessage = 'Completa o elimina las líneas de fotografía sin tipo seleccionado.';
         this.showAlertModal = true;
         return;
       }
+      if (this.fieldErrors.order_content) {
+        this.alertMessage = 'Agrega al menos un tipo de fotografía o un paquete escolar.';
+        this.showAlertModal = true;
+        return;
+      }
+
       this.savingConcepts = true;
       try {
+        // Los servicios adicionales no se envían: el backend conserva los existentes
+        // y recalcula el total con ellos.
         const res = await axios.put(`/quotes/${this.quote.id}/concepts`, {
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds
@@ -483,7 +507,9 @@ export default {
         this.successModalMessage = 'Los tipos de fotografía se actualizaron correctamente.';
         this.showSuccessModal = true;
       } catch (error) {
-        this.alertMessage = error.response?.data?.message || 'No se pudieron actualizar los conceptos';
+        const data = error.response?.data;
+        const firstValidationError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+        this.alertMessage = firstValidationError || data?.message || 'No se pudieron actualizar los conceptos';
         this.showAlertModal = true;
       } finally {
         this.savingConcepts = false;

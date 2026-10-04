@@ -14,6 +14,8 @@ class QuoteService
     public function createQuote(array $data)
     {
         return DB::transaction(function () use ($data) {
+            $this->ensureHasContent($data['photo_types'] ?? [], $data['package_ids'] ?? []);
+
             $customer = $this->resolveCustomer($data);
             $total = $this->calculateTotal($data);
 
@@ -25,7 +27,7 @@ class QuoteService
                 'status' => 'pending',
             ]);
 
-            foreach ($data['photo_types'] as $line) {
+            foreach ($data['photo_types'] ?? [] as $line) {
                 $photoType = PhotoType::find($line['photo_type_id']);
                 $quote->quotePhotoTypes()->create([
                     'photo_type_id' => $line['photo_type_id'],
@@ -60,13 +62,16 @@ class QuoteService
     public function convertToOrder(Quote $quote, array $data): Order
     {
         if (!$quote->isConvertible()) {
-            throw new \Exception('Esta cotización no puede convertirse en orden (estado actual: ' . $quote->status . ').');
+            throw new \DomainException('Esta cotización no puede convertirse en orden (estado actual: ' . $quote->status . ').');
         }
 
         return DB::transaction(function () use ($quote, $data) {
             $photoTypes = $data['photo_types'] ?? $this->quotePhotoTypesAsInput($quote);
             $packageIds = $data['package_ids'] ?? $quote->packages->pluck('id')->all();
             $notes = array_key_exists('notes', $data) ? $data['notes'] : $quote->notes;
+
+            // El contenido puede venir de la base de datos, no solo de la validación
+            $this->ensureHasContent($photoTypes, $packageIds);
 
             $this->syncQuoteContent($quote, $photoTypes, $packageIds, $notes);
 
@@ -96,7 +101,7 @@ class QuoteService
     public function updateStatus(Quote $quote, string $status): Quote
     {
         if ($quote->status === 'converted') {
-            throw new \Exception('No se puede cambiar el estado de una cotización ya convertida.');
+            throw new \DomainException('No se puede cambiar el estado de una cotización ya convertida.');
         }
 
         $quote->update(['status' => $status]);
@@ -176,14 +181,14 @@ class QuoteService
             return $customer;
         }
 
-        throw new \Exception('Debe seleccionar un cliente existente o crear uno nuevo.');
+        throw new \DomainException('Debe seleccionar un cliente existente o crear uno nuevo.');
     }
 
     protected function calculateTotal(array $data): float
     {
         $total = 0;
 
-        foreach ($data['photo_types'] as $line) {
+        foreach ($data['photo_types'] ?? [] as $line) {
             $photoType = PhotoType::find($line['photo_type_id']);
             $total += ($photoType->base_price ?? 0) * $line['quantity'];
         }
@@ -193,12 +198,23 @@ class QuoteService
             $total += $packages->sum('total_price');
         }
 
-        return $total;
+        return (float) $total;
     }
+
+    /**
+     * Regla de negocio: al menos un tipo de fotografía O un paquete escolar.
+     */
+    protected function ensureHasContent(array $photoTypes, array $packageIds): void
+    {
+        if (empty($photoTypes) && empty($packageIds)) {
+            throw new \DomainException('Agrega al menos un tipo de fotografía o un paquete escolar.');
+        }
+    }
+
     public function patchQuote(Quote $quote, array $data): Quote
     {
         if ($quote->status === 'converted') {
-            throw new \Exception('No se puede editar una cotización ya convertida en orden.');
+            throw new \DomainException('No se puede editar una cotización ya convertida en orden.');
         }
 
         $quote->update([
@@ -217,8 +233,10 @@ class QuoteService
     public function updateConcepts(Quote $quote, array $data): Quote
     {
         if ($quote->status === 'converted') {
-            throw new \Exception('No se puede editar una cotización ya convertida en orden.');
+            throw new \DomainException('No se puede editar una cotización ya convertida en orden.');
         }
+
+        $this->ensureHasContent($data['photo_types'] ?? [], $data['package_ids'] ?? []);
 
         return DB::transaction(function () use ($quote, $data) {
             $total = $this->calculateTotal($data);
@@ -226,7 +244,7 @@ class QuoteService
             $quote->update(['total' => $total]);
 
             $quote->quotePhotoTypes()->delete();
-            foreach ($data['photo_types'] as $line) {
+            foreach ($data['photo_types'] ?? [] as $line) {
                 $photoType = PhotoType::find($line['photo_type_id']);
                 $quote->quotePhotoTypes()->create([
                     'photo_type_id' => $line['photo_type_id'],
@@ -263,14 +281,14 @@ class QuoteService
         if (!empty($data['customer_id'])) {
             $customerId = $data['customer_id'];
         } elseif (!empty($data['new_customer'])) {
-            $customer = \App\Models\Customer::create([
+            $customer = Customer::create([
                 'name'  => $data['new_customer']['name'],
                 'phone' => $data['new_customer']['phone'] ?? null,
                 'email' => $data['new_customer']['email'] ?? null,
             ]);
             $customerId = $customer->id;
         } else {
-            throw new \Exception('Debes proporcionar un cliente existente o uno nuevo.');
+            throw new \DomainException('Debes proporcionar un cliente existente o uno nuevo.');
         }
 
         $quote->customer_id = $customerId;
@@ -284,5 +302,4 @@ class QuoteService
             'order:id,quote_id,status,total,balance_due',
         ]);
     }
-
 }
