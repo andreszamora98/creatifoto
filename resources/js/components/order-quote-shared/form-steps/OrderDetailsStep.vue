@@ -22,7 +22,7 @@
             role="tab"
             :aria-selected="activeTab === tab.key"
             @click="activeTab = tab.key"
-            class="relative flex items-center gap-2 px-4 py-2.5 text-lg font-medium rounded-t-lg transition-colors"
+            class="relative flex items-center gap-2 px-4 py-2.5 text-lg font-medium rounded-t-lg"
             :class="[
               index > 0
                 ? 'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-px before:bg-gray-300 dark:before:bg-gray-600'
@@ -36,40 +36,60 @@
             <span>{{ tab.label }}</span>
             <span
               v-if="tab.count > 0"
-              class="min-w-[1.75rem] h-7 px-2 rounded-full text-white text-sm font-bold flex items-center justify-center transition-colors"
+              class="min-w-[1.75rem] h-7 px-2 rounded-full text-white text-sm font-bold flex items-center justify-center"
               :class="activeTab === tab.key ? 'bg-blue-500' : 'bg-gray-400 dark:bg-gray-600'"
             >{{ tab.count }}</span>
           </button>
         </div>
 
-        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg rounded-tr-lg p-3 space-y-3">
-          <div v-show="activeTab === 'photos'" role="tabpanel">
-            <PhotoTypeLinesEditor
-              :lines="photoLines"
-              :photo-types="photoTypes"
-              :paper-types="paperTypes"
-              :loading="loadingCatalogs"
-              :show-errors="showErrors"
-              :error="linesError"
-              title=""
-              empty-hint="Sin tipos de fotografía. Puedes dejarlo vacío si la orden lleva paquetes escolares."
-            />
+        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg rounded-tr-lg p-3 transition-none">
+          <div
+            v-if="activeTab === 'packages'"
+            class="absolute top-0 left-0 w-2 h-2 bg-gray-200 dark:bg-gray-800 pointer-events-none"
+            aria-hidden="true"
+          >
+            <div class="w-full h-full rounded-tl-lg bg-gray-50 dark:bg-gray-700"></div>
           </div>
 
-          <div v-show="activeTab === 'packages'" role="tabpanel">
-            <PackageLinesEditor
-              :lines="packageLines"
-              :packages="packages"
-              :schools="schools"
-              :loading="loadingCatalogs"
-              :show-errors="showErrors"
-              :error="contentError"
-              title=""
-              empty-hint="Sin paquetes escolares. Puedes dejarlo vacío si la orden lleva tipos de fotografía."
-            />
+          <div class="grid">
+            <div
+              class="col-start-1 row-start-1"
+              :class="{ invisible: activeTab !== 'photos' }"
+              :aria-hidden="activeTab !== 'photos'"
+              role="tabpanel"
+            >
+              <PhotoTypeLinesEditor
+                :lines="photoLines"
+                :photo-types="photoTypes"
+                :paper-types="paperTypes"
+                :loading="loadingCatalogs"
+                :show-errors="showErrors"
+                :error="linesError"
+                title=""
+                empty-hint="Sin tipos de fotografía. Puedes dejarlo vacío si la orden lleva paquetes escolares."
+              />
+            </div>
+
+            <div
+              class="col-start-1 row-start-1"
+              :class="{ invisible: activeTab !== 'packages' }"
+              :aria-hidden="activeTab !== 'packages'"
+              role="tabpanel"
+            >
+              <PackageLinesEditor
+                :lines="packageLines"
+                :packages="packages"
+                :schools="schools"
+                :loading="loadingCatalogs"
+                :show-errors="showErrors"
+                :error="contentError"
+                title=""
+                empty-hint="Sin paquetes escolares. Puedes dejarlo vacío si la orden lleva tipos de fotografía."
+              />
+            </div>
           </div>
 
-          <p v-if="showErrors && contentError" class="text-sm text-red-500 flex items-center gap-1">
+          <p v-if="showErrors && contentError" class="mt-3 text-sm text-red-500 flex items-center gap-1">
             <i class="ti ti-alert-circle"></i>
             Agrega al menos un tipo de fotografía o un paquete escolar para continuar.
           </p>
