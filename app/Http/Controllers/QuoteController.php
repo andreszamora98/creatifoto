@@ -35,7 +35,7 @@ class QuoteController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'customer_id' => 'nullable|exists:customers,id',
             'new_customer' => 'nullable|array',
             'new_customer.name' => 'required_with:new_customer|string|max:255',
@@ -45,7 +45,6 @@ class QuoteController extends Controller
             'valid_until' => 'nullable|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
 
-            // Al menos un tipo de fotografía O un paquete escolar
             'photo_types' => 'nullable|array|required_without:package_ids',
             'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
             'photo_types.*.quantity' => 'required|integer|min:1',
@@ -53,7 +52,7 @@ class QuoteController extends Controller
             'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
             'package_ids' => 'nullable|array|required_without:photo_types',
             'package_ids.*' => 'exists:packages,id',
-        ], $this->contentMessages());
+        ], $this->serviceRules()), $this->contentMessages());
 
         try {
             $quote = $this->quoteService->createQuote($validated);
@@ -92,7 +91,6 @@ class QuoteController extends Controller
             'estimated_delivery_time' => 'required|date_format:H:i',
             'pose_number' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:1000',
-            // Si no se envían, se usa el contenido guardado en la cotización
             'photo_types' => 'nullable|array',
             'photo_types.*.photo_type_id' => 'required_with:photo_types|exists:photo_types,id',
             'photo_types.*.quantity' => 'required_with:photo_types|integer|min:1',
@@ -152,7 +150,7 @@ class QuoteController extends Controller
 
     public function updateConcepts(Request $request, Quote $quote)
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'photo_types' => 'nullable|array|required_without:package_ids',
             'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
             'photo_types.*.quantity' => 'required|integer|min:1',
@@ -160,7 +158,7 @@ class QuoteController extends Controller
             'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
             'package_ids' => 'nullable|array|required_without:photo_types',
             'package_ids.*' => 'exists:packages,id',
-        ], $this->contentMessages());
+        ], $this->serviceRules()), $this->contentMessages());
 
         try {
             $quote = $this->quoteService->updateConcepts($quote, $validated);
@@ -203,6 +201,17 @@ class QuoteController extends Controller
         return [
             'photo_types.required_without' => $message,
             'package_ids.required_without' => $message,
+        ];
+    }
+
+    private function serviceRules(): array
+    {
+        return [
+            'additional_services' => 'nullable|array',
+            'additional_services.*.additional_service_id' => 'required|exists:additional_services,id|distinct',
+            'additional_services.*.price' => 'required|numeric|min:0',
+            'additional_services.*.quantity' => 'required|integer|min:1',
+            'additional_services.*.notes' => 'nullable|string|max:255',
         ];
     }
 }

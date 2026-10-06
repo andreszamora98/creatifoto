@@ -52,7 +52,6 @@ class OrderController extends Controller
             'pose_number' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:1000',
 
-            // Al menos un tipo de fotografía O un paquete escolar
             'photo_types' => 'nullable|array|required_without:package_ids',
             'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
             'photo_types.*.quantity' => 'required|integer|min:1',
@@ -64,6 +63,7 @@ class OrderController extends Controller
             'additional_services' => 'nullable|array',
             'additional_services.*.additional_service_id' => 'required|exists:additional_services,id|distinct',
             'additional_services.*.price' => 'required|numeric|min:0',
+            'additional_services.*.quantity' => 'required|integer|min:1',
             'additional_services.*.notes' => 'nullable|string|max:255',
 
             'payments' => 'required|array|min:1',

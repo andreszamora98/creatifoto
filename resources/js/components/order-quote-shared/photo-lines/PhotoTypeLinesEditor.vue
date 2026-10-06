@@ -1,9 +1,11 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border-2"
        :class="showErrors && error ? 'border-red-500' : 'border-transparent'">
+    <!--  
     <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
       <i :class="icon" class="mr-2 text-xl"></i>{{ title }}
     </h4>
+    -->
     <p v-if="showErrors && error" class="text-base text-red-600 dark:text-red-400 mb-3 font-medium">{{ errorMessage }}</p>
 
     <div v-if="loading" class="text-center py-4 text-lg text-gray-500 dark:text-gray-400 mt-3">

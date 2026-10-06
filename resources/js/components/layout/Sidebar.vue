@@ -101,7 +101,7 @@ export default {
           icon: 'ti ti-category-2',
           children: [
             { title: 'Tipos de fotografía', tab: 'photo-types', icon: 'ti ti-photo' },
-            { title: 'Servicios adicionales', tab: 'additional-services', icon: 'ti ti-stars' },
+            { title: 'Servicios adicionales', tab: 'additional-services', icon: 'ti ti-tool' },
           ],
         },
         { title: 'Cotizaciones', path: '/cotizaciones', icon: 'ti ti-file-description' },

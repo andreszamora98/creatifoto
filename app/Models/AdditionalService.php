@@ -13,10 +13,12 @@ class AdditionalService extends Model
     protected $fillable = [
         'name',
         'default_price',
+        'default_quantity',
     ];
 
     protected $casts = [
         'default_price' => 'decimal:2',
+        'default_quantity' => 'integer',
     ];
 
     public function orders(): MorphToMany
@@ -30,6 +32,13 @@ class AdditionalService extends Model
     public function orderPhotoTypes(): MorphToMany
     {
         return $this->morphedByMany(OrderPhotoType::class, 'serviceable')
+            ->withPivot(['price', 'notes'])
+            ->withTimestamps()
+            ->using(Serviceable::class);
+    }
+    public function quotes(): MorphToMany
+    {
+        return $this->morphedByMany(Quote::class, 'serviceable')
             ->withPivot(['price', 'notes'])
             ->withTimestamps()
             ->using(Serviceable::class);

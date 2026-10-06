@@ -4,7 +4,7 @@ export default {
   data() {
     return {
       additionalServices: [],
-      selectedServices: [],
+      schools: [],
       successModalTitle: '',
       successModalMessage: '',
       successModalNext: null,
@@ -37,21 +37,51 @@ export default {
       showCustomerDropdown: false,
       selectedCustomer: null,
 
-      selectedPackageIds: [],
+      packageLines: [],
       photoLines: [],
+      serviceLines: [],
 
       initialState: null
     };
   },
   computed: {
 
+    selectedPackageIds() {
+      return this.packageLines
+        .filter(l => l.package_id)
+        .map(l => l.package_id);
+    },
+    selectedPackagesData() {
+      return this.packages.filter(p => this.selectedPackageIds.includes(p.id));
+    },
+    selectedServices() {
+      return this.serviceLines
+        .filter(l => l.service_id)
+        .map(l => {
+          const svc = this.additionalServices.find(s => s.id === l.service_id);
+          const unitPrice = Number(svc?.default_price ?? 0);
+          const quantity = Number.isFinite(Number(l.quantity)) && Number(l.quantity) >= 1
+            ? Math.floor(Number(l.quantity))
+            : 1;
+          return {
+            additional_service_id: l.service_id,
+            service_id: l.service_id,
+            name: svc?.name || '',
+            price: unitPrice,
+            quantity,
+            subtotal: unitPrice * quantity,
+            notes: ''
+          };
+        });
+    },
     servicesTotal() {
-      return this.selectedServices.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+      return this.selectedServices.reduce((sum, s) => sum + (Number(s.subtotal) || 0), 0);
     },
     activeServices() {
       return this.selectedServices.map(s => ({
         additional_service_id: s.additional_service_id,
         price: Number(s.price) || 0,
+        quantity: Number(s.quantity) || 1,
         notes: (s.notes || '').trim() || null
       }));
     },
@@ -117,9 +147,6 @@ export default {
           format: l.format,
           paper_type_id: l.paper_type_id
         }));
-    },
-    selectedPackagesData() {
-      return this.packages.filter(p => this.selectedPackageIds.includes(p.id));
     },
     estimatedTotal() {
       const linesTotal = this.activeLines.reduce((sum, l) => {
@@ -367,17 +394,21 @@ export default {
     async loadCatalogs() {
       this.loadingCatalogs = true;
       try {
-        const [ptRes, paperRes, pkgRes, custRes] = await Promise.all([
+        const [ptRes, paperRes, pkgRes, custRes, schoolRes] = await Promise.all([
           axios.get('/photo-types'),
           axios.get('/paper-types'),
           axios.get('/packages'),
-          axios.get('/customers')
+          axios.get('/customers'),
+          axios.get('/schools')
         ]);
         this.photoTypes = ptRes.data;
         this.paperTypes = paperRes.data;
         this.packages = pkgRes.data;
         this.customers = custRes.data;
+        this.schools = schoolRes.data;
         this.photoLines = [];
+        this.packageLines = [];
+        this.serviceLines = [];
       } catch (error) {
         console.error('Error cargando catálogos:', error);
         this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los catálogos', type: 'error' });
@@ -410,7 +441,6 @@ export default {
     },
 
     resetSharedFields() {
-      this.selectedServices = [];
       this.successModalTitle = '';
       this.successModalMessage = '';
       this.successModalNext = null;
@@ -420,12 +450,13 @@ export default {
       this.customerSearch = '';
       this.customerPhone = '';
       this.customerEmail = '';
-      this.selectedPackageIds = [];
       this.currentStep = 1;
       this.navDirection = 'forward';
       this.editingPhone = false;
       this.editingEmail = false;
       this.photoLines = [];
+      this.packageLines = [];
+      this.serviceLines = [];
       this.isDirty = false;
       this.submittingAttempted = false;
       this.stepAttempted = { 1: false, 2: false, 3: false };
@@ -433,12 +464,12 @@ export default {
 
     getSharedState() {
       return {
-        selectedServices: JSON.parse(JSON.stringify(this.selectedServices)),
+        packageLines: JSON.parse(JSON.stringify(this.packageLines)),
+        serviceLines: JSON.parse(JSON.stringify(this.serviceLines)),
         customerSearch: this.customerSearch,
         selectedCustomerId: this.selectedCustomer ? this.selectedCustomer.id : null,
         customerPhone: this.customerPhone,
         customerEmail: this.customerEmail,
-        selectedPackageIds: [...this.selectedPackageIds],
         photoLines: JSON.parse(JSON.stringify(this.photoLines))
       };
     },

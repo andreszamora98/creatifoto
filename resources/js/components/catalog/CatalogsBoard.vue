@@ -52,7 +52,7 @@ export default {
       activeTab: 'photo-types',
       tabs: [
         { key: 'photo-types', label: 'Tipos de fotografía', icon: 'ti ti-photo' },
-        { key: 'additional-services', label: 'Servicios adicionales', icon: 'ti ti-stars' }
+        { key: 'additional-services', label: 'Servicios adicionales', icon: 'ti ti-tool' }
       ],
       showNotification: false,
       notificationTitle: '',

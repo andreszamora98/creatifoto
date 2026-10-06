@@ -74,7 +74,11 @@
               :photo-lines="photoLines"
               :paper-types="paperTypes"
               :packages="packages"
-              v-model:selected-package-ids="selectedPackageIds"
+              :package-lines="packageLines"
+              :schools="schools"
+              show-additional-services
+              :additional-services="additionalServices"
+              :service-lines="serviceLines"
               :show-estimated-total="false"
               hide-delivery-date
               @update:form="form = $event"
@@ -86,6 +90,8 @@
               :active-lines="activeLines"
               :photo-types="photoTypes"
               :selected-packages="selectedPackagesData"
+              :selected-services="selectedServices"
+              :additional-services="additionalServices"
               :estimated-total="estimatedTotal"
               :valid-until="validUntil"
               @update:validUntil="validUntil = $event"
@@ -190,11 +196,18 @@ export default {
       return {
         customer: !hasCustomer,
         order_content: !hasContent,
-        photo_lines: hasEmptyPhotoLine
+        photo_lines: hasEmptyPhotoLine,
+        service_prices: this.selectedServices.some(s =>
+          s.price === '' || s.price === null || Number.isNaN(Number(s.price)) || Number(s.price) < 0
+        )
       };
     },
     currentStepValid() {
-      const keysByStep = { 1: ['customer'], 2: ['order_content', 'photo_lines'], 3: [] };
+      const keysByStep = {
+        1: ['customer'],
+        2: ['order_content', 'photo_lines', 'service_prices'],
+        3: []
+      };
       return this.keysValid(keysByStep[this.currentStep] || []);
     }
   },
@@ -222,6 +235,7 @@ export default {
           notes: this.form.notes,
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds,
+          additional_services: this.activeServices,
         };
         const res = await axios.post('/quotes', payload);
         this.$emit('created', res.data.quote);

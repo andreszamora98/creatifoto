@@ -74,10 +74,11 @@
               :photo-lines="photoLines"
               :paper-types="paperTypes"
               :packages="packages"
-              v-model:selected-package-ids="selectedPackageIds"
+              :package-lines="packageLines"
+              :schools="schools"
               show-additional-services
               :additional-services="additionalServices"
-              v-model:selected-services="selectedServices"
+              :service-lines="serviceLines"
               :show-estimated-total="false"
               @update:form="form = $event"
             />

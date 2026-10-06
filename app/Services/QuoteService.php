@@ -48,11 +48,14 @@ class QuoteService
                 }
             }
 
+            $quote->additionalServices()->sync($this->servicesSyncData($data['additional_services'] ?? []));
+
             $quote->load([
                 'customer:id,name,phone,email',
                 'packages:id,package_number,name,total_price',
                 'quotePhotoTypes.photoType:id,name,base_price',
                 'quotePhotoTypes.paperType:id,name,extra_price',
+                'additionalServices',
             ]);
 
             return $quote;
@@ -68,17 +71,18 @@ class QuoteService
         return DB::transaction(function () use ($quote, $data) {
             $photoTypes = $data['photo_types'] ?? $this->quotePhotoTypesAsInput($quote);
             $packageIds = $data['package_ids'] ?? $quote->packages->pluck('id')->all();
+            $services = $data['additional_services'] ?? $this->quoteServicesAsInput($quote);
             $notes = array_key_exists('notes', $data) ? $data['notes'] : $quote->notes;
 
-            // El contenido puede venir de la base de datos, no solo de la validación
             $this->ensureHasContent($photoTypes, $packageIds);
 
-            $this->syncQuoteContent($quote, $photoTypes, $packageIds, $notes);
+            $this->syncQuoteContent($quote, $photoTypes, $packageIds, $services, $notes);
 
             $orderData = array_merge($data, [
                 'customer_id' => $quote->customer_id,
                 'photo_types' => $photoTypes,
                 'package_ids' => $packageIds,
+                'additional_services' => $services,
                 'notes' => $notes,
             ]);
 
@@ -93,6 +97,7 @@ class QuoteService
                 'packages:id,package_number,name,total_price',
                 'orderPhotoTypes.photoType:id,name,base_price',
                 'orderPhotoTypes.paperType:id,name,extra_price',
+                'additionalServices',
                 'payments',
             ]);
         });
@@ -109,7 +114,7 @@ class QuoteService
         return $quote;
     }
 
-    protected function syncQuoteContent(Quote $quote, array $photoTypes, array $packageIds, ?string $notes): void
+    protected function syncQuoteContent(Quote $quote, array $photoTypes, array $packageIds, array $services, ?string $notes): void
     {
         $quote->quotePhotoTypes()->delete();
 
@@ -135,9 +140,12 @@ class QuoteService
             }
         }
 
+        $quote->additionalServices()->sync($this->servicesSyncData($services));
+
         $total = $this->calculateTotal([
             'photo_types' => $photoTypes,
             'package_ids' => $packageIds,
+            'additional_services' => $services,
         ]);
 
         $quote->update([
@@ -154,6 +162,29 @@ class QuoteService
             'format' => $line->format,
             'paper_type_id' => $line->paper_type_id,
         ])->all();
+    }
+
+    protected function quoteServicesAsInput(Quote $quote): array
+    {
+        return $quote->additionalServices->map(fn ($service) => [
+            'additional_service_id' => $service->id,
+            'price' => $service->pivot->price,
+            'quantity' => $service->pivot->quantity ?? 1,
+            'notes' => $service->pivot->notes,
+        ])->all();
+    }
+
+    protected function servicesSyncData(array $services): array
+    {
+        return collect($services)
+            ->mapWithKeys(fn ($s) => [
+                $s['additional_service_id'] => [
+                    'price' => $s['price'],
+                    'quantity' => $s['quantity'] ?? 1,
+                    'notes' => $s['notes'] ?? null,
+                ],
+            ])
+            ->all();
     }
 
     protected function resolveCustomer(array $data): Customer
@@ -198,12 +229,16 @@ class QuoteService
             $total += $packages->sum('total_price');
         }
 
+        if (!empty($data['additional_services'])) {
+            $total += collect($data['additional_services'])->sum(function ($s) {
+                $quantity = (int) ($s['quantity'] ?? 1);
+                return (float) $s['price'] * $quantity;
+            });
+        }
+
         return (float) $total;
     }
 
-    /**
-     * Regla de negocio: al menos un tipo de fotografía O un paquete escolar.
-     */
     protected function ensureHasContent(array $photoTypes, array $packageIds): void
     {
         if (empty($photoTypes) && empty($packageIds)) {
@@ -227,6 +262,7 @@ class QuoteService
             'packages:id,package_number,name,total_price',
             'quotePhotoTypes.photoType:id,name,base_price',
             'quotePhotoTypes.paperType:id,name,extra_price',
+            'additionalServices',
         ]);
     }
 
@@ -239,7 +275,11 @@ class QuoteService
         $this->ensureHasContent($data['photo_types'] ?? [], $data['package_ids'] ?? []);
 
         return DB::transaction(function () use ($quote, $data) {
-            $total = $this->calculateTotal($data);
+            $services = array_key_exists('additional_services', $data)
+                ? ($data['additional_services'] ?? [])
+                : $this->quoteServicesAsInput($quote);
+
+            $total = $this->calculateTotal(array_merge($data, ['additional_services' => $services]));
 
             $quote->update(['total' => $total]);
 
@@ -267,11 +307,14 @@ class QuoteService
             }
             $quote->packages()->sync($syncData);
 
+            $quote->additionalServices()->sync($this->servicesSyncData($services));
+
             return $quote->fresh([
                 'customer:id,name,phone,email',
                 'packages:id,package_number,name,total_price',
                 'quotePhotoTypes.photoType:id,name,base_price',
                 'quotePhotoTypes.paperType:id,name,extra_price',
+                'additionalServices',
             ]);
         });
     }
@@ -299,6 +342,7 @@ class QuoteService
             'packages:id,package_number,name,total_price',
             'quotePhotoTypes.photoType:id,name,base_price',
             'quotePhotoTypes.paperType:id,name,extra_price',
+            'additionalServices',
             'order:id,quote_id,status,total,balance_due',
         ]);
     }

@@ -11,7 +11,7 @@ class AdditionalServiceController extends Controller
 {
     public function index()
     {
-        return AdditionalService::orderBy('name')->get(['id', 'name', 'default_price']);
+        return AdditionalService::orderBy('name')->get(['id', 'name', 'default_price', 'default_quantity']);
     }
 
     public function store(Request $request)
@@ -19,6 +19,7 @@ class AdditionalServiceController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:additional_services,name',
             'default_price' => 'required|numeric|min:0',
+            'default_quantity' => 'required|integer|min:1',
         ]);
 
         $service = AdditionalService::create($validated);
@@ -33,6 +34,7 @@ class AdditionalServiceController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('additional_services', 'name')->ignore($service->id)],
             'default_price' => 'required|numeric|min:0',
+            'default_quantity' => 'required|integer|min:1',
         ]);
 
         $service->update($validated);

@@ -102,10 +102,12 @@ export default {
       }));
       const serviceLines = this.selectedServices.map(s => {
         const svc = this.additionalServices.find(a => a.id === s.additional_service_id);
+        const qty = Number(s.quantity) || 1;
+        const subtotal = Number(s.subtotal ?? (Number(s.price) * qty)) || 0;
         return {
           key: 'svc-' + s.additional_service_id,
-          label: svc?.name || 'Servicio adicional',
-          amount: Number(s.price) || 0
+          label: `${svc?.name || 'Servicio adicional'} x${qty}`,
+          amount: subtotal
         };
       });
       return [...lines, ...packageLines, ...serviceLines];

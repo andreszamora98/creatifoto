@@ -21,7 +21,7 @@ class Order extends Model
         'pose_number',
         'notes',
         'estimated_delivery_date',
-        'estimated_delivery_time', 
+        'estimated_delivery_time',
         'actual_delivery_date',
         'status',
         'signature_id',
@@ -66,10 +66,11 @@ class Order extends Model
     public function additionalServices(): MorphToMany
     {
         return $this->morphToMany(AdditionalService::class, 'serviceable')
-            ->withPivot(['price', 'notes'])
+            ->withPivot(['price', 'quantity', 'notes'])
             ->withTimestamps()
             ->using(Serviceable::class);
     }
+
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);

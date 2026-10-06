@@ -35,17 +35,17 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <div class="flex items-center gap-4">
+              <div class="flex items-center gap-3">
                 <div
                   class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800"
-                  :class="remainingBalance > 0
-                    ? 'bg-blue-100 dark:bg-blue-900/40 ring-blue-200 dark:ring-blue-800'
-                    : 'bg-green-100 dark:bg-green-900/40 ring-green-200 dark:ring-green-800'"
+                  :class="isLiquidated(idx)
+                    ? 'bg-green-100 dark:bg-green-900/40 ring-green-200 dark:ring-green-800'
+                    : 'bg-blue-100 dark:bg-blue-900/40 ring-blue-200 dark:ring-blue-800'"
                 >
                   <i
-                    :class="remainingBalance > 0
-                      ? 'ti ti-coin text-blue-600 dark:text-blue-300'
-                      : 'ti ti-check text-green-600 dark:text-green-300'"
+                    :class="isLiquidated(idx)
+                      ? 'ti ti-check text-green-600 dark:text-green-300'
+                      : 'ti ti-coin text-blue-600 dark:text-blue-300'"
                     class="text-xl"
                   ></i>
                 </div>
@@ -89,21 +89,24 @@
                 <i class="ti ti-chevron-down text-base"></i>
               </button>
 
-              <div v-if="openPaymentMethodDropdownIdx === idx"
-                   class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
-                <button @mousedown.prevent="selectLinePaymentMethod(idx, 'efectivo')"
-                        class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                  <i class="ti ti-cash text-xl text-green-600 dark:text-green-400"></i> Efectivo
-                </button>
-                <button @mousedown.prevent="selectLinePaymentMethod(idx, 'tarjeta')"
-                        class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                  <i class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i> Tarjeta
-                </button>
-                <button @mousedown.prevent="selectLinePaymentMethod(idx, 'transferencia')"
-                        class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                  <i class="ti ti-device-mobile text-xl text-purple-600 dark:text-purple-400"></i> Transferencia
-                </button>
-              </div>
+              <transition name="dropdown">
+                <div v-if="openPaymentMethodDropdownIdx === idx"
+                     class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
+                  <button @mousedown.prevent="selectLinePaymentMethod(idx, 'efectivo')"
+                          class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                    <i class="ti ti-cash text-xl text-green-600 dark:text-green-400"></i> Efectivo
+                  </button>
+                  <button @mousedown.prevent="selectLinePaymentMethod(idx, 'tarjeta')"
+                          class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                    <i class="ti ti-credit-card text-xl text-blue-600 dark:text-blue-400"></i> Tarjeta
+                  </button>
+                  <button @mousedown.prevent="selectLinePaymentMethod(idx, 'transferencia')"
+                          class="w-full px-3 py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                    <i class="ti ti-device-mobile text-xl text-purple-600 dark:text-purple-400"></i> Transferencia
+                  </button>
+                </div>
+              </transition>
+
               <p v-if="showErrors && !payment.payment_method" class="text-sm text-red-600 dark:text-red-400 mt-1 font-medium">
                 Campo obligatorio*
               </p>
@@ -145,6 +148,35 @@ export default {
     selectLinePaymentMethod: { type: Function, required: true },
     addPayment: { type: Function, required: true },
     removePayment: { type: Function, required: true }
+  },
+  methods: {
+    isLiquidated(idx) {
+      if (this.remainingBalance > 0) return false;
+      if (this.payments.length <= 1) return true;
+      return idx === this.payments.length - 1;
+    }
   }
 };
 </script>
+
+<style scoped>
+.dropdown-enter-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  transform-origin: top center;
+}
+
+.dropdown-leave-active {
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  transform-origin: top center;
+}
+
+.dropdown-enter-from {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+
+.dropdown-leave-to {
+  opacity: 0;
+  transform: scaleY(0.9) translateY(-4px);
+}
+</style>

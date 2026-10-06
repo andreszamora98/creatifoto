@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quote extends Model
@@ -44,10 +45,6 @@ class Quote extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Una cotización puede tener a lo más una orden generada a partir
-     * de ella. La relación vive en orders.quote_id, no aquí.
-     */
     public function order(): HasOne
     {
         return $this->hasOne(Order::class);
@@ -56,5 +53,13 @@ class Quote extends Model
     public function isConvertible(): bool
     {
         return in_array($this->status, ['pending', 'accepted']);
+    }
+
+    public function additionalServices(): MorphToMany
+    {
+        return $this->morphToMany(AdditionalService::class, 'serviceable')
+            ->withPivot(['price', 'quantity', 'notes'])
+            ->withTimestamps()
+            ->using(Serviceable::class);
     }
 }

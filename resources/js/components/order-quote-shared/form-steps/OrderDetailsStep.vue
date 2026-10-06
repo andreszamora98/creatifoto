@@ -5,72 +5,89 @@
       {{ sectionTitle }}
     </h4>
 
-    <!-- 1. Conceptos de la orden -->
     <div class="space-y-3">
       <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Conceptos de la orden
       </h5>
 
-      <div class="flex gap-2 border-b border-gray-200 dark:border-gray-700" role="tablist">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === tab.key"
-          @click="activeTab = tab.key"
-          class="flex items-center gap-2 px-4 py-2.5 -mb-px border-b-2 text-lg font-medium transition-colors"
-          :class="activeTab === tab.key
-            ? 'border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+      <div>
+        <div
+          class="relative z-10 flex w-fit rounded-t-lg bg-gray-200 dark:bg-gray-800"
+          role="tablist"
         >
-          <i :class="['ti', tab.icon, 'text-xl']"></i>
-          <span>{{ tab.label }}</span>
-          <span
-            v-if="tab.count > 0"
-            class="min-w-[1.75rem] h-7 px-2 rounded-full bg-blue-500 text-white text-sm font-bold flex items-center justify-center"
-          >{{ tab.count }}</span>
-        </button>
-      </div>
+          <button
+            v-for="(tab, index) in tabs"
+            :key="tab.key"
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === tab.key"
+            @click="activeTab = tab.key"
+            class="relative flex items-center gap-2 px-4 py-2.5 text-lg font-medium rounded-t-lg transition-colors"
+            :class="[
+              index > 0
+                ? 'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-px before:bg-gray-300 dark:before:bg-gray-600'
+                : '',
+              activeTab === tab.key
+                ? 'bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gray-50 dark:after:bg-gray-700'
+                : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+            ]"
+          >
+            <i :class="['ti', tab.icon, 'text-xl']"></i>
+            <span>{{ tab.label }}</span>
+            <span
+              v-if="tab.count > 0"
+              class="min-w-[1.75rem] h-7 px-2 rounded-full text-white text-sm font-bold flex items-center justify-center transition-colors"
+              :class="activeTab === tab.key ? 'bg-blue-500' : 'bg-gray-400 dark:bg-gray-600'"
+            >{{ tab.count }}</span>
+          </button>
+        </div>
 
-      <div v-show="activeTab === 'photos'" role="tabpanel">
-        <PhotoTypeLinesEditor
-          :lines="photoLines"
-          :photo-types="photoTypes"
-          :paper-types="paperTypes"
-          :loading="loadingCatalogs"
-          :show-errors="showErrors"
-          :error="linesError"
-          title=""
-          empty-hint="Sin tipos de fotografía. Puedes dejarlo vacío si la orden lleva paquetes escolares."
-        />
-      </div>
+        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg rounded-tr-lg p-3 space-y-3">
+          <div v-show="activeTab === 'photos'" role="tabpanel">
+            <PhotoTypeLinesEditor
+              :lines="photoLines"
+              :photo-types="photoTypes"
+              :paper-types="paperTypes"
+              :loading="loadingCatalogs"
+              :show-errors="showErrors"
+              :error="linesError"
+              title=""
+              empty-hint="Sin tipos de fotografía. Puedes dejarlo vacío si la orden lleva paquetes escolares."
+            />
+          </div>
 
-      <div v-show="activeTab === 'packages'" role="tabpanel">
-        <PackagesSelector
-          :packages="packages"
-          v-model:selected-ids="selectedPackageIdsProxy"
-          :loading="loadingCatalogs"
-        />
-      </div>
+          <div v-show="activeTab === 'packages'" role="tabpanel">
+            <PackageLinesEditor
+              :lines="packageLines"
+              :packages="packages"
+              :schools="schools"
+              :loading="loadingCatalogs"
+              :show-errors="showErrors"
+              :error="contentError"
+              title=""
+              empty-hint="Sin paquetes escolares. Puedes dejarlo vacío si la orden lleva tipos de fotografía."
+            />
+          </div>
 
-      <p v-if="showErrors && contentError" class="text-sm text-red-500 flex items-center gap-1">
-        <i class="ti ti-alert-circle"></i>
-        Agrega al menos un tipo de fotografía o un paquete escolar para continuar.
-      </p>
+          <p v-if="showErrors && contentError" class="text-sm text-red-500 flex items-center gap-1">
+            <i class="ti ti-alert-circle"></i>
+            Agrega al menos un tipo de fotografía o un paquete escolar para continuar.
+          </p>
+        </div>
+      </div>
     </div>
 
-    <!-- 2. Servicios adicionales -->
-    <AdditionalServicesSelector
+    <AdditionalServiceLinesEditor
       v-if="showAdditionalServices"
+      :lines="serviceLines"
       :services="additionalServices"
-      v-model:selected="selectedServicesProxy"
       :loading="loadingCatalogs"
       :show-errors="showErrors"
       :error="fieldErrors.service_prices || false"
+      title="Servicios adicionales"
+      empty-hint="Sin servicios adicionales agregados."
     />
 
-    <!-- 3. Entrega -->
     <div class="space-y-3">
       <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Entrega
@@ -107,15 +124,15 @@
 <script>
 import DeliveryDateTimeFields from '../DeliveryDateTimeFields.vue';
 import PhotoTypeLinesEditor from '../photo-lines/PhotoTypeLinesEditor.vue';
-import PackagesSelector from '../PackagesSelector.vue';
-import AdditionalServicesSelector from '../AdditionalServicesSelector.vue';
+import PackageLinesEditor from '../PackageLinesEditor.vue';
+import AdditionalServiceLinesEditor from '../AdditionalServiceLinesEditor.vue';
 import NotesField from '../NotesField.vue';
 
 export default {
   name: 'OrderDetailsStep',
   components: {
-    DeliveryDateTimeFields, PhotoTypeLinesEditor, PackagesSelector,
-    AdditionalServicesSelector, NotesField
+    DeliveryDateTimeFields, PhotoTypeLinesEditor, PackageLinesEditor,
+    AdditionalServiceLinesEditor, NotesField
   },
   props: {
     sectionBadge: { type: [Number, String], default: 2 },
@@ -129,33 +146,28 @@ export default {
     photoLines: { type: Array, required: true },
     paperTypes: { type: Array, default: () => [] },
     packages: { type: Array, default: () => [] },
-    selectedPackageIds: { type: Array, required: true },
+    packageLines: { type: Array, required: true },
+    schools: { type: Array, default: () => [] },
     showAdditionalServices: { type: Boolean, default: false },
     additionalServices: { type: Array, default: () => [] },
-    selectedServices: { type: Array, default: () => [] },
+    serviceLines: { type: Array, required: true },
     estimatedTotal: { type: Number, default: 0 },
     showEstimatedTotal: { type: Boolean, default: true }
   },
-  emits: ['update:selectedPackageIds', 'update:selectedServices', 'update:form'],
   data() {
     return { activeTab: 'photos' };
   },
   computed: {
-    selectedPackageIdsProxy: {
-      get() { return this.selectedPackageIds; },
-      set(value) { this.$emit('update:selectedPackageIds', value); }
-    },
-    selectedServicesProxy: {
-      get() { return this.selectedServices; },
-      set(value) { this.$emit('update:selectedServices', value); }
-    },
     photoCount() {
       return this.photoLines.filter(l => l.photo_type_id).length;
+    },
+    packageCount() {
+      return this.packageLines.filter(l => l.package_id).length;
     },
     tabs() {
       return [
         { key: 'photos', label: 'Tipos de fotografía', icon: 'ti-camera', count: this.photoCount },
-        { key: 'packages', label: 'Paquetes escolares', icon: 'ti ti-school', count: this.selectedPackageIds.length }
+        { key: 'packages', label: 'Paquetes escolares', icon: 'ti-school', count: this.packageCount }
       ];
     },
     contentError() {

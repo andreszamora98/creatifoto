@@ -65,6 +65,7 @@ class OrderService
                     ->mapWithKeys(fn ($s) => [
                         $s['additional_service_id'] => [
                             'price' => $s['price'],
+                            'quantity' => $s['quantity'] ?? 1,
                             'notes' => $s['notes'] ?? null,
                         ],
                     ])
@@ -161,7 +162,10 @@ class OrderService
         }
 
         if (!empty($data['additional_services'])) {
-            $total += collect($data['additional_services'])->sum('price');
+            $total += collect($data['additional_services'])->sum(function ($s) {
+                $quantity = (int) ($s['quantity'] ?? 1);
+                return (float) $s['price'] * $quantity;
+            });
         }
 
         return (float) $total;
