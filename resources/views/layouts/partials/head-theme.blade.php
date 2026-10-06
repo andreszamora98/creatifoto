@@ -1,0 +1,2 @@
+<script>(function(){try{if(JSON.parse(localStorage.getItem('darkMode'))){document.documentElement.classList.add('dark');}}catch(e){}})();</script>
+<style>html{background-color:#f9fafb;}html.dark{background-color:#111827;color-scheme:dark;}</style>

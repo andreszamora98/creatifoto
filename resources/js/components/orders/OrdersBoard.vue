@@ -528,6 +528,7 @@ export default {
       clearInterval(this.blinkInterval);
       this.blinkInterval = null;
     }
+    if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
     if (this.darkObserver) {
       this.darkObserver.disconnect();
       this.darkObserver = null;
@@ -535,7 +536,7 @@ export default {
   },
   methods: {
     goToPhotoTypesCatalog() {
-      window.location.href = '/catalogos?tab=photo-types';
+      this.$router.push('/catalogos?tab=photo-types');
     },
     handleChoiceSelected(type) {
       this.showChoiceModal = false;
@@ -560,7 +561,7 @@ export default {
       this.showQuoteModal = false;
       if (this.pendingNavigateToQuotes) {
         this.pendingNavigateToQuotes = false;
-        window.location.href = '/cotizaciones';
+        this.$router.push('/cotizaciones');
       }
     },
     openOrderDetail(order) {

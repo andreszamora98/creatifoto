@@ -50,32 +50,18 @@
           </transition>
         </template>
 
-        <a
+        <router-link
           v-else
-          :href="item.path"
+          :to="item.path"
           :title="!isOpen ? item.title : ''"
-          @click="handleItemClick(item.path)"
           class="flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           :class="{ 'bg-gray-200 dark:bg-gray-700': isActiveRoute(item.path) }"
         >
           <i :class="item.icon" class="w-6 h-6 text-xl text-gray-600 dark:text-gray-400"></i>
           <span v-if="isOpen" class="ml-3">{{ item.title }}</span>
-        </a>
+        </router-link>
       </template>
     </nav>
-
-    <div class="p-2 border-t border-gray-200 dark:border-gray-700">
-      <a
-        href="/settings"
-        :title="!isOpen ? 'Ajustes' : ''"
-        @click="handleItemClick('/settings')"
-        class="flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        :class="{ 'bg-gray-200 dark:bg-gray-700': isActiveRoute('/settings') }"
-      >
-        <i class="ti ti-settings w-6 h-6 text-xl text-gray-600 dark:text-gray-400"></i>
-        <span v-if="isOpen" class="ml-3">Ajustes</span>
-      </a>
-    </div>
   </aside>
 </template>
 
@@ -92,7 +78,6 @@ export default {
   data() {
     return {
       expandedGroups: [],
-      activeCatalogTab: 'photo-types',
       menuItems: [
         { title: 'Órdenes', path: '/', icon: 'ti ti-ticket' },
         {
@@ -109,18 +94,24 @@ export default {
       ],
     };
   },
-  mounted() {
-    this.syncFromUrl();
-    window.addEventListener('catalog-tab-changed', this.onCatalogTabChanged);
-    window.addEventListener('popstate', this.syncFromUrl);
+  computed: {
+    activeCatalogTab() {
+      return this.$route.query.tab === 'additional-services' ? 'additional-services' : 'photo-types';
+    },
   },
-  beforeUnmount() {
-    window.removeEventListener('catalog-tab-changed', this.onCatalogTabChanged);
-    window.removeEventListener('popstate', this.syncFromUrl);
+  watch: {
+    '$route.path': {
+      immediate: true,
+      handler() {
+        if (this.isOnCatalogos() && !this.expandedGroups.includes('/catalogos')) {
+          this.expandedGroups.push('/catalogos');
+        }
+      },
+    },
   },
   methods: {
     isActiveRoute(path) {
-      const current = window.location.pathname.replace(/\/$/, '') || '/';
+      const current = this.$route.path.replace(/\/$/, '') || '/';
       const target = path.replace(/\/$/, '') || '/';
       return current === target;
     },
@@ -141,41 +132,13 @@ export default {
     },
     handleParentClick(item) {
       if (!this.isOpen) {
-        window.location.href = item.path;
+        this.$router.push(item.path);
         return;
       }
       this.toggleGroup(item.path);
     },
     handleChildClick(parent, child) {
-      const current = window.location.pathname.replace(/\/$/, '') || '/';
-      const target = parent.path.replace(/\/$/, '') || '/';
-      if (current === target) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', child.tab);
-        window.history.replaceState({}, '', url);
-        this.activeCatalogTab = child.tab;
-        window.dispatchEvent(new CustomEvent('catalog-tab-request', { detail: { tab: child.tab } }));
-      } else {
-        window.location.href = `${parent.path}?tab=${child.tab}`;
-      }
-    },
-    handleItemClick(path) {},
-    syncFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get('tab');
-      this.activeCatalogTab = (tab === 'photo-types' || tab === 'additional-services') ? tab : 'photo-types';
-      if (this.isOnCatalogos() && !this.expandedGroups.includes('/catalogos')) {
-        this.expandedGroups.push('/catalogos');
-      }
-    },
-    onCatalogTabChanged(e) {
-      const tab = e.detail?.tab;
-      if (tab === 'photo-types' || tab === 'additional-services') {
-        this.activeCatalogTab = tab;
-      }
-      if (this.isOnCatalogos() && !this.expandedGroups.includes('/catalogos')) {
-        this.expandedGroups.push('/catalogos');
-      }
+      this.$router.push({ path: parent.path, query: { tab: child.tab } });
     },
   },
 };

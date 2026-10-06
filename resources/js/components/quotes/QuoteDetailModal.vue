@@ -316,7 +316,9 @@ export default {
         paper_type_id: line.paper_type_id
       }));
 
-      this.selectedPackageIds = (this.quote.packages || []).map(p => p.id);
+      // selectedPackageIds es un computed derivado de packageLines (ver orderQuoteFormMixin),
+      // por eso se escribe en packageLines y no directamente en selectedPackageIds.
+      this.packageLines = (this.quote.packages || []).map(p => ({ package_id: p.id }));
     },
     getCurrentState() {
       return {};

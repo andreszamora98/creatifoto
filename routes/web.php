@@ -11,21 +11,13 @@ use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\AdditionalServiceController;
 
 
-Route::get('/', function () {
-    return view('layouts/app');
-});
-
-Route::get('/cotizaciones', function () {
-    return view('layouts/quotes');
-});
-
-Route::get('/paquetes', function () {
-    return view('layouts/packages');
-});
-
-Route::get('/catalogos', function () {
-    return view('layouts/catalogs');
-});
+/*
+ * Vistas (SPA con vue-router: todas sirven la misma vista Blade)
+ */
+Route::view('/', 'layouts.app');
+Route::view('/cotizaciones', 'layouts.app');
+Route::view('/paquetes', 'layouts.app');
+Route::view('/catalogos', 'layouts.app');
 
 /*
  * Catálogos

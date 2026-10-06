@@ -49,7 +49,6 @@ export default {
   components: { PhotoTypesPanel, AdditionalServicesPanel },
   data() {
     return {
-      activeTab: 'photo-types',
       tabs: [
         { key: 'photo-types', label: 'Tipos de fotografía', icon: 'ti ti-photo' },
         { key: 'additional-services', label: 'Servicios adicionales', icon: 'ti ti-tool' }
@@ -61,34 +60,25 @@ export default {
       notificationTimeout: null
     };
   },
+  computed: {
+    activeTab: {
+      get() {
+        const tab = this.$route.query.tab;
+        return this.tabs.some(t => t.key === tab) ? tab : 'photo-types';
+      },
+      set(key) {
+        if (key === this.activeTab) return;
+        this.$router.replace({ query: { ...this.$route.query, tab: key } });
+      }
+    }
+  },
   mounted() {
     setPageTitle('Catálogos');
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab && this.tabs.some(t => t.key === tab)) {
-      this.activeTab = tab;
-    }
-    window.addEventListener('catalog-tab-request', this.onTabRequest);
   },
   beforeUnmount() {
-    window.removeEventListener('catalog-tab-request', this.onTabRequest);
     if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
   },
-  watch: {
-    activeTab(val) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', val);
-      window.history.replaceState({}, '', url);
-      window.dispatchEvent(new CustomEvent('catalog-tab-changed', { detail: { tab: val } }));
-    }
-  },
   methods: {
-    onTabRequest(e) {
-      const tab = e.detail?.tab;
-      if (tab && this.tabs.some(t => t.key === tab) && this.activeTab !== tab) {
-        this.activeTab = tab;
-      }
-    },
     handleNotify({ title, message, type }) {
       this.notificationTitle = title;
       this.notificationMessage = message;

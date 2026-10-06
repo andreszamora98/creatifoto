@@ -20,11 +20,13 @@
             :key="tab.key"
             type="button"
             role="tab"
+            :id="`order-tab-${tab.key}`"
             :aria-selected="activeTab === tab.key"
+            :aria-controls="`order-panel-${tab.key}`"
             @click="activeTab = tab.key"
             class="relative flex items-center gap-2 px-4 py-2.5 text-lg font-medium rounded-t-lg"
             :class="[
-              index > 0
+              showDivider(index)
                 ? 'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-px before:bg-gray-300 dark:before:bg-gray-600'
                 : '',
               activeTab === tab.key
@@ -44,49 +46,47 @@
 
         <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg rounded-tr-lg p-3 transition-none">
           <div
-            v-if="activeTab === 'packages'"
+            v-show="activeTab === 'packages'"
             class="absolute top-0 left-0 w-2 h-2 bg-gray-200 dark:bg-gray-800 pointer-events-none"
             aria-hidden="true"
           >
             <div class="w-full h-full rounded-tl-lg bg-gray-50 dark:bg-gray-700"></div>
           </div>
 
-          <div class="grid">
-            <div
-              class="col-start-1 row-start-1"
-              :class="{ invisible: activeTab !== 'photos' }"
-              :aria-hidden="activeTab !== 'photos'"
-              role="tabpanel"
-            >
-              <PhotoTypeLinesEditor
-                :lines="photoLines"
-                :photo-types="photoTypes"
-                :paper-types="paperTypes"
-                :loading="loadingCatalogs"
-                :show-errors="showErrors"
-                :error="linesError"
-                title=""
-                empty-hint="Sin tipos de fotografía. Puedes dejarlo vacío si la orden lleva paquetes escolares."
-              />
-            </div>
+          <div
+            v-show="activeTab === 'photos'"
+            id="order-panel-photos"
+            role="tabpanel"
+            aria-labelledby="order-tab-photos"
+          >
+            <PhotoTypeLinesEditor
+              :lines="photoLines"
+              :photo-types="photoTypes"
+              :paper-types="paperTypes"
+              :loading="loadingCatalogs"
+              :show-errors="showErrors"
+              :error="linesError || contentError"
+              title=""
+              empty-hint="Sin tipos de fotografía. Puedes dejarlo vacío si la orden lleva paquetes escolares."
+            />
+          </div>
 
-            <div
-              class="col-start-1 row-start-1"
-              :class="{ invisible: activeTab !== 'packages' }"
-              :aria-hidden="activeTab !== 'packages'"
-              role="tabpanel"
-            >
-              <PackageLinesEditor
-                :lines="packageLines"
-                :packages="packages"
-                :schools="schools"
-                :loading="loadingCatalogs"
-                :show-errors="showErrors"
-                :error="contentError"
-                title=""
-                empty-hint="Sin paquetes escolares. Puedes dejarlo vacío si la orden lleva tipos de fotografía."
-              />
-            </div>
+          <div
+            v-show="activeTab === 'packages'"
+            id="order-panel-packages"
+            role="tabpanel"
+            aria-labelledby="order-tab-packages"
+          >
+            <PackageLinesEditor
+              :lines="packageLines"
+              :packages="packages"
+              :schools="schools"
+              :loading="loadingCatalogs"
+              :show-errors="showErrors"
+              :error="contentError"
+              title=""
+              empty-hint="Sin paquetes escolares. Puedes dejarlo vacío si la orden lleva tipos de fotografía."
+            />
           </div>
 
           <p v-if="showErrors && contentError" class="mt-3 text-sm text-red-500 flex items-center gap-1">
@@ -205,6 +205,12 @@ export default {
   methods: {
     emitFormUpdate(key, value) {
       this.$emit('update:form', { ...this.form, [key]: value });
+    },
+    showDivider(index) {
+      if (index === 0) return false;
+      const current = this.tabs[index].key;
+      const previous = this.tabs[index - 1].key;
+      return this.activeTab !== current && this.activeTab !== previous;
     }
   }
 };

@@ -300,6 +300,7 @@ export default {
       clearInterval(this.blinkInterval);
       this.blinkInterval = null;
     }
+    if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
   },
   methods: {
     handleConvertRequest(quote) {
