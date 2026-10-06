@@ -25,14 +25,7 @@
             :aria-controls="`order-panel-${tab.key}`"
             @click="activeTab = tab.key"
             class="relative flex items-center gap-2 px-4 py-2.5 text-lg font-medium rounded-t-lg"
-            :class="[
-              showDivider(index)
-                ? 'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-px before:bg-gray-300 dark:before:bg-gray-600'
-                : '',
-              activeTab === tab.key
-                ? 'bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gray-50 dark:after:bg-gray-700'
-                : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
-            ]"
+            :class="tabClasses(tab, index)"
           >
             <i :class="['ti', tab.icon, 'text-xl']"></i>
             <span>{{ tab.label }}</span>
@@ -83,7 +76,7 @@
               :schools="schools"
               :loading="loadingCatalogs"
               :show-errors="showErrors"
-              :error="contentError"
+              :error="contentError || packageLinesError"
               title=""
               empty-hint="Sin paquetes escolares. Puedes dejarlo vacío si la orden lleva tipos de fotografía."
             />
@@ -103,7 +96,7 @@
       :services="additionalServices"
       :loading="loadingCatalogs"
       :show-errors="showErrors"
-      :error="fieldErrors.service_prices || false"
+      :error="serviceLinesError || fieldErrors.service_prices || false"
       title="Servicios adicionales"
       empty-hint="Sin servicios adicionales agregados."
     />
@@ -172,7 +165,8 @@ export default {
     additionalServices: { type: Array, default: () => [] },
     serviceLines: { type: Array, required: true },
     estimatedTotal: { type: Number, default: 0 },
-    showEstimatedTotal: { type: Boolean, default: true }
+    showEstimatedTotal: { type: Boolean, default: true },
+    validationTick: { type: Number, default: 0 }
   },
   data() {
     return { activeTab: 'photos' };
@@ -195,11 +189,20 @@ export default {
     },
     linesError() {
       return this.fieldErrors.photo_lines ?? false;
+    },
+    packageLinesError() {
+      return this.fieldErrors.package_lines ?? false;
+    },
+    serviceLinesError() {
+      return this.fieldErrors.service_lines ?? false;
     }
   },
   watch: {
     showErrors(val) {
-      if (val && this.linesError) this.activeTab = 'photos';
+      if (val) this.jumpToErrorTab();
+    },
+    validationTick() {
+      if (this.showErrors) this.jumpToErrorTab();
     }
   },
   methods: {
@@ -211,6 +214,46 @@ export default {
       const current = this.tabs[index].key;
       const previous = this.tabs[index - 1].key;
       return this.activeTab !== current && this.activeTab !== previous;
+    },
+    tabHasError(tab) {
+      if (!this.showErrors) return false;
+      if (tab.key === 'photos') return this.linesError || this.contentError;
+      if (tab.key === 'packages') return this.packageLinesError || this.contentError;
+      return false;
+    },
+    tabClasses(tab, index) {
+      const isActive = this.activeTab === tab.key;
+      const hasError = this.tabHasError(tab);
+
+      const divider = this.showDivider(index)
+        ? 'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-px before:bg-gray-300 dark:before:bg-gray-600'
+        : '';
+
+      let stateClasses;
+      if (isActive && hasError) {
+        stateClasses = 'bg-gray-50 dark:bg-gray-700 text-red-600 dark:text-red-400 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-red-500 dark:after:bg-red-400';
+      } else if (isActive) {
+        stateClasses = 'bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gray-50 dark:after:bg-gray-700';
+      } else if (hasError) {
+        stateClasses = 'text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300';
+      } else {
+        stateClasses = 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300';
+      }
+
+      return [divider, stateClasses];
+    },
+    jumpToErrorTab() {
+      if (this.linesError && this.activeTab !== 'photos') {
+        this.activeTab = 'photos';
+        return;
+      }
+      if (this.packageLinesError && this.activeTab !== 'packages') {
+        this.activeTab = 'packages';
+        return;
+      }
+      if (this.contentError && this.activeTab !== 'photos') {
+        this.activeTab = 'photos';
+      }
     }
   }
 };

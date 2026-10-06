@@ -15,7 +15,10 @@
 
       <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div v-for="(line, idx) in lines" :key="lineKey(line)"
-             class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-3">
+             class="relative bg-white dark:bg-gray-800 border rounded-lg p-4 space-y-3"
+             :class="showErrors && !line.service_id
+               ? 'border-red-500 dark:border-red-500'
+               : 'border-gray-200 dark:border-gray-600'">
           <div class="flex items-center justify-between">
             <span class="text-base font-semibold text-gray-500 dark:text-gray-400">Servicio {{ idx + 1 }}</span>
             <button v-if="canRemove" type="button" @click="removeLine(idx)"
@@ -31,7 +34,7 @@
             <div class="relative min-w-[10rem]" :data-service-dropdown="editorId" @focusout="onFocusOut(line, $event)">
               <div
                 class="w-full text-lg p-3 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center gap-2"
-                :class="showErrors && error && !line.service_id
+                :class="showErrors && !line.service_id
                   ? 'border-red-500 dark:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
               >

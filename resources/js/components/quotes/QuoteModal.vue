@@ -76,6 +76,7 @@
               :packages="packages"
               :package-lines="packageLines"
               :schools="schools"
+              :validation-tick="attemptTick"
               show-additional-services
               :additional-services="additionalServices"
               :service-lines="serviceLines"
@@ -191,12 +192,15 @@ export default {
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
       const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
-      // Regla de negocio: al menos una fotografía O un paquete
+      const hasEmptyPackageLine = this.packageLines.some(l => !l.package_id);
+      const hasEmptyServiceLine = this.serviceLines.some(l => !l.service_id);
       const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
         order_content: !hasContent,
         photo_lines: hasEmptyPhotoLine,
+        package_lines: hasEmptyPackageLine,
+        service_lines: hasEmptyServiceLine,
         service_prices: this.selectedServices.some(s =>
           s.price === '' || s.price === null || Number.isNaN(Number(s.price)) || Number(s.price) < 0
         )
@@ -205,7 +209,7 @@ export default {
     currentStepValid() {
       const keysByStep = {
         1: ['customer'],
-        2: ['order_content', 'photo_lines', 'service_prices'],
+        2: ['order_content', 'photo_lines', 'package_lines', 'service_lines', 'service_prices'],
         3: []
       };
       return this.keysValid(keysByStep[this.currentStep] || []);

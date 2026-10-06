@@ -76,6 +76,7 @@
               :packages="packages"
               :package-lines="packageLines"
               :schools="schools"
+              :validation-tick="attemptTick"
               show-additional-services
               :additional-services="additionalServices"
               :service-lines="serviceLines"
@@ -221,10 +222,12 @@ export default {
     showErrorsStep3() {
       return this.submittingAttempted || this.stepAttempted[3];
     },
+
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
       const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
-      // Regla de negocio: al menos una fotografía O un paquete
+      const hasEmptyPackageLine = this.packageLines.some(l => !l.package_id);
+      const hasEmptyServiceLine = this.serviceLines.some(l => !l.service_id);
       const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
@@ -232,6 +235,8 @@ export default {
         delivery_time: !this.form.estimated_delivery_time,
         order_content: !hasContent,
         photo_lines: hasEmptyPhotoLine,
+        package_lines: hasEmptyPackageLine,
+        service_lines: hasEmptyServiceLine,
         service_prices: this.selectedServices.some(s =>
           s.price === '' || s.price === null || Number.isNaN(Number(s.price)) || Number(s.price) < 0
         ),
@@ -242,16 +247,24 @@ export default {
     currentStepValid() {
       const keysByStep = {
         1: ['customer'],
-        2: ['delivery_date', 'delivery_time', 'order_content', 'photo_lines', 'service_prices'],
+        2: ['delivery_date', 'delivery_time', 'order_content', 'photo_lines', 'package_lines', 'service_lines', 'service_prices'],
         3: ['initial_payment_amount', 'initial_payment_method']
       };
       return this.keysValid(keysByStep[this.currentStep] || []);
     }
+
   },
   watch: {
-    estimatedTotal() {
+    estimatedTotal(newVal, oldVal) {
+      if (newVal === oldVal) return;
       if (this.liquidateAll && this.payments.length) {
         this.payments[0].amount = this.estimatedTotal;
+        return;
+      }
+      if (this.currentStep !== 3) {
+        this.payments = [{ amount: null, payment_method: 'tarjeta' }];
+        this.openPaymentMethodDropdownIdx = null;
+        this.liquidateAll = false;
       }
     }
   },

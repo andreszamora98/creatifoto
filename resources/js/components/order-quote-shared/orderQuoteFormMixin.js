@@ -22,6 +22,7 @@ export default {
       showConfirmModal: false,
       dateInputOpen: false,
       submittingAttempted: false,
+      attemptTick: 0,
       stepAttempted: { 1: false, 2: false, 3: false },
       currentStep: 1,
       navDirection: 'forward',
@@ -275,6 +276,7 @@ export default {
       return !keys.some(k => this.fieldErrors[k]);
     },
     goNext() {
+      this.attemptTick++;
       this.stepAttempted[this.currentStep] = true;
 
       if (this.currentStep === 1) {
@@ -459,6 +461,7 @@ export default {
       this.serviceLines = [];
       this.isDirty = false;
       this.submittingAttempted = false;
+      this.attemptTick = 0;
       this.stepAttempted = { 1: false, 2: false, 3: false };
     },
 
