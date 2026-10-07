@@ -1,30 +1,30 @@
 <template>
   <aside
     :class="[
-      'flex flex-col h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-all duration-300 overflow-y-auto border-r border-gray-200 dark:border-gray-700',
+      'flex flex-col h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-all duration-300 overflow-y-auto overflow-x-hidden border-r border-gray-200 dark:border-gray-700',
       isOpen ? 'w-64' : 'w-16',
     ]"
   >
-    <div class="flex items-center justify-center h-20 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-center h-20 border-b border-gray-200 dark:border-gray-700 shrink-0">
       <img v-if="isOpen" :src="'/images/creatifoto_2.png'" alt="creatifoto" class="h-14 w-auto" />
       <img v-else :src="'/images/creatifoto_1.png'" alt="creatifoto" class="h-14 w-auto" />
     </div>
 
-    <nav class="flex-1 px-2 py-4 space-y-1">
+    <nav class="flex-1 px-2 py-4 space-y-1 min-w-0">
       <template v-for="item in menuItems" :key="item.path">
         <template v-if="item.children && item.children.length">
           <button
             type="button"
             @click="handleParentClick(item)"
             :title="!isOpen ? item.title : ''"
-            class="w-full flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            class="w-full flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-0"
             :class="{ 'bg-gray-200 dark:bg-gray-700': isActiveRoute(item.path) }"
           >
-            <i :class="item.icon" class="w-6 h-6 text-xl text-gray-600 dark:text-gray-400"></i>
-            <span v-if="isOpen" class="ml-3 flex-1 text-left">{{ item.title }}</span>
+            <i :class="item.icon" class="w-6 h-6 text-xl text-gray-600 dark:text-gray-400 shrink-0"></i>
+            <span v-if="isOpen" class="ml-3 flex-1 text-left whitespace-nowrap">{{ item.title }}</span>
             <i
               v-if="isOpen"
-              class="ti ti-chevron-down text-sm text-gray-500 dark:text-gray-400 transition-transform duration-200"
+              class="ti ti-chevron-down text-sm text-gray-500 dark:text-gray-400 transition-transform duration-200 shrink-0"
               :class="{ 'rotate-180': isGroupExpanded(item.path) }"
             ></i>
           </button>
@@ -38,13 +38,13 @@
                 :key="child.tab"
                 :href="`${item.path}?tab=${child.tab}`"
                 @click.prevent="handleChildClick(item, child)"
-                class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                class="flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-0"
                 :class="isChildActive(item, child)
                   ? 'bg-gray-200 dark:bg-gray-700 text-blue-600 dark:text-blue-400 font-medium'
                   : 'text-gray-700 dark:text-gray-300'"
               >
-                <i :class="child.icon" class="mr-2 text-base"></i>
-                <span>{{ child.title }}</span>
+                <i :class="child.icon" class="mr-2 text-base shrink-0"></i>
+                <span class="whitespace-nowrap">{{ child.title }}</span>
               </a>
             </div>
           </transition>
@@ -54,11 +54,11 @@
           v-else
           :to="item.path"
           :title="!isOpen ? item.title : ''"
-          class="flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          class="flex items-center px-2 py-2 text-base font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-0"
           :class="{ 'bg-gray-200 dark:bg-gray-700': isActiveRoute(item.path) }"
         >
-          <i :class="item.icon" class="w-6 h-6 text-xl text-gray-600 dark:text-gray-400"></i>
-          <span v-if="isOpen" class="ml-3">{{ item.title }}</span>
+          <i :class="item.icon" class="w-6 h-6 text-xl text-gray-600 dark:text-gray-400 shrink-0"></i>
+          <span v-if="isOpen" class="ml-3 whitespace-nowrap">{{ item.title }}</span>
         </router-link>
       </template>
     </nav>

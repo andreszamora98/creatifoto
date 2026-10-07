@@ -11,14 +11,14 @@ class School extends Model
     use HasFactory;
 
     protected $fillable = [
+        'sequence',
         'name',
     ];
 
-    /**
-     * Cada escuela puede ofrecer varios paquetes.
-     * packages.school_id es cascadeOnDelete: si se borra la escuela,
-     * sus paquetes desaparecen con ella.
-     */
+    protected $casts = [
+        'sequence' => 'integer',
+    ];
+
     public function packages(): HasMany
     {
         return $this->hasMany(Package::class);

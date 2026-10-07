@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Package;
 use App\Services\PackageService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class PackageController extends Controller
 {
@@ -18,15 +18,15 @@ class PackageController extends Controller
 
     public function index()
     {
-        return Package::with(['school:id,name', 'photoTypes:id,name,base_price'])
+        return Package::with(['school:id,name,sequence', 'photoTypes:id,name,base_price'])
             ->orderBy('school_id')
-            ->orderBy('package_number')
-            ->get(['id', 'school_id', 'package_number', 'name', 'total_price', 'women_features', 'men_features']);
+            ->orderBy('sequence')
+            ->get(['id', 'school_id', 'sequence', 'name', 'total_price', 'women_features', 'men_features']);
     }
 
     public function show(Package $package)
     {
-        $package->load(['school:id,name', 'photoTypes:id,name,base_price']);
+        $package->load(['school:id,name,sequence', 'photoTypes:id,name,base_price']);
         return response()->json($package);
     }
 
@@ -35,7 +35,13 @@ class PackageController extends Controller
         $validated = $this->validated($request);
 
         try {
-            $package = $this->packageService->createPackage($validated);
+            $package = DB::transaction(function () use ($validated) {
+                $validated['sequence'] = (Package::where('school_id', $validated['school_id'])
+                    ->max('sequence') ?? 0) + 1;
+
+                return $this->packageService->createPackage($validated);
+            });
+
             return response()->json(['message' => 'Paquete creado exitosamente', 'package' => $package], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error al crear el paquete: ' . $e->getMessage()], 500);
@@ -44,7 +50,7 @@ class PackageController extends Controller
 
     public function update(Request $request, Package $package)
     {
-        $validated = $this->validated($request, $package->id);
+        $validated = $this->validated($request);
 
         try {
             $package = $this->packageService->updatePackage($package, $validated);
@@ -57,25 +63,33 @@ class PackageController extends Controller
     public function destroy(Package $package)
     {
         try {
-            $this->packageService->deletePackage($package);
+            DB::transaction(function () use ($package) {
+                $schoolId = $package->school_id;
+                $seq = $package->sequence;
+
+                $package->delete();
+
+                $affected = Package::where('school_id', $schoolId)
+                    ->where('sequence', '>', $seq)
+                    ->orderBy('sequence', 'asc')
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($affected as $p) {
+                    $p->decrement('sequence');
+                }
+            });
+
             return response()->json(['message' => 'Paquete eliminado correctamente']);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
-    protected function validated(Request $request, ?int $ignorePackageId = null): array
+    protected function validated(Request $request): array
     {
         return $request->validate([
             'school_id' => 'required|exists:schools,id',
-            'package_number' => [
-                'required',
-                'integer',
-                'min:1',
-                Rule::unique('packages', 'package_number')
-                    ->where('school_id', $request->school_id)
-                    ->ignore($ignorePackageId),
-            ],
             'name' => 'nullable|string|max:255',
             'total_price' => 'required|numeric|min:0',
             'women_features_text' => ['nullable', 'string', function ($attribute, $value, $fail) {

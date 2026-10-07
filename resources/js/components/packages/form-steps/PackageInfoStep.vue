@@ -10,7 +10,7 @@
         Información del paquete
       </h5>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <label class="form-label text-lg font-medium block mb-2 text-gray-700 dark:text-gray-300">
             Escuela <span class="text-red-500">*</span>
@@ -38,32 +38,8 @@
           <p v-if="showErrors && fieldErrors.school" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
             Campo obligatorio*
           </p>
-        </div>
-
-        <div>
-          <label class="form-label text-lg font-medium block mb-2 text-gray-700 dark:text-gray-300">
-            Número de paquete <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            :value="form.package_number ?? ''"
-            @input="onNumberInput"
-            v-blur-on-enter
-            enterkeyhint="next"
-            placeholder="Ej. 1"
-            :class="fieldClass((showErrors && fieldErrors.package_number) || fieldErrors.package_number_duplicate)"
-          />
-          <p v-if="showErrors && fieldErrors.package_number" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-            Campo obligatorio*
-          </p>
-          <p v-else-if="fieldErrors.package_number_duplicate" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-            <i class="ti ti-alert-triangle mr-1"></i>Ya existe el paquete {{ pad2(form.package_number) }} en esta escuela.
-          </p>
-          <p v-if="nextPackageNumber && Number(form.package_number) !== nextPackageNumber" class="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            Siguiente disponible: {{ pad2(nextPackageNumber) }}.
-            <button type="button" @click="applyNextNumber" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Usar</button>
+          <p v-if="form.school_id && nextPackageNumber" class="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Este será el paquete <strong>{{ pad2(nextPackageNumber) }}</strong> de la escuela seleccionada.
           </p>
         </div>
 
@@ -84,34 +60,10 @@
         </div>
       </div>
     </div>
-
-    <div class="space-y-3">
-      <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        Características
-      </h5>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <NotesField
-          label="Características mujeres"
-          :model-value="form.women_features_text"
-          :max-words="1000"
-          :rows="5"
-          @update:modelValue="emitFormUpdate('women_features_text', $event)"
-        />
-        <NotesField
-          label="Características hombres"
-          :model-value="form.men_features_text"
-          :max-words="1000"
-          :rows="5"
-          @update:modelValue="emitFormUpdate('men_features_text', $event)"
-        />
-      </div>
-    </div>
   </section>
 </template>
 
 <script>
-import NotesField from '../../order-quote-shared/NotesField.vue';
 import SchoolSelect from './SchoolSelect.vue';
 
 const FIELD_BASE =
@@ -121,7 +73,7 @@ const FIELD_BASE =
 
 export default {
   name: 'PackageInfoStep',
-  components: { NotesField, SchoolSelect },
+  components: { SchoolSelect },
   props: {
     sectionBadge: { type: [Number, String], default: 1 },
     sectionTitle: { type: String, default: 'Información del paquete' },
@@ -149,14 +101,6 @@ export default {
     },
     onSchoolSelect(id) {
       this.emitFormUpdate('school_id', id ? Number(id) : null);
-    },
-    onNumberInput(event) {
-      const raw = event.target.value;
-      const n = raw === '' ? null : Math.floor(Number(raw));
-      this.emitFormUpdate('package_number', Number.isFinite(n) ? n : null);
-    },
-    applyNextNumber() {
-      this.emitFormUpdate('package_number', this.nextPackageNumber);
     }
   }
 };

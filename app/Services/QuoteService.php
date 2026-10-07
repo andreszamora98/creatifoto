@@ -42,7 +42,7 @@ class QuoteService
                 $packages = Package::whereIn('id', $data['package_ids'])->get();
                 foreach ($packages as $pkg) {
                     $quote->packages()->attach($pkg->id, [
-                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->package_number),
+                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->sequence),
                         'price_snapshot' => $pkg->total_price,
                     ]);
                 }
@@ -52,7 +52,7 @@ class QuoteService
 
             $quote->load([
                 'customer:id,name,phone,email',
-                'packages:id,package_number,name,total_price',
+                'packages:id,sequence,name,total_price',
                 'quotePhotoTypes.photoType:id,name,base_price',
                 'quotePhotoTypes.paperType:id,name,extra_price',
                 'additionalServices',
@@ -94,7 +94,7 @@ class QuoteService
             return $order->fresh([
                 'customer:id,name,phone',
                 'quote:id,status',
-                'packages:id,package_number,name,total_price',
+                'packages:id,sequence,name,total_price',
                 'orderPhotoTypes.photoType:id,name,base_price',
                 'orderPhotoTypes.paperType:id,name,extra_price',
                 'additionalServices',
@@ -134,7 +134,7 @@ class QuoteService
             $packages = Package::whereIn('id', $packageIds)->get();
             foreach ($packages as $pkg) {
                 $quote->packages()->attach($pkg->id, [
-                    'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->package_number),
+                    'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->sequence),
                     'price_snapshot' => $pkg->total_price,
                 ]);
             }
@@ -259,7 +259,7 @@ class QuoteService
 
         return $quote->fresh([
             'customer:id,name,phone,email',
-            'packages:id,package_number,name,total_price',
+            'packages:id,sequence,name,total_price',
             'quotePhotoTypes.photoType:id,name,base_price',
             'quotePhotoTypes.paperType:id,name,extra_price',
             'additionalServices',
@@ -300,7 +300,7 @@ class QuoteService
                 $packages = Package::whereIn('id', $data['package_ids'])->get();
                 foreach ($packages as $pkg) {
                     $syncData[$pkg->id] = [
-                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->package_number),
+                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->sequence),
                         'price_snapshot' => $pkg->total_price,
                     ];
                 }
@@ -311,7 +311,7 @@ class QuoteService
 
             return $quote->fresh([
                 'customer:id,name,phone,email',
-                'packages:id,package_number,name,total_price',
+                'packages:id,sequence,name,total_price',
                 'quotePhotoTypes.photoType:id,name,base_price',
                 'quotePhotoTypes.paperType:id,name,extra_price',
                 'additionalServices',
@@ -339,7 +339,7 @@ class QuoteService
 
         return $quote->fresh()->load([
             'customer:id,name,phone,email',
-            'packages:id,package_number,name,total_price',
+            'packages:id,sequence,name,total_price',
             'quotePhotoTypes.photoType:id,name,base_price',
             'quotePhotoTypes.paperType:id,name,extra_price',
             'additionalServices',

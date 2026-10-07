@@ -14,7 +14,7 @@ class Package extends Model
 
     protected $fillable = [
         'school_id',
-        'package_number',
+        'sequence',
         'name',
         'total_price',
         'women_features',
@@ -22,14 +22,20 @@ class Package extends Model
     ];
 
     protected $casts = [
+        'sequence' => 'integer',
         'total_price' => 'decimal:2',
         'women_features' => 'array',
         'men_features' => 'array',
     ];
 
     protected $appends = [
+        'package_number',
         'women_features_text',
         'men_features_text',
+    ];
+
+    protected $hidden = [
+        'sequence',
     ];
 
     public function school(): BelongsTo
@@ -51,6 +57,11 @@ class Package extends Model
             ->withPivot(['package_name_snapshot', 'price_snapshot'])
             ->withTimestamps()
             ->using(OrderPackage::class);
+    }
+
+    public function getPackageNumberAttribute(): int
+    {
+        return (int) $this->sequence;
     }
 
     public function getWomenFeaturesTextAttribute(): string

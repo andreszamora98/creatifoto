@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\School;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class SchoolController extends Controller
 {
     public function index()
     {
-        return School::orderBy('name')->get(['id', 'name']);
+        return School::orderBy('sequence')->get(['id', 'name', 'sequence']);
     }
 
     public function store(Request $request)
@@ -20,7 +21,10 @@ class SchoolController extends Controller
             'name' => 'required|string|max:255|unique:schools,name',
         ]);
 
-        $school = School::create($validated);
+        $school = DB::transaction(function () use ($validated) {
+            $validated['sequence'] = (School::max('sequence') ?? 0) + 1;
+            return School::create($validated);
+        });
 
         return response()->json(['message' => 'Escuela creada', 'school' => $school], 201);
     }
@@ -39,7 +43,21 @@ class SchoolController extends Controller
     public function destroy(School $school)
     {
         try {
-            $school->delete();
+            DB::transaction(function () use ($school) {
+                $seq = $school->sequence;
+
+                $school->delete();
+
+                $affected = School::where('sequence', '>', $seq)
+                    ->orderBy('sequence', 'asc')
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($affected as $s) {
+                    $s->decrement('sequence');
+                }
+            });
+
             return response()->json(['message' => 'Escuela eliminada']);
         } catch (QueryException $e) {
             return response()->json([

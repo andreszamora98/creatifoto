@@ -20,7 +20,7 @@ class QuoteController extends Controller
     {
         $query = Quote::with([
             'customer:id,name,phone,email',
-            'packages:id,package_number,name,total_price',
+            'packages:id,sequence,name,total_price',
             'quotePhotoTypes.photoType:id,name,base_price',
             'order:id,quote_id,status',
             'additionalServices',
@@ -74,7 +74,7 @@ class QuoteController extends Controller
     {
         $quote->load([
             'customer:id,name,phone,email',
-            'packages:id,package_number,name,total_price',
+            'packages:id,sequence,name,total_price',
             'quotePhotoTypes.photoType:id,name,base_price',
             'quotePhotoTypes.paperType:id,name,extra_price',
             'order:id,quote_id,status,total,balance_due',

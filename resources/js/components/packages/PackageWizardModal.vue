@@ -40,6 +40,63 @@
             <section v-else-if="currentStep === 2" key="step-2" class="space-y-6">
               <div class="space-y-3">
                 <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Características
+                </h5>
+
+                <div>
+                  <div
+                    class="relative z-10 flex w-fit rounded-t-lg bg-gray-200 dark:bg-gray-800"
+                    role="tablist"
+                  >
+                    <button
+                      v-for="(tab, index) in featureTabs"
+                      :key="tab.key"
+                      type="button"
+                      role="tab"
+                      :aria-selected="featureTab === tab.key"
+                      @click="featureTab = tab.key"
+                      class="relative flex items-center gap-2 px-4 py-2.5 text-lg font-medium rounded-t-lg"
+                      :class="featureTabClasses(tab, index)"
+                    >
+                      <i :class="['ti', tab.icon, 'text-xl']"></i>
+                      <span>{{ tab.label }}</span>
+                    </button>
+                  </div>
+
+                  <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg rounded-tr-lg p-3 transition-none">
+                    <div
+                      v-show="featureTab === 'men'"
+                      class="absolute top-0 left-0 w-2 h-2 bg-gray-200 dark:bg-gray-800 pointer-events-none"
+                      aria-hidden="true"
+                    >
+                      <div class="w-full h-full rounded-tl-lg bg-gray-50 dark:bg-gray-700"></div>
+                    </div>
+
+                    <div v-show="featureTab === 'women'" role="tabpanel">
+                      <textarea
+                        :value="form.women_features_text"
+                        @input="updateFeature('women_features_text', $event.target.value)"
+                        rows="4"
+                        placeholder="Describe las características incluidas para este grupo..."
+                        class="w-full text-base p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-y min-h-[7rem]"
+                      ></textarea>
+                    </div>
+
+                    <div v-show="featureTab === 'men'" role="tabpanel">
+                      <textarea
+                        :value="form.men_features_text"
+                        @input="updateFeature('men_features_text', $event.target.value)"
+                        rows="4"
+                        placeholder="Describe las características incluidas para este grupo..."
+                        class="w-full text-base p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-y min-h-[7rem]"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   Tipos de fotografía incluidos
                 </h5>
                 <PhotoTypeLinesEditor
@@ -72,7 +129,7 @@
               <template #summary>
                 <PackageSummary
                   :school="selectedSchool"
-                  :package-number="form.package_number"
+                  :package-number="nextPackageNumber"
                   :name="form.name"
                   :lines="priceLines"
                   :services="summaryServices"
@@ -173,15 +230,14 @@ const isBlank = (v) => v === '' || v === null || v === undefined;
 
 const emptyForm = () => ({
   school_id: null,
-  package_number: null,
   name: '',
   women_features_text: '',
   men_features_text: ''
 });
 
 const emptyPricing = () => ({
-  subtotal_override: '',     // '' = usar el subtotal calculado
-  discount_type: 'percent',  // 'percent' | 'amount'
+  subtotal_override: '',
+  discount_type: 'percent',
   discount_value: ''
 });
 
@@ -196,10 +252,11 @@ export default {
   props: {
     show: { type: Boolean, default: false }
   },
-  emits: ['close', 'created', 'notify'],
+  emits: ['close', 'created', 'notify', 'school-created'],
   data() {
     return {
       showSchoolModal: false,
+      featureTab: 'women',
       form: emptyForm(),
       photoLines: [],
       serviceLines: [],
@@ -210,8 +267,15 @@ export default {
     stepLabels() {
       return [
         { label: 'Información del paquete' },
-        { label: 'Tipos de fotografía y servicios' },
+        { label: 'Armado del paquete' },
         { label: 'Precio y resumen' }
+      ];
+    },
+
+    featureTabs() {
+      return [
+        { key: 'women', label: 'Mujeres', icon: 'ti-woman' },
+        { key: 'men', label: 'Hombres', icon: 'ti-man' }
       ];
     },
 
@@ -220,21 +284,13 @@ export default {
     },
 
     nextPackageNumber() {
-      if (!this.form.school_id) return null;
-      const numbers = this.existingPackages
-        .filter(p => Number(p.school_id) === Number(this.form.school_id))
-        .map(p => Number(p.package_number) || 0);
-      return (numbers.length ? Math.max(...numbers) : 0) + 1;
-    },
-    packageNumberTaken() {
-      const n = Number(this.form.package_number);
-      if (!this.form.school_id || !n) return false;
-      return this.existingPackages.some(p =>
-        Number(p.school_id) === Number(this.form.school_id) && Number(p.package_number) === n
-      );
+        if (!this.form.school_id) return null;
+        const numbers = this.existingPackages
+            .filter(p => Number(p.school_id) === Number(this.form.school_id))
+            .map(p => Number(p.package_number) || 0);
+        return (numbers.length ? Math.max(...numbers) : 0) + 1;
     },
 
-    // ---- Paso 2: fotografías y servicios ----
     activeLines() {
       return this.photoLines
         .filter(l => l.photo_type_id)
@@ -248,35 +304,33 @@ export default {
         }));
     },
     hasDuplicatePhotoTypes() {
-      // Se considera repetida la misma combinación tipo + formato + papel.
       const keys = this.activeLines.map(l => `${l.photo_type_id}|${l.format}|${l.paper_type_id ?? ''}`);
       return new Set(keys).size !== keys.length;
     },
     activeServices() {
-        return this.serviceLines
-            .filter(l => l.service_id)
-            .map(l => {
-            const svc = this.additionalServices.find(s => s.id === l.service_id);
-            const unitPrice = Number(svc?.default_price || 0);
-            const quantity = Number.isFinite(Number(l.quantity)) && Number(l.quantity) >= 1
-                ? Math.floor(Number(l.quantity))
-                : 1;
-            return {
-                additional_service_id: l.service_id,
-                price: round2(unitPrice),
-                quantity,
-                subtotal: round2(unitPrice * quantity),
-                notes: ''
-            };
-            });
+      return this.serviceLines
+        .filter(l => l.service_id)
+        .map(l => {
+          const svc = this.additionalServices.find(s => s.id === l.service_id);
+          const unitPrice = Number(svc?.default_price || 0);
+          const quantity = Number.isFinite(Number(l.quantity)) && Number(l.quantity) >= 1
+            ? Math.floor(Number(l.quantity))
+            : 1;
+          return {
+            additional_service_id: l.service_id,
+            price: round2(unitPrice),
+            quantity,
+            subtotal: round2(unitPrice * quantity),
+            notes: ''
+          };
+        });
     },
     servicePricesInvalid() {
-        return this.serviceLines.some(l =>
-            l.service_id && !this.additionalServices.find(s => s.id === l.service_id)
-        );
+      return this.serviceLines.some(l =>
+        l.service_id && !this.additionalServices.find(s => s.id === l.service_id)
+      );
     },
 
-    // ---- Paso 3: precios ----
     priceLines() {
       return this.activeLines.map(l => {
         const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
@@ -294,19 +348,19 @@ export default {
       });
     },
     summaryServices() {
-    return this.activeServices.map(s => ({
+      return this.activeServices.map(s => ({
         additional_service_id: s.additional_service_id,
         name: this.additionalServices.find(x => x.id === s.additional_service_id)?.name || '',
         price: s.price,
         quantity: s.quantity,
         subtotal: s.subtotal,
         notes: s.notes
-    }));
+      }));
     },
     calculatedSubtotal() {
-        const photos = this.priceLines.reduce((sum, l) => sum + l.subtotal, 0);
-        const services = this.activeServices.reduce((sum, s) => sum + s.subtotal, 0);
-        return round2(photos + services);
+      const photos = this.priceLines.reduce((sum, l) => sum + l.subtotal, 0);
+      const services = this.activeServices.reduce((sum, s) => sum + s.subtotal, 0);
+      return round2(photos + services);
     },
     subtotalOverridden() {
       return !isBlank(this.pricing.subtotal_override);
@@ -329,7 +383,6 @@ export default {
       return Math.max(0, round2(this.subtotal - this.discountAmount));
     },
 
-    // ---- Validación ----
     discountErrorMessage() {
       if (this.pricing.discount_type === 'percent') return 'El porcentaje debe estar entre 0 y 100.';
       return 'El descuento debe ser 0 o mayor y no puede superar el subtotal.';
@@ -348,25 +401,22 @@ export default {
     },
 
     fieldErrors() {
-      const n = Number(this.form.package_number);
-      return {
-        school: !this.form.school_id,
-        package_number: !Number.isInteger(n) || n < 1,
-        package_number_duplicate: this.packageNumberTaken,
-        photo_content: this.activeLines.length === 0,
-        photo_lines: this.photoLines.some(l => !l.photo_type_id),
-        photo_duplicates: this.hasDuplicatePhotoTypes,
-        service_prices: this.servicePricesInvalid,
-        price_subtotal: this.subtotalInvalid,
-        price_discount: this.discountInvalid
-      };
+        return {
+            school: !this.form.school_id,
+            photo_content: this.activeLines.length === 0,
+            photo_lines: this.photoLines.some(l => !l.photo_type_id),
+            photo_duplicates: this.hasDuplicatePhotoTypes,
+            service_prices: this.servicePricesInvalid,
+            price_subtotal: this.subtotalInvalid,
+            price_discount: this.discountInvalid
+        };
     },
     stepKeys() {
-      return {
-        1: ['school', 'package_number', 'package_number_duplicate'],
-        2: ['photo_content', 'photo_lines', 'photo_duplicates', 'service_prices'],
-        3: ['price_subtotal', 'price_discount']
-      };
+        return {
+            1: ['school'],
+            2: ['photo_content', 'photo_lines', 'photo_duplicates', 'service_prices'],
+            3: ['price_subtotal', 'price_discount']
+        };
     },
     currentStepValid() {
       return this.keysValid(this.stepKeys[this.currentStep] || []);
@@ -382,10 +432,24 @@ export default {
     }
   },
   methods: {
-    getValidationMessage() {
-      if (this.fieldErrors.package_number_duplicate) {
-        return `Ya existe el paquete ${pad2(this.form.package_number)} en esta escuela. Elige otro número.`;
+    featureTabClasses(tab, index) {
+      const isActive = this.featureTab === tab.key;
+      const divider = index > 0
+        ? 'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-px before:bg-gray-300 dark:before:bg-gray-600'
+        : '';
+      let stateClasses;
+      if (isActive) {
+        stateClasses = 'bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gray-50 dark:after:bg-gray-700';
+      } else {
+        stateClasses = 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300';
       }
+      return [divider, stateClasses];
+    },
+    updateFeature(key, value) {
+      this.form = { ...this.form, [key]: value };
+    },
+
+    getValidationMessage() {
       if (this.fieldErrors.photo_duplicates) {
         return 'Hay líneas repetidas (mismo tipo, formato y papel). Déjalas en una sola línea.';
       }
@@ -412,6 +476,7 @@ export default {
 
     resetForm() {
       this.resetWizardState();
+      this.featureTab = 'women';
       this.form = emptyForm();
       this.photoLines = [];
       this.serviceLines = [];
@@ -420,9 +485,10 @@ export default {
     },
 
     handleSchoolCreated(school) {
-      this.schools.push(school);
-      this.form = { ...this.form, school_id: school.id };
-      this.showSchoolModal = false;
+        this.schools.push(school);
+        this.form = { ...this.form, school_id: school.id };
+        this.showSchoolModal = false;
+        this.$emit('school-created', school);
     },
 
     async submit() {
@@ -432,7 +498,6 @@ export default {
       try {
         const payload = {
           school_id: this.form.school_id,
-          package_number: Number(this.form.package_number),
           name: (this.form.name || '').trim() || null,
           women_features_text: this.form.women_features_text,
           men_features_text: this.form.men_features_text,

@@ -12,7 +12,7 @@ class PackageService
         return DB::transaction(function () use ($data) {
             $package = Package::create([
                 'school_id' => $data['school_id'],
-                'package_number' => $data['package_number'],
+                'sequence' => $data['sequence'],
                 'name' => $data['name'] ?? null,
                 'total_price' => $data['total_price'],
                 'women_features' => $this->buildFeatures($data['women_features_text'] ?? null),
@@ -21,7 +21,7 @@ class PackageService
 
             $this->syncPhotoTypes($package, $data['photo_types'] ?? []);
 
-            return $package->fresh(['school:id,name', 'photoTypes']);
+            return $package->fresh(['school:id,name,sequence', 'photoTypes']);
         });
     }
 
@@ -29,8 +29,6 @@ class PackageService
     {
         return DB::transaction(function () use ($package, $data) {
             $package->update([
-                'school_id' => $data['school_id'],
-                'package_number' => $data['package_number'],
                 'name' => $data['name'] ?? null,
                 'total_price' => $data['total_price'],
                 'women_features' => $this->buildFeatures($data['women_features_text'] ?? null),
@@ -39,7 +37,7 @@ class PackageService
 
             $this->syncPhotoTypes($package, $data['photo_types'] ?? []);
 
-            return $package->fresh(['school:id,name', 'photoTypes']);
+            return $package->fresh(['school:id,name,sequence', 'photoTypes']);
         });
     }
 

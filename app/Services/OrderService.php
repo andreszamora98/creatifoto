@@ -54,7 +54,7 @@ class OrderService
                 $packages = Package::whereIn('id', $data['package_ids'])->get();
                 foreach ($packages as $pkg) {
                     $order->packages()->attach($pkg->id, [
-                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->package_number),
+                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->sequence),
                         'price_snapshot' => $pkg->total_price,
                     ]);
                 }
@@ -90,7 +90,7 @@ class OrderService
 
             $order->load([
                 'customer:id,name,phone',
-                'packages:id,package_number,name,total_price',
+                'packages:id,sequence,name,total_price',
                 'orderPhotoTypes.photoType:id,name,base_price',
                 'orderPhotoTypes.paperType:id,name,extra_price',
                 'additionalServices',

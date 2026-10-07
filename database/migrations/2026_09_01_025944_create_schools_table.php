@@ -10,8 +10,11 @@ return new class extends Migration
     {
         Schema::create('schools', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->unsignedInteger('sequence');
+            $table->string('name')->unique();
             $table->timestamps();
+
+            $table->index('sequence');
         });
     }
 

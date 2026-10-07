@@ -70,19 +70,6 @@
                     </div>
 
                     <div>
-                      <label class="text-base font-medium text-blue-800 dark:text-blue-300 mb-1.5 block">
-                        Número de paquete <span class="text-red-500">*</span>
-                      </label>
-                      <input
-                        v-model.number="form.package_number"
-                        type="number"
-                        min="1"
-                        :class="fieldClass(showErrors && !form.package_number)"
-                      >
-                      <p v-if="showErrors && !form.package_number" class="text-base text-red-600 dark:text-red-400 mt-1.5 font-medium">Campo obligatorio*</p>
-                    </div>
-
-                    <div>
                       <label class="text-base font-medium text-blue-800 dark:text-blue-300 mb-1.5 block">Nombre (opcional)</label>
                       <input
                         v-model="form.name"
@@ -222,7 +209,6 @@ export default {
       photoLines: [],
       form: {
         school_id: null,
-        package_number: null,
         name: '',
         total_price: null,
         women_features_text: '',
@@ -243,10 +229,7 @@ export default {
     modalSubtitle() {
       if (!this.packageId) return 'Los campos marcados con * son obligatorios';
       const school = this.schools.find(s => s.id === this.form.school_id);
-      const num = this.form.package_number
-        ? 'Paquete ' + String(this.form.package_number).padStart(2, '0')
-        : '';
-      return [school?.name, num].filter(Boolean).join(' · ');
+      return school?.name || '';
     }
   },
   watch: {
@@ -291,7 +274,6 @@ export default {
         const pkg = res.data;
         this.form = {
           school_id: pkg.school_id,
-          package_number: pkg.package_number,
           name: pkg.name || '',
           total_price: Number(pkg.total_price),
           women_features_text: pkg.women_features_text || '',
@@ -310,7 +292,7 @@ export default {
       }
     },
     resetForm() {
-      this.form = { school_id: null, package_number: null, name: '', total_price: null, women_features_text: '', men_features_text: '' };
+      this.form = { school_id: null, name: '', total_price: null, women_features_text: '', men_features_text: '' };
       this.photoLines = [];
       this.showErrors = false;
     },
@@ -323,7 +305,7 @@ export default {
       if (this.readonly || this.submitting) return;
       this.showErrors = true;
       const validLines = this.photoLines.filter(l => l.photo_type_id);
-      if (!this.form.school_id || !this.form.package_number || this.priceMissing || validLines.length === 0) {
+      if (!this.form.school_id || this.priceMissing || validLines.length === 0) {
         this.alertMessage = 'Completa todos los campos obligatorios antes de continuar.';
         this.showAlertModal = true;
         return;

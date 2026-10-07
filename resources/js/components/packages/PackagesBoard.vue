@@ -26,7 +26,7 @@
           @click="openCreateSchool()"
           class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
         >
-          <i class="ti ti-building text-base"></i>
+          <i class="ti ti-school text-base"></i>
           <span>Nueva escuela</span>
         </button>
 
@@ -312,6 +312,7 @@
       :show="showWizard"
       @close="showWizard = false"
       @created="handlePackageCreated"
+      @school-created="handleSchoolCreated"
       @notify="handleNotify"
     />
 
@@ -527,7 +528,7 @@ export default {
           (a, b) => (a.package_number || 0) - (b.package_number || 0)
         );
 
-        g.schoolNumber = g.schoolId === null ? '—' : pad2(g.schoolId);
+        g.schoolNumber = g.schoolId === null ? '—' : pad2(g.school?.sequence);
       }
 
       return arr;
@@ -692,6 +693,15 @@ export default {
       if (!school || school.id === null) return;
       this.selectedSchool = school;
       this.showSchoolModal = true;
+    },
+
+    handleSchoolCreated(school) {
+      const idx = this.schools.findIndex(s => s.id === school.id);
+      if (idx === -1) {
+        this.schools.push(school);
+      } else {
+        this.schools.splice(idx, 1, school);
+      }
     },
 
     async handleSchoolSaved() {

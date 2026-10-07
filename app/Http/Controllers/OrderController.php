@@ -20,7 +20,7 @@ class OrderController extends Controller
     {
         return Order::with([
             'customer:id,name,phone,email',
-            'packages:id,package_number,name,total_price',
+            'packages:id,sequence,name,total_price',
             'orderPhotoTypes.photoType:id,name,base_price',
             'orderPhotoTypes.paperType:id,name,extra_price',
             'payments',
@@ -118,7 +118,7 @@ class OrderController extends Controller
     {
         $order->load([
             'customer:id,name,phone,email',
-            'packages:id,package_number,name,total_price',
+            'packages:id,sequence,name,total_price',
             'orderPhotoTypes.photoType:id,name,base_price',
             'orderPhotoTypes.paperType:id,name,extra_price',
             'payments',
