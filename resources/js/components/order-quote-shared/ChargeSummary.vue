@@ -32,6 +32,14 @@
               <span class="w-3.5 h-3.5 rounded-full bg-black border border-gray-300 dark:border-gray-400"></span>
             </span>
           </span>
+
+          <span
+            v-else-if="line.icon"
+            class="w-9 h-9 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700"
+          >
+            <i :class="[line.icon, 'text-xl text-gray-500 dark:text-gray-400']"></i>
+          </span>
+
           <span class="truncate">{{ line.label }}</span>
         </span>
         <span class="font-medium whitespace-nowrap ml-2">${{ line.amount.toFixed(2) }}</span>
@@ -60,12 +68,8 @@ export default {
     emptyMessage: { type: String, default: 'No hay conceptos registrados.' }
   },
   methods: {
-    lineBackgroundClass(line) {
-      const background = ['color', 'bn'].includes(line.format)
-        ? 'bg-gray-100'
-        : 'bg-white';
-
-      return `${background} dark:bg-gray-800 border-gray-200 dark:border-gray-600`;
+    lineBackgroundClass() {
+      return 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-600';
     }
   }
 };

@@ -15,7 +15,10 @@
 
       <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div v-for="(line, idx) in lines" :key="lineKey(line)"
-             class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-3">
+             class="relative bg-white dark:bg-gray-800 border rounded-lg p-4 space-y-3"
+             :class="showErrors && error && !line.package_id
+               ? 'border-red-500 dark:border-red-500'
+               : 'border-gray-200 dark:border-gray-600'">
           <div class="flex items-center justify-between">
             <span class="text-base font-semibold text-gray-500 dark:text-gray-400">Paquete {{ idx + 1 }}</span>
             <button v-if="canRemove" type="button" @click="removeLine(idx)"
@@ -28,7 +31,10 @@
             <label class="text-sm font-medium block mb-1 text-gray-500 dark:text-gray-400">Escuela</label>
             <div class="relative" :data-school-dropdown="editorId" @focusout="onSchoolFocusOut(line, $event)">
               <div
-                class="w-full text-lg p-3 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center gap-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
+                class="w-full text-lg p-3 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center gap-2"
+                :class="showErrors && error && !line.school_id
+                  ? 'border-red-500 dark:border-red-500 bg-gray-50 dark:bg-gray-700'
+                  : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
               >
                 <i class="ti ti-building-community text-xl text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
                 <input
@@ -84,13 +90,16 @@
             <div class="relative" :data-package-dropdown="editorId" @focusout="onPackageFocusOut(line, $event)">
               <div
                 class="w-full text-lg p-3 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center gap-2"
-                :class="showErrors && error && !line.package_id
-                  ? 'border-red-500 dark:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
+                :class="!line.school_id
+                  ? 'border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 opacity-60 cursor-not-allowed'
+                  : showErrors && error && !line.package_id
+                    ? 'border-red-500 dark:border-red-500 bg-gray-50 dark:bg-gray-700'
+                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
               >
                 <i class="ti ti-school text-xl text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
                 <input
                   :value="packageInputValueFor(line)"
+                  :disabled="!line.school_id"
                   @focus="openPackageDropdown(line)"
                   @input="onPackageInput(line, $event.target.value)"
                   @keydown.esc="closePackageDropdown()"
@@ -98,8 +107,8 @@
                   @keydown.up.prevent="movePackageHighlight(-1)"
                   @keydown.enter.prevent="selectPackageHighlighted(idx, line)"
                   type="text"
-                  :placeholder="line.package_id ? 'Buscar otro paquete...' : 'Buscar o seleccionar paquete...'"
-                  class="flex-1 min-w-0 bg-transparent border-0 outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 truncate"
+                  :placeholder="packagePlaceholder(line)"
+                  class="flex-1 min-w-0 bg-transparent border-0 outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 truncate disabled:cursor-not-allowed"
                   autocomplete="off"
                 >
                 <span v-if="line.package_id && !isPackageOpen(line)" class="text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
@@ -225,6 +234,10 @@ export default {
     packagePrice(id) {
       return Number(this.packageById(id)?.total_price || 0);
     },
+    packagePlaceholder(line) {
+      if (!line.school_id) return 'Selecciona primero una escuela';
+      return line.package_id ? 'Buscar otro paquete...' : 'Buscar o seleccionar paquete...';
+    },
 
     isSchoolOpen(line) {
       return this.openSchoolDropdownKey === this.lineKey(line);
@@ -299,6 +312,7 @@ export default {
     },
 
     openPackageDropdown(line) {
+      if (!line.school_id) return;
       const key = this.lineKey(line);
       if (this.openPackageDropdownKey === key) return;
       this.packageSearch = '';
@@ -311,6 +325,7 @@ export default {
       this.packageSearch = '';
     },
     onPackageInput(line, value) {
+      if (!line.school_id) return;
       const key = this.lineKey(line);
       this.packageSearch = value;
       this.packageHighlightedIdx = 0;

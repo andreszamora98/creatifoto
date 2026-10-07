@@ -5,7 +5,10 @@
       {{ sectionTitle }}
     </h4>
 
-    <div class="space-y-3">
+    <div
+      class="space-y-3"
+      :data-error-anchor="conceptSectionError ? '' : null"
+    >
       <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Conceptos de la orden
       </h5>
@@ -90,18 +93,25 @@
       </div>
     </div>
 
-    <AdditionalServiceLinesEditor
+    <div
       v-if="showAdditionalServices"
-      :lines="serviceLines"
-      :services="additionalServices"
-      :loading="loadingCatalogs"
-      :show-errors="showErrors"
-      :error="serviceLinesError || fieldErrors.service_prices || false"
-      title="Servicios adicionales"
-      empty-hint="Sin servicios adicionales agregados."
-    />
+      :data-error-anchor="serviceSectionError ? '' : null"
+    >
+      <AdditionalServiceLinesEditor
+        :lines="serviceLines"
+        :services="additionalServices"
+        :loading="loadingCatalogs"
+        :show-errors="showErrors"
+        :error="serviceLinesError || fieldErrors.service_prices || false"
+        title="Servicios adicionales"
+        empty-hint="Sin servicios adicionales agregados."
+      />
+    </div>
 
-    <div class="space-y-3">
+    <div
+      class="space-y-3"
+      :data-error-anchor="deliverySectionError ? '' : null"
+    >
       <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Entrega
       </h5>
@@ -195,14 +205,23 @@ export default {
     },
     serviceLinesError() {
       return this.fieldErrors.service_lines ?? false;
+    },
+    conceptSectionError() {
+      return this.linesError || this.packageLinesError || this.contentError;
+    },
+    serviceSectionError() {
+      return this.serviceLinesError || this.fieldErrors.service_prices;
+    },
+    deliverySectionError() {
+      return this.fieldErrors.delivery_date || this.fieldErrors.delivery_time;
     }
   },
   watch: {
     showErrors(val) {
-      if (val) this.jumpToErrorTab();
+      if (val) this.handleValidationError();
     },
     validationTick() {
-      if (this.showErrors) this.jumpToErrorTab();
+      if (this.showErrors) this.handleValidationError();
     }
   },
   methods: {
@@ -254,6 +273,18 @@ export default {
       if (this.contentError && this.activeTab !== 'photos') {
         this.activeTab = 'photos';
       }
+    },
+    async handleValidationError() {
+      this.jumpToErrorTab();
+      await this.$nextTick();
+      this.scrollToFirstError();
+    },
+    scrollToFirstError() {
+      const root = this.$el;
+      if (!root) return;
+      const el = root.querySelector('[data-error-anchor]');
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 };

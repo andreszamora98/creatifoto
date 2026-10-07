@@ -1,0 +1,477 @@
+<template>
+  <transition name="fade">
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-6">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden">
+
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg flex-shrink-0">
+          <div class="flex justify-between items-center px-6 py-3">
+            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
+              <i class="ti ti-package mr-2"></i>Nuevo paquete
+            </h3>
+            <button
+              @click="handleClose"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <i class="ti ti-x text-2xl"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="px-6 pt-6 pb-0 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+          <StepIndicator :steps="stepLabels" :current-step="currentStep" />
+        </div>
+
+        <div class="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6">
+          <transition :name="transitionName" mode="out-in">
+            <PackageInfoStep
+              v-if="currentStep === 1"
+              key="step-1"
+              section-title=""
+              :form="form"
+              :schools="schools"
+              :loading-catalogs="loadingCatalogs"
+              :show-errors="showErrorsStep1"
+              :field-errors="fieldErrors"
+              :next-package-number="nextPackageNumber"
+              @update:form="form = $event"
+              @new-school="showSchoolModal = true"
+            />
+
+            <section v-else-if="currentStep === 2" key="step-2" class="space-y-6">
+              <div class="space-y-3">
+                <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Tipos de fotografía incluidos
+                </h5>
+                <PhotoTypeLinesEditor
+                  :lines="photoLines"
+                  :photo-types="photoTypes"
+                  :paper-types="paperTypes"
+                  :loading="loadingCatalogs"
+                  :show-errors="showErrorsStep2"
+                  :error="photoLinesHasError"
+                  :error-message="photoLinesErrorMessage"
+                  title=""
+                  empty-hint="Agrega al menos un tipo de fotografía."
+                />
+              </div>
+
+              <div>
+                <AdditionalServiceLinesEditor
+                  :lines="serviceLines"
+                  :services="additionalServices"
+                  :loading="loadingCatalogs"
+                  :show-errors="showErrorsStep2"
+                  :error="fieldErrors.service_prices"
+                  title="Servicios adicionales"
+                  empty-hint="Sin servicios adicionales agregados."
+                />
+              </div>
+            </section>
+
+            <ChargePaymentLayout v-else key="step-3">
+              <template #summary>
+                <PackageSummary
+                  :school="selectedSchool"
+                  :package-number="form.package_number"
+                  :name="form.name"
+                  :lines="priceLines"
+                  :services="summaryServices"
+                  :women-text="form.women_features_text"
+                  :men-text="form.men_features_text"
+                />
+              </template>
+
+              <template #payment>
+                <PackagePriceBreakdown
+                  :pricing="pricing"
+                  :calculated-subtotal="calculatedSubtotal"
+                  :subtotal="subtotal"
+                  :discount-amount="discountAmount"
+                  :total="total"
+                  :show-errors="showErrorsStep3"
+                  :subtotal-error="fieldErrors.price_subtotal"
+                  :discount-error="fieldErrors.price_discount"
+                  :discount-error-message="discountErrorMessage"
+                  @update:pricing="pricing = $event"
+                />
+              </template>
+            </ChargePaymentLayout>
+          </transition>
+        </div>
+
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-4 px-6 py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+          <button @click="handleClose" class="flex-1 btn btn-light py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors">
+            Cancelar
+          </button>
+          <button v-if="currentStep > 1" @click="goBack" type="button"
+                  class="flex-1 btn btn-light py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors font-medium">
+            <i class="ti ti-chevron-left mr-1"></i>Atrás
+          </button>
+          <button v-if="currentStep < totalSteps" @click="goNext" type="button"
+                  class="flex-1 btn btn-primary py-3 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors">
+            Siguiente<i class="ti ti-chevron-right ml-1"></i>
+          </button>
+          <button v-else @click="submit" :disabled="submitting" class="flex-1 btn btn-primary py-3 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span v-if="submitting"><i class="ti ti-refresh animate-spin mr-2"></i>Creando...</span>
+            <span v-else><i class="ti ti-check mr-2"></i>Crear paquete</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </transition>
+
+  <SchoolModal
+    :show="showSchoolModal"
+    @close="showSchoolModal = false"
+    @created="handleSchoolCreated"
+    @notify="$emit('notify', $event)"
+  />
+
+  <ConfirmModal
+    :show="showConfirmModal"
+    title="¿Cerrar sin guardar?"
+    message="Hay cambios sin guardar. ¿Estás seguro de que quieres cerrar esta ventana?"
+    confirm-text="Cerrar de todos modos"
+    cancel-text="Seguir editando"
+    @confirm="closeConfirmed"
+    @cancel="showConfirmModal = false"
+  />
+
+  <SuccessModal
+    :show="showSuccessModal"
+    :title="successModalTitle"
+    :message="successModalMessage"
+    @closed="onSuccessClosed"
+  />
+  <AlertModal
+    :show="showAlertModal"
+    title="Atención"
+    :message="alertMessage"
+    @closed="showAlertModal = false"
+  />
+</template>
+
+<script>
+import axios from 'axios';
+import ConfirmModal from '../common/ConfirmModal.vue';
+import SuccessModal from '../common/SuccessModal.vue';
+import AlertModal from '../common/AlertModal.vue';
+import StepIndicator from '../order-quote-shared/StepIndicator.vue';
+import ChargePaymentLayout from '../order-quote-shared/ChargePaymentLayout.vue';
+import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLinesEditor.vue';
+import AdditionalServiceLinesEditor from '../order-quote-shared/AdditionalServiceLinesEditor.vue';
+import SchoolModal from './SchoolModal.vue';
+import PackageInfoStep from './form-steps/PackageInfoStep.vue';
+import PackageSummary from './form-steps/PackageSummary.vue';
+import PackagePriceBreakdown from './form-steps/PackagePriceBreakdown.vue';
+import packageWizardMixin from './packageWizardMixin.js';
+
+const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+const pad2 = (n) => String(n ?? '').padStart(2, '0');
+const isBlank = (v) => v === '' || v === null || v === undefined;
+
+const emptyForm = () => ({
+  school_id: null,
+  package_number: null,
+  name: '',
+  women_features_text: '',
+  men_features_text: ''
+});
+
+const emptyPricing = () => ({
+  subtotal_override: '',     // '' = usar el subtotal calculado
+  discount_type: 'percent',  // 'percent' | 'amount'
+  discount_value: ''
+});
+
+export default {
+  name: 'PackageWizardModal',
+  mixins: [packageWizardMixin],
+  components: {
+    ConfirmModal, SuccessModal, AlertModal, StepIndicator, ChargePaymentLayout,
+    PhotoTypeLinesEditor, AdditionalServiceLinesEditor, SchoolModal,
+    PackageInfoStep, PackageSummary, PackagePriceBreakdown
+  },
+  props: {
+    show: { type: Boolean, default: false }
+  },
+  emits: ['close', 'created', 'notify'],
+  data() {
+    return {
+      showSchoolModal: false,
+      form: emptyForm(),
+      photoLines: [],
+      serviceLines: [],
+      pricing: emptyPricing()
+    };
+  },
+  computed: {
+    stepLabels() {
+      return [
+        { label: 'Información del paquete' },
+        { label: 'Tipos de fotografía y servicios' },
+        { label: 'Precio y resumen' }
+      ];
+    },
+
+    selectedSchool() {
+      return this.schools.find(s => Number(s.id) === Number(this.form.school_id)) || null;
+    },
+
+    nextPackageNumber() {
+      if (!this.form.school_id) return null;
+      const numbers = this.existingPackages
+        .filter(p => Number(p.school_id) === Number(this.form.school_id))
+        .map(p => Number(p.package_number) || 0);
+      return (numbers.length ? Math.max(...numbers) : 0) + 1;
+    },
+    packageNumberTaken() {
+      const n = Number(this.form.package_number);
+      if (!this.form.school_id || !n) return false;
+      return this.existingPackages.some(p =>
+        Number(p.school_id) === Number(this.form.school_id) && Number(p.package_number) === n
+      );
+    },
+
+    // ---- Paso 2: fotografías y servicios ----
+    activeLines() {
+      return this.photoLines
+        .filter(l => l.photo_type_id)
+        .map(l => ({
+          photo_type_id: l.photo_type_id,
+          quantity: Number.isFinite(Number(l.quantity)) && Number(l.quantity) >= 1
+            ? Math.floor(Number(l.quantity))
+            : 1,
+          format: l.format === 'color' ? 'color' : 'bn',
+          paper_type_id: l.paper_type_id || null
+        }));
+    },
+    hasDuplicatePhotoTypes() {
+      // Se considera repetida la misma combinación tipo + formato + papel.
+      const keys = this.activeLines.map(l => `${l.photo_type_id}|${l.format}|${l.paper_type_id ?? ''}`);
+      return new Set(keys).size !== keys.length;
+    },
+    activeServices() {
+        return this.serviceLines
+            .filter(l => l.service_id)
+            .map(l => {
+            const svc = this.additionalServices.find(s => s.id === l.service_id);
+            const unitPrice = Number(svc?.default_price || 0);
+            const quantity = Number.isFinite(Number(l.quantity)) && Number(l.quantity) >= 1
+                ? Math.floor(Number(l.quantity))
+                : 1;
+            return {
+                additional_service_id: l.service_id,
+                price: round2(unitPrice),
+                quantity,
+                subtotal: round2(unitPrice * quantity),
+                notes: ''
+            };
+            });
+    },
+    servicePricesInvalid() {
+        return this.serviceLines.some(l =>
+            l.service_id && !this.additionalServices.find(s => s.id === l.service_id)
+        );
+    },
+
+    // ---- Paso 3: precios ----
+    priceLines() {
+      return this.activeLines.map(l => {
+        const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
+        const paper = l.paper_type_id ? this.paperTypes.find(p => p.id === l.paper_type_id) : null;
+        const unitPrice = Number(pt?.base_price || 0);
+        return {
+          photo_type_id: l.photo_type_id,
+          name: pt?.name || '',
+          quantity: l.quantity,
+          format: l.format,
+          paper_name: paper?.name || '',
+          unit_price: unitPrice,
+          subtotal: round2(unitPrice * l.quantity)
+        };
+      });
+    },
+    summaryServices() {
+    return this.activeServices.map(s => ({
+        additional_service_id: s.additional_service_id,
+        name: this.additionalServices.find(x => x.id === s.additional_service_id)?.name || '',
+        price: s.price,
+        quantity: s.quantity,
+        subtotal: s.subtotal,
+        notes: s.notes
+    }));
+    },
+    calculatedSubtotal() {
+        const photos = this.priceLines.reduce((sum, l) => sum + l.subtotal, 0);
+        const services = this.activeServices.reduce((sum, s) => sum + s.subtotal, 0);
+        return round2(photos + services);
+    },
+    subtotalOverridden() {
+      return !isBlank(this.pricing.subtotal_override);
+    },
+    subtotal() {
+      if (!this.subtotalOverridden) return this.calculatedSubtotal;
+      const v = Number(this.pricing.subtotal_override);
+      return Number.isFinite(v) ? round2(Math.max(0, v)) : 0;
+    },
+    discountValueNumber() {
+      const v = Number(this.pricing.discount_value);
+      return Number.isFinite(v) ? v : 0;
+    },
+    discountAmount() {
+      const v = this.discountValueNumber;
+      const raw = this.pricing.discount_type === 'percent' ? (this.subtotal * v) / 100 : v;
+      return round2(Math.min(Math.max(raw, 0), this.subtotal));
+    },
+    total() {
+      return Math.max(0, round2(this.subtotal - this.discountAmount));
+    },
+
+    // ---- Validación ----
+    discountErrorMessage() {
+      if (this.pricing.discount_type === 'percent') return 'El porcentaje debe estar entre 0 y 100.';
+      return 'El descuento debe ser 0 o mayor y no puede superar el subtotal.';
+    },
+    discountInvalid() {
+      if (isBlank(this.pricing.discount_value)) return false;
+      const v = Number(this.pricing.discount_value);
+      if (!Number.isFinite(v) || v < 0) return true;
+      if (this.pricing.discount_type === 'percent') return v > 100;
+      return v > this.subtotal;
+    },
+    subtotalInvalid() {
+      if (!this.subtotalOverridden) return false;
+      const v = Number(this.pricing.subtotal_override);
+      return !Number.isFinite(v) || v < 0;
+    },
+
+    fieldErrors() {
+      const n = Number(this.form.package_number);
+      return {
+        school: !this.form.school_id,
+        package_number: !Number.isInteger(n) || n < 1,
+        package_number_duplicate: this.packageNumberTaken,
+        photo_content: this.activeLines.length === 0,
+        photo_lines: this.photoLines.some(l => !l.photo_type_id),
+        photo_duplicates: this.hasDuplicatePhotoTypes,
+        service_prices: this.servicePricesInvalid,
+        price_subtotal: this.subtotalInvalid,
+        price_discount: this.discountInvalid
+      };
+    },
+    stepKeys() {
+      return {
+        1: ['school', 'package_number', 'package_number_duplicate'],
+        2: ['photo_content', 'photo_lines', 'photo_duplicates', 'service_prices'],
+        3: ['price_subtotal', 'price_discount']
+      };
+    },
+    currentStepValid() {
+      return this.keysValid(this.stepKeys[this.currentStep] || []);
+    },
+
+    photoLinesHasError() {
+      return this.fieldErrors.photo_content || this.fieldErrors.photo_lines || this.fieldErrors.photo_duplicates;
+    },
+    photoLinesErrorMessage() {
+      if (this.fieldErrors.photo_content) return 'Agrega al menos un tipo de fotografía.';
+      if (this.fieldErrors.photo_duplicates) return 'Hay líneas repetidas (mismo tipo, formato y papel). Déjalas en una sola línea.';
+      return 'Selecciona un tipo en cada línea o elimina las vacías.';
+    }
+  },
+  methods: {
+    getValidationMessage() {
+      if (this.fieldErrors.package_number_duplicate) {
+        return `Ya existe el paquete ${pad2(this.form.package_number)} en esta escuela. Elige otro número.`;
+      }
+      if (this.fieldErrors.photo_duplicates) {
+        return 'Hay líneas repetidas (mismo tipo, formato y papel). Déjalas en una sola línea.';
+      }
+      if (this.fieldErrors.service_prices) {
+        return 'El precio de cada servicio adicional debe ser 0 o mayor.';
+      }
+      if (this.fieldErrors.price_subtotal) {
+        return 'El subtotal debe ser 0 o mayor.';
+      }
+      if (this.fieldErrors.price_discount) {
+        return this.discountErrorMessage;
+      }
+      return 'Por favor, completa todos los campos marcados con * antes de continuar.';
+    },
+
+    getCurrentState() {
+      return {
+        form: { ...this.form },
+        photoLines: JSON.parse(JSON.stringify(this.photoLines)),
+        serviceLines: JSON.parse(JSON.stringify(this.serviceLines)),
+        pricing: { ...this.pricing }
+      };
+    },
+
+    resetForm() {
+      this.resetWizardState();
+      this.form = emptyForm();
+      this.photoLines = [];
+      this.serviceLines = [];
+      this.pricing = emptyPricing();
+      this.showSchoolModal = false;
+    },
+
+    handleSchoolCreated(school) {
+      this.schools.push(school);
+      this.form = { ...this.form, school_id: school.id };
+      this.showSchoolModal = false;
+    },
+
+    async submit() {
+      if (!this.runSubmitChecks()) return;
+      if (this.submitting) return;
+      this.submitting = true;
+      try {
+        const payload = {
+          school_id: this.form.school_id,
+          package_number: Number(this.form.package_number),
+          name: (this.form.name || '').trim() || null,
+          women_features_text: this.form.women_features_text,
+          men_features_text: this.form.men_features_text,
+          photo_types: this.activeLines,
+          additional_services: this.activeServices,
+          subtotal: this.subtotal,
+          discount_type: this.pricing.discount_type,
+          discount_value: this.discountValueNumber,
+          discount_amount: this.discountAmount,
+          total_price: this.total
+        };
+        const res = await axios.post('/packages', payload);
+        this.$emit('created', res.data.package);
+        this.openSuccess('¡Paquete creado!', 'El paquete se registró correctamente.', () => {
+          this.close();
+        });
+      } catch (error) {
+        this.$emit('notify', {
+          title: 'Error',
+          message: error.response?.data?.message || 'No se pudo crear el paquete',
+          type: 'error'
+        });
+        this.submitting = false;
+      }
+    }
+  }
+};
+</script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.slide-next-enter-active, .slide-next-leave-active,
+.slide-prev-enter-active, .slide-prev-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.slide-next-enter-from { opacity: 0; transform: translateX(32px); }
+.slide-next-leave-to { opacity: 0; transform: translateX(-32px); }
+.slide-prev-enter-from { opacity: 0; transform: translateX(-32px); }
+.slide-prev-leave-to { opacity: 0; transform: translateX(32px); }
+</style>

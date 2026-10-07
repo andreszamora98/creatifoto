@@ -36,7 +36,8 @@ export default {
       const packageLines = this.selectedPackages.map(pkg => ({
         key: 'pkg-' + pkg.id,
         label: pkg.name || ('Paquete ' + pkg.package_number),
-        amount: Number(pkg.total_price || 0)
+        amount: Number(pkg.total_price || 0),
+        icon: 'ti ti-school'
       }));
       const serviceLines = this.selectedServices.map(s => {
         const svc = this.additionalServices.find(a => a.id === s.additional_service_id);
@@ -45,7 +46,8 @@ export default {
         return {
           key: 'svc-' + s.additional_service_id,
           label: `${svc?.name || 'Servicio adicional'} x${qty}`,
-          amount: subtotal
+          amount: subtotal,
+          icon: 'ti ti-tool'
         };
       });
       return [...photoLines, ...packageLines, ...serviceLines];

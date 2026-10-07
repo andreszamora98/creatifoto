@@ -308,6 +308,13 @@
       </div>
     </div>
 
+    <PackageWizardModal
+      :show="showWizard"
+      @close="showWizard = false"
+      @created="handlePackageCreated"
+      @notify="handleNotify"
+    />
+
     <PackageModal
       :show="showModal"
       :package-id="selectedPackageId"
@@ -377,6 +384,7 @@
 import axios from 'axios';
 import { setPageTitle } from '../../store';
 import PackageModal from './PackageModal.vue';
+import PackageWizardModal from './PackageWizardModal.vue';
 import SchoolModal from './SchoolModal.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 
@@ -402,7 +410,7 @@ const COL_DIV = 'border-r border-r-gray-200 dark:border-r-gray-700';
 
 export default {
   name: 'PackagesBoard',
-  components: { PackageModal, SchoolModal, ConfirmModal },
+  components: { PackageModal, PackageWizardModal, SchoolModal, ConfirmModal },
 
   data() {
     return {
@@ -410,6 +418,8 @@ export default {
       schools: [],
       loading: false,
       hasLoaded: false,
+
+      showWizard: false,
 
       showModal: false,
       selectedPackageId: null,
@@ -647,9 +657,13 @@ export default {
     },
 
     openCreate() {
-      this.selectedPackageId = null;
-      this.modalReadonly = false;
-      this.showModal = true;
+      this.showWizard = true;
+    },
+
+    async handlePackageCreated() {
+      // El wizard muestra su propio modal de éxito y se cierra solo;
+      // aquí solo se refresca la tabla (también recarga escuelas creadas desde el wizard).
+      await this.refreshAll();
     },
 
     openEdit(pkg, readonly = false) {
