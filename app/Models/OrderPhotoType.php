@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class OrderPhotoType extends Model
 {
@@ -13,11 +12,14 @@ class OrderPhotoType extends Model
 
     protected $fillable = [
         'order_id',
+        'order_package_id',
         'photo_type_id',
+        'photo_type_name_snapshot',
         'quantity',
         'unit_price',
         'format',
         'paper_type_id',
+        'paper_type_name_snapshot',
     ];
 
     protected $casts = [
@@ -29,21 +31,18 @@ class OrderPhotoType extends Model
         return $this->belongsTo(Order::class);
     }
 
+    public function orderPackage(): BelongsTo
+    {
+        return $this->belongsTo(OrderPackage::class);
+    }
+
     public function photoType(): BelongsTo
     {
-        return $this->belongsTo(PhotoType::class);
+        return $this->belongsTo(PhotoType::class)->withTrashed();
     }
 
     public function paperType(): BelongsTo
     {
-        return $this->belongsTo(PaperType::class);
-    }
-
-    public function additionalServices(): MorphToMany
-    {
-        return $this->morphToMany(AdditionalService::class, 'serviceable')
-            ->withPivot(['price', 'quantity', 'notes'])
-            ->withTimestamps()
-            ->using(Serviceable::class);
+        return $this->belongsTo(PaperType::class)->withTrashed();
     }
 }

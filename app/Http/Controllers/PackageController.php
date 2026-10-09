@@ -6,6 +6,7 @@ use App\Models\Package;
 use App\Services\PackageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PackageController extends Controller
 {
@@ -60,6 +61,7 @@ class PackageController extends Controller
         }
     }
 
+    /** Soft-delete permitido aunque el paquete tenga órdenes: ellas conservan su snapshot. */
     public function destroy(Package $package)
     {
         try {
@@ -89,7 +91,7 @@ class PackageController extends Controller
     protected function validated(Request $request): array
     {
         return $request->validate([
-            'school_id' => 'required|exists:schools,id',
+            'school_id' => ['required', Rule::exists('schools', 'id')->whereNull('deleted_at')],
             'name' => 'nullable|string|max:255',
             'total_price' => 'required|numeric|min:0',
             'women_features_text' => ['nullable', 'string', function ($attribute, $value, $fail) {
@@ -103,7 +105,7 @@ class PackageController extends Controller
                 }
             }],
             'photo_types' => 'required|array|min:1',
-            'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
+            'photo_types.*.photo_type_id' => ['required', Rule::exists('photo_types', 'id')->whereNull('deleted_at')],
             'photo_types.*.quantity' => 'required|integer|min:1',
         ]);
     }

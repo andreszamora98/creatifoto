@@ -53,7 +53,7 @@
                   autocomplete="off"
                 >
                 <span v-if="line.service_id && !isOpen(line)" class="text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
-                  ${{ servicePrice(line.service_id).toFixed(2) }} c/u
+                  ${{ servicePriceForLine(line).toFixed(2) }} c/u
                 </span>
                 <button
                   v-if="line.service_id && !isOpen(line)"
@@ -166,10 +166,18 @@ export default {
       return this._lineKeyMap.get(line);
     },
     serviceName(id) {
-      return this.services.find(s => s.id === id)?.name || '';
+      const fromCatalog = this.services.find(s => s.id === id);
+      if (fromCatalog) return fromCatalog.name;
+      return '';
     },
     servicePrice(id) {
       return Number(this.services.find(s => s.id === id)?.default_price || 0);
+    },
+    servicePriceForLine(line) {
+      if (line.price !== undefined && line.price !== null) {
+        return Number(line.price);
+      }
+      return this.servicePrice(line.service_id);
     },
     serviceDefaultQuantity(id) {
       const svc = this.services.find(s => s.id === id);
@@ -182,7 +190,10 @@ export default {
     inputValueFor(line) {
       const key = this.lineKey(line);
       if (this.openDropdownKey === key) return this.serviceSearch;
-      return line.service_id ? this.serviceName(line.service_id) : '';
+      if (!line.service_id) return '';
+      const fromCatalog = this.services.find(s => s.id === line.service_id);
+      if (fromCatalog) return fromCatalog.name;
+      return line.additional_service_name_snapshot || '';
     },
     openDropdown(line) {
       const key = this.lineKey(line);
@@ -217,8 +228,15 @@ export default {
       this.selectAndReset(idx, line, svc.id);
     },
     selectAndReset(idx, line, serviceId) {
+      const isExisting = Boolean(line.id);
       line.service_id = serviceId;
-      line.quantity = this.serviceDefaultQuantity(serviceId);
+      if (isExisting) {
+        // Servicio existente: conservamos su price histórico.
+        // El usuario puede editarlo manualmente si lo necesita.
+      } else {
+        line.price = this.servicePrice(serviceId);
+        line.quantity = this.serviceDefaultQuantity(serviceId);
+      }
       this.closeDropdown();
     },
     clearLine(idx) {
@@ -226,6 +244,7 @@ export default {
       if (!line) return;
       line.service_id = null;
       line.quantity = 1;
+      line.price = null;
       this.serviceSearch = '';
     },
     sanitizeQuantity(line) {
@@ -233,7 +252,7 @@ export default {
       line.quantity = Number.isFinite(value) && value >= 1 ? Math.floor(value) : 1;
     },
     addLine() {
-      this.lines.push({ service_id: null, quantity: 1 });
+      this.lines.push({ service_id: null, quantity: 1, price: null });
     },
     removeLine(idx) {
       this.lines.splice(idx, 1);

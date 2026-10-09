@@ -2,37 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Paquete escolar vendido dentro de una orden.
- * package_name_snapshot / price_snapshot se congelan al vender:
- * si el paquete cambia de precio o nombre después, esta línea no
- * cambia retroactivamente.
- */
-class OrderPackage extends Pivot
+/** Paquete vendido dentro de una orden. Ya NO es un pivote: es una entidad propia con snapshot. */
+class OrderPackage extends Model
 {
-    public $incrementing = true;
-
     protected $fillable = [
-        'order_id',
-        'package_id',
-        'package_name_snapshot',
-        'price_snapshot',
+        'order_id', 'package_id', 'school_id',
+        'package_name_snapshot', 'school_name_snapshot', 'price_snapshot',
     ];
 
-    protected $casts = [
-        'price_snapshot' => 'decimal:2',
-    ];
+    protected $casts = ['price_snapshot' => 'decimal:2'];
 
-    public function order(): BelongsTo
-    {
-        return $this->belongsTo(Order::class);
-    }
-
-    public function package(): BelongsTo
-    {
-        return $this->belongsTo(Package::class);
-    }
+    public function order(): BelongsTo { return $this->belongsTo(Order::class); }
+    public function package(): BelongsTo { return $this->belongsTo(Package::class)->withTrashed(); }
+    public function school(): BelongsTo { return $this->belongsTo(School::class)->withTrashed(); }
+    public function photoTypes(): HasMany { return $this->hasMany(OrderPhotoType::class, 'order_package_id'); }
 }

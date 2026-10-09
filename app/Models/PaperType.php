@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PaperType extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -19,10 +20,7 @@ class PaperType extends Model
         'extra_price' => 'decimal:2',
     ];
 
-    /**
-     * Catálogo: paper_type_id es restrictOnDelete en order_photo_type,
-     * protege que no se borre un papel que ya está en uso.
-     */
+    /** Líneas históricas que usan este papel (paper_type_id es restrictOnDelete). */
     public function orderPhotoTypes(): HasMany
     {
         return $this->hasMany(OrderPhotoType::class);

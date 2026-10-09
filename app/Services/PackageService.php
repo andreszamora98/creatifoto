@@ -41,12 +41,9 @@ class PackageService
         });
     }
 
+    /** Soft-delete: las órdenes históricas conservan su snapshot, así que no hay nada que bloquear. */
     public function deletePackage(Package $package): void
     {
-        if ($package->orders()->exists()) {
-            throw new \Exception('No se puede eliminar un paquete que ya ha sido vendido en alguna orden. Puedes desactivarlo en su lugar.');
-        }
-
         $package->delete();
     }
 

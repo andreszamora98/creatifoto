@@ -20,16 +20,16 @@
 
           <div class="truncate">
             <p class="font-medium text-gray-800 dark:text-gray-300 text-base truncate">
-              {{ pkg.pivot?.package_name_snapshot || pkg.name || ('Paquete ' + pkg.package_number) }}
+              {{ pkg.package_name_snapshot || ('Paquete #' + pkg.package_id) }}
             </p>
-            <p class="text-base text-gray-500 dark:text-gray-400">
-              Paquete escolar
+            <p v-if="pkg.school_name_snapshot" class="text-base text-gray-500 dark:text-gray-400 truncate">
+              <i class="ti ti-school mr-1"></i>{{ pkg.school_name_snapshot }}
             </p>
           </div>
         </div>
 
         <span class="font-semibold text-gray-700 dark:text-gray-300 text-base ml-2 whitespace-nowrap">
-          {{ formatCurrency(pkg.pivot?.price_snapshot || pkg.total_price) }}
+          {{ formatCurrency(pkg.price_snapshot) }}
         </span>
       </div>
     </div>

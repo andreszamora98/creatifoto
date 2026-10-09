@@ -312,8 +312,17 @@
       :order="selectedOrderForDetail"
       :columns="columns"
       :active-column="activeColumn"
+      @edit="handleOrderDetailEdit"
       @close="handleOrderDetailClosed"
       @updated="handleOrderDetailUpdated"
+      @notify="handleNotify"
+    />
+
+    <OrderEditModal
+      :show="showOrderEditModal"
+      :order="selectedOrderForEdit"
+      @close="handleOrderEditClosed"
+      @updated="handleOrderEditUpdated"
       @notify="handleNotify"
     />
 
@@ -360,12 +369,15 @@ import OrderModal from './OrderModal.vue';
 import OrderDetailModal from './OrderDetailModal.vue';
 import QuoteModal from '../quotes/QuoteModal.vue';
 import NewRecordChoiceModal from '../order-quote-shared/NewRecordChoiceModal.vue';
+import OrderEditModal from './OrderEditModal.vue';
 
 export default {
   name: 'OrdersBoard',
-  components: { OrderModal, QuoteModal, NewRecordChoiceModal, OrderDetailModal },
+  components: { OrderModal, QuoteModal, NewRecordChoiceModal, OrderDetailModal, OrderEditModal },
   data() {
     return {
+      showOrderEditModal: false,
+      selectedOrderForEdit: null,
       isDarkMode: false,
       darkObserver: null,
       showOrderDetailModal: false,
@@ -535,6 +547,30 @@ export default {
     }
   },
   methods: {
+    handleOrderDetailEdit(order) {
+      // Cerramos el detalle para no apilar modales.
+      this.showOrderDetailModal = false;
+      this.selectedOrderForDetail = null;
+      this.selectedOrderForEdit = order;
+      this.showOrderEditModal = true;
+    },
+    handleOrderEditClosed() {
+      this.showOrderEditModal = false;
+      this.selectedOrderForEdit = null;
+    },
+    async handleOrderEditUpdated() {
+      await this.loadOrders();
+      // Reabrimos el detalle para que el usuario vea la orden ya actualizada.
+      if (this.selectedOrderForEdit) {
+        const refreshed = this.orders.find(o => o.id === this.selectedOrderForEdit.id);
+        this.selectedOrderForEdit = null;
+        this.showOrderEditModal = false;
+        if (refreshed) {
+          this.selectedOrderForDetail = refreshed;
+          this.showOrderDetailModal = true;
+        }
+      }
+    },
     goToPhotoTypesCatalog() {
       this.$router.push('/catalogos?tab=photo-types');
     },
@@ -658,8 +694,10 @@ export default {
       return 'ORD-' + String(order.id).padStart(3, '0');
     },
     packagesSummary(order) {
-      if (order.packages && order.packages.length) {
-        return order.packages.map(p => p.name || ('Paquete ' + p.package_number)).join(', ');
+      if (order.order_packages && order.order_packages.length) {
+        return order.order_packages
+          .map(p => p.package_name_snapshot || ('Paquete #' + p.package_id))
+          .join(', ');
       }
       const itemCount = (order.order_photo_types || []).length;
       return itemCount ? `Personalizado (${itemCount} tipos)` : 'Personalizado';

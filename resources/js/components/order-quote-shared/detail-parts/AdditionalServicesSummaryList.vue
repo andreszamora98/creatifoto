@@ -19,13 +19,18 @@
         class="flex items-start justify-between gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
       >
         <div class="min-w-0">
-          <p class="text-base font-medium text-gray-800 dark:text-gray-200 truncate">{{ service.name }}</p>
-          <p v-if="service.pivot?.notes" class="text-sm text-gray-500 dark:text-gray-400 italic break-words">
-            {{ service.pivot.notes }}
+          <p class="text-base font-medium text-gray-800 dark:text-gray-200 truncate">
+            {{ service.additional_service_name_snapshot || 'Servicio adicional' }}
+            <span v-if="service.quantity > 1" class="text-gray-500 dark:text-gray-400">
+              x{{ service.quantity }}
+            </span>
+          </p>
+          <p v-if="service.notes" class="text-sm text-gray-500 dark:text-gray-400 italic break-words">
+            {{ service.notes }}
           </p>
         </div>
         <span class="text-base font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap">
-          {{ formatCurrency(service.pivot?.price ?? service.default_price) }}
+          {{ formatCurrency(service.price * (service.quantity || 1)) }}
         </span>
       </div>
     </div>

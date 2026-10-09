@@ -17,6 +17,17 @@
                 </p>
               </div>
               <div class="flex items-center justify-end gap-2">
+                
+                <button
+                  v-if="canEdit"
+                  @click="requestEdit"
+                  class="px-5 py-3 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg flex items-center gap-2 transition-colors"
+                  title="Editar orden"
+                >
+                  <i class="ti ti-pencil text-lg"></i>
+                  Editar
+                </button>
+
                 <button
                   v-if="canDeliver"
                   @click="requestDeliver"
@@ -127,10 +138,10 @@
               </div>
 
               <div
-                v-if="localOrder.packages && localOrder.packages.length"
+                v-if="localOrder.order_packages && localOrder.order_packages.length"
                 class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
               >
-                <PackagesSummaryList :packages="localOrder.packages" />
+                <PackagesSummaryList :packages="localOrder.order_packages" />
               </div>
 
               <div
@@ -141,10 +152,10 @@
               </div>
 
               <div
-                v-if="localOrder.additional_services && localOrder.additional_services.length"
+                v-if="localOrder.services && localOrder.services.length"
                 class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
               >
-                <AdditionalServicesSummaryList :services="localOrder.additional_services" />
+                <AdditionalServicesSummaryList :services="localOrder.services" />
               </div>
 
               <div class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
@@ -152,6 +163,14 @@
                   <i class="ti ti-cash mr-2 text-xl"></i>Pagos
                   <span class="ml-2 text-base px-3 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300 rounded">{{ payments.length }}</span>
                 </h4>
+
+                <div
+                  v-if="hasInitialTotalDiff"
+                  class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm mb-4"
+                >
+                  <p class="text-base text-gray-500 dark:text-gray-400">Total inicial</p>
+                  <p class="text-lg sm:text-xl font-bold text-gray-700 dark:text-gray-300">{{ formatCurrency(localOrder.initial_total) }}</p>
+                </div>
 
                 <div class="grid grid-cols-3 gap-3 mb-4">
                   <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
@@ -307,7 +326,7 @@ export default {
     columns: { type: Array, default: () => [] },
     activeColumn: { type: Number, default: 0 }
   },
-  emits: ['close', 'updated', 'notify'],
+  emits: ['close', 'updated', 'notify', 'edit'],
   data() {
     return {
       localOrder: null,
@@ -326,6 +345,10 @@ export default {
     };
   },
   computed: {
+    canEdit() {
+      if (!this.localOrder) return false;
+      return this.localOrder.status !== 'delivered';
+    },
     activeColumnData() {
       return this.columns[this.activeColumn] || null;
     },
@@ -347,6 +370,12 @@ export default {
     },
     totalPaid() {
       return this.payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    },
+    hasInitialTotalDiff() {
+      if (!this.localOrder) return false;
+      const initial = Number(this.localOrder.initial_total ?? 0);
+      const total = Number(this.localOrder.total ?? 0);
+      return Math.abs(initial - total) >= 0.01;
     },
     canDeliver() {
       if (!this.localOrder) return false;
@@ -379,6 +408,12 @@ export default {
     }
   },
   methods: {
+
+    requestEdit() {
+      if (!this.canEdit) return;
+      this.$emit('edit', this.localOrder);
+    },
+
     async loadOrderDetail() {
       this.loading = true;
       try {

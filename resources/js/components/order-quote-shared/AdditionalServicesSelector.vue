@@ -35,7 +35,7 @@
           class="grid grid-cols-12 gap-3 items-center bg-gray-50 dark:bg-gray-700/40 rounded-lg px-4 py-3"
         >
           <span class="col-span-12 md:col-span-4 font-medium text-gray-800 dark:text-gray-200">
-            {{ nameOf(line.additional_service_id) }}
+            {{ line.additional_service_name_snapshot || nameOf(line.additional_service_id) }}
           </span>
 
           <div class="col-span-5 md:col-span-2 relative">

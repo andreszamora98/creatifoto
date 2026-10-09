@@ -5,10 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quote extends Model
@@ -38,11 +37,14 @@ class Quote extends Model
         return $this->hasMany(QuotePhotoType::class);
     }
 
-    public function packages(): BelongsToMany
+    public function quotePackages(): HasMany
     {
-        return $this->belongsToMany(Package::class, 'quote_packages')
-            ->withPivot(['package_name_snapshot', 'price_snapshot'])
-            ->withTimestamps();
+        return $this->hasMany(QuotePackage::class);
+    }
+
+    public function services(): MorphMany
+    {
+        return $this->morphMany(Serviceable::class, 'serviceable');
     }
 
     public function order(): HasOne
@@ -53,13 +55,5 @@ class Quote extends Model
     public function isConvertible(): bool
     {
         return in_array($this->status, ['pending', 'accepted']);
-    }
-
-    public function additionalServices(): MorphToMany
-    {
-        return $this->morphToMany(AdditionalService::class, 'serviceable')
-            ->withPivot(['price', 'quantity', 'notes'])
-            ->withTimestamps()
-            ->using(Serviceable::class);
     }
 }

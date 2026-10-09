@@ -112,7 +112,7 @@
                   autocomplete="off"
                 >
                 <span v-if="line.package_id && !isPackageOpen(line)" class="text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
-                  ${{ packagePrice(line.package_id).toFixed(2) }}
+                  ${{ packagePriceForLine(line).toFixed(2) }}
                 </span>
                 <button
                   v-if="line.package_id && !isPackageOpen(line)"
@@ -234,6 +234,22 @@ export default {
     packagePrice(id) {
       return Number(this.packageById(id)?.total_price || 0);
     },
+    packagePriceForLine(line) {
+      // Si el paquete ya no está en el catálogo, usar el snapshot.
+      const pkg = this.packageById(line.package_id);
+      if (pkg) return Number(pkg.total_price || 0);
+      return Number(line.price_snapshot || 0);
+    },
+    packageNameForLine(line) {
+      const pkg = this.packageById(line.package_id);
+      if (pkg) return this.packageLabel(pkg);
+      return line.package_name_snapshot || ('Paquete #' + line.package_id);
+    },
+    schoolNameForLine(line) {
+      const school = this.schoolById(line.school_id);
+      if (school) return school.name;
+      return line.school_name_snapshot || '';
+    },
     packagePlaceholder(line) {
       if (!line.school_id) return 'Selecciona primero una escuela';
       return line.package_id ? 'Buscar otro paquete...' : 'Buscar o seleccionar paquete...';
@@ -249,12 +265,12 @@ export default {
     schoolInputValueFor(line) {
       const key = this.lineKey(line);
       if (this.openSchoolDropdownKey === key) return this.schoolSearch;
-      return line.school_id ? (this.schoolById(line.school_id)?.name || '') : '';
+      return this.schoolNameForLine(line);
     },
     packageInputValueFor(line) {
       const key = this.lineKey(line);
       if (this.openPackageDropdownKey === key) return this.packageSearch;
-      return line.package_id ? this.packageLabel(this.packageById(line.package_id) || {}) : '';
+      return this.packageNameForLine(line);
     },
 
     openSchoolDropdown(line) {

@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AdditionalService extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -21,26 +22,12 @@ class AdditionalService extends Model
         'default_quantity' => 'integer',
     ];
 
-    public function orders(): MorphToMany
+    /**
+     * Usos históricos del servicio (órdenes, cotizaciones). Reemplaza los tres morphedByMany
+     * que dependían del pivote; para filtrar por tipo: ->where('serviceable_type', 'order').
+     */
+    public function serviceables(): HasMany
     {
-        return $this->morphedByMany(Order::class, 'serviceable')
-            ->withPivot(['price', 'notes'])
-            ->withTimestamps()
-            ->using(Serviceable::class);
-    }
-
-    public function orderPhotoTypes(): MorphToMany
-    {
-        return $this->morphedByMany(OrderPhotoType::class, 'serviceable')
-            ->withPivot(['price', 'notes'])
-            ->withTimestamps()
-            ->using(Serviceable::class);
-    }
-    public function quotes(): MorphToMany
-    {
-        return $this->morphedByMany(Quote::class, 'serviceable')
-            ->withPivot(['price', 'notes'])
-            ->withTimestamps()
-            ->using(Serviceable::class);
+        return $this->hasMany(Serviceable::class);
     }
 }

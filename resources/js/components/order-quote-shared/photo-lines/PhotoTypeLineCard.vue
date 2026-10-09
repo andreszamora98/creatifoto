@@ -2,7 +2,12 @@
   <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-3">
 
     <div class="flex items-center justify-between">
-      <span class="text-base font-semibold text-gray-500 dark:text-gray-400">Tipo {{ index + 1 }}</span>
+      <span class="text-base font-semibold text-gray-500 dark:text-gray-400">
+        Tipo {{ index + 1 }}
+        <span v-if="includedInPackage" class="ml-2 text-xs font-medium text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded">
+          Incluido en paquete
+        </span>
+      </span>
       <button v-if="canRemove" type="button" @click="onRemove"
               class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors">
         <i class="ti ti-trash text-xl"></i>
@@ -35,7 +40,7 @@
             autocomplete="off"
           >
           <span v-if="line.photo_type_id && !isOpen" class="text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
-            ${{ photoTypePrice(line.photo_type_id).toFixed(2) }} c/u
+            {{ displayPrice }}
           </span>
           <button
             v-if="line.photo_type_id && !isOpen"
@@ -74,7 +79,7 @@
         @blur="onQuantityBlur"
         v-blur-on-enter
         enterkeyhint="done"
-        :disabled="!line.photo_type_id"
+        :disabled="!line.photo_type_id || includedInPackage"
         class="form-control form-control-sm text-lg p-3 w-28 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
     </div>
@@ -126,6 +131,14 @@
       <select v-model="line.paper_type_id"
               class="form-control form-control-sm text-base p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
         <option :value="null">Papel (opcional)</option>
+        <!-- Papel histórico: ya no está en el catálogo pero la línea lo usa -->
+        <option
+          v-if="line.paper_type_id && !paperTypes.some(p => p.id === line.paper_type_id)"
+          :value="line.paper_type_id"
+          class="bg-white dark:bg-gray-800"
+        >
+          {{ line.paper_type_name_snapshot || 'Papel eliminado' }}
+        </option>
         <option v-for="p in paperTypes" :key="p.id" :value="p.id" class="bg-white dark:bg-gray-800">{{ p.name }}</option>
       </select>
     </div>
@@ -149,6 +162,7 @@ export default {
     filteredPhotoTypes: { type: Array, required: true },
     photoTypePrice: { type: Function, required: true },
     showError: { type: Boolean, default: false },
+    includedInPackage: { type: Boolean, default: false },
     onOpen: { type: Function, required: true },
     onInput: { type: Function, required: true },
     onEsc: { type: Function, required: true },
@@ -163,6 +177,16 @@ export default {
     onToggleFormat: { type: Function, required: true },
     onCloseFormat: { type: Function, required: true },
     onSelectFormat: { type: Function, required: true }
+  },
+  computed: {
+    displayPrice() {
+      if (this.includedInPackage) return 'Incluido';
+      const locked = this.line.locked_unit_price;
+      if (locked !== undefined && locked !== null) {
+        return '$' + Number(locked).toFixed(2) + ' c/u';
+      }
+      return '$' + Number(this.photoTypePrice(this.line.photo_type_id)).toFixed(2) + ' c/u';
+    }
   }
 };
 </script>

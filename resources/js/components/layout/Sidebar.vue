@@ -1,13 +1,23 @@
 <template>
   <aside
     :class="[
-      'flex flex-col h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-all duration-300 overflow-y-auto overflow-x-hidden border-r border-gray-200 dark:border-gray-700',
+      'relative flex flex-col h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-all duration-300 overflow-y-auto overflow-x-hidden border-r border-gray-200 dark:border-gray-700',
       isOpen ? 'w-64' : 'w-16',
     ]"
   >
-    <div class="flex items-center justify-center h-20 border-b border-gray-200 dark:border-gray-700 shrink-0">
+    <div class="flex items-center justify-center h-20 border-b border-gray-200 dark:border-gray-700 shrink-0 relative">
       <img v-if="isOpen" :src="'/images/creatifoto_2.png'" alt="creatifoto" class="h-14 w-auto" />
       <img v-else :src="'/images/creatifoto_1.png'" alt="creatifoto" class="h-14 w-auto" />
+
+      <button
+        v-if="isMobile && isOpen"
+        type="button"
+        class="absolute top-2 right-2 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        title="Cerrar menú"
+        @click="$emit('close-sidebar')"
+      >
+        <i class="ti ti-x text-lg"></i>
+      </button>
     </div>
 
     <nav class="flex-1 px-2 py-4 space-y-1 min-w-0">
@@ -72,6 +82,10 @@ export default {
     isOpen: {
       type: Boolean,
       required: true,
+    },
+    isMobile: {
+      type: Boolean,
+      default: false,
     },
   },
   emits: ['close-sidebar'],

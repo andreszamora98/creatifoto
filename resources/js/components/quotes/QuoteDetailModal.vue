@@ -149,7 +149,7 @@
               </h4>
             </div>
 
-            <PackagesSummaryList v-if="quote?.packages?.length" :packages="quote.packages" />
+            <PackagesSummaryList v-if="quote?.quote_packages?.length" :packages="quote.quote_packages" />
 
             <div class="mt-4 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
               <div class="flex items-center justify-between mb-3">
@@ -185,10 +185,10 @@
             </div>
 
             <div
-              v-if="quote?.additional_services?.length"
+              v-if="quote?.services?.length"
               class="mt-4 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
             >
-              <AdditionalServicesSummaryList :services="quote.additional_services" nested />
+              <AdditionalServicesSummaryList :services="quote.services" nested />
             </div>
           </div>
 
@@ -310,6 +310,7 @@ export default {
     populateConceptsFromQuote() {
       if (!this.quote) return;
       this.photoLines = (this.quote.quote_photo_types || []).map(line => ({
+        id: line.id,
         photo_type_id: line.photo_type_id,
         quantity: line.quantity,
         format: line.format,
@@ -318,7 +319,8 @@ export default {
 
       // selectedPackageIds es un computed derivado de packageLines (ver orderQuoteFormMixin),
       // por eso se escribe en packageLines y no directamente en selectedPackageIds.
-      this.packageLines = (this.quote.packages || []).map(p => ({ package_id: p.id }));
+      // OJO: p.id aquí es el id de la fila de la cotización; el id del catálogo es p.package_id.
+      this.packageLines = (this.quote.quote_packages || []).map(p => ({ package_id: p.package_id }));
     },
     getCurrentState() {
       return {};

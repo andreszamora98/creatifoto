@@ -5,9 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
@@ -18,6 +17,7 @@ class Order extends Model
         'customer_id',
         'quote_id',
         'total',
+        'initial_total',
         'pose_number',
         'notes',
         'estimated_delivery_date',
@@ -29,6 +29,7 @@ class Order extends Model
 
     protected $casts = [
         'total' => 'decimal:2',
+        'initial_total' => 'decimal:2',
         'balance_due' => 'decimal:2',
         'estimated_delivery_date' => 'date',
         'actual_delivery_date' => 'date',
@@ -50,25 +51,19 @@ class Order extends Model
         return $this->hasMany(OrderPhotoType::class);
     }
 
-    public function packages(): BelongsToMany
+    public function orderPackages(): HasMany
     {
-        return $this->belongsToMany(Package::class, 'order_packages')
-            ->withPivot(['package_name_snapshot', 'price_snapshot'])
-            ->withTimestamps()
-            ->using(OrderPackage::class);
+        return $this->hasMany(OrderPackage::class);
+    }
+
+    public function services(): MorphMany
+    {
+        return $this->morphMany(Serviceable::class, 'serviceable');
     }
 
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
-    }
-
-    public function additionalServices(): MorphToMany
-    {
-        return $this->morphToMany(AdditionalService::class, 'serviceable')
-            ->withPivot(['price', 'quantity', 'notes'])
-            ->withTimestamps()
-            ->using(Serviceable::class);
     }
 
     public function quote(): BelongsTo

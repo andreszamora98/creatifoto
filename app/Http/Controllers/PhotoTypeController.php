@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\PhotoType;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class PhotoTypeController extends Controller
 {
+    /** Solo activos (el global scope de SoftDeletes excluye los eliminados). */
     public function index()
     {
         return PhotoType::orderBy('name')->get(['id', 'name', 'base_price', 'base_quantity']);
@@ -17,7 +17,7 @@ class PhotoTypeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:photo_types,name',
+            'name' => ['required', 'string', 'max:255', Rule::unique('photo_types', 'name')->whereNull('deleted_at')],
             'base_price' => 'required|numeric|min:0',
             'base_quantity' => 'required|integer|min:1',
         ]);
@@ -31,7 +31,10 @@ class PhotoTypeController extends Controller
         $photoType = PhotoType::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('photo_types', 'name')->ignore($photoType->id)],
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('photo_types', 'name')->whereNull('deleted_at')->ignore($photoType->id),
+            ],
             'base_price' => 'required|numeric|min:0',
             'base_quantity' => 'required|integer|min:1',
         ]);
@@ -44,13 +47,13 @@ class PhotoTypeController extends Controller
     {
         $photoType = PhotoType::findOrFail($id);
 
-        try {
-            $photoType->delete();
-            return response()->json(['message' => 'Eliminado']);
-        } catch (QueryException $e) {
+        if ($photoType->packages()->exists()) {
             return response()->json([
-                'message' => 'No se puede eliminar: este tipo de fotografía ya está en uso en una o más órdenes, cotizaciones o paquetes.',
+                'message' => 'No se puede eliminar: este tipo de fotografía forma parte de uno o más paquetes. Quítalo de esos paquetes primero.',
             ], 422);
         }
+
+        $photoType->delete();
+        return response()->json(['message' => 'Eliminado']);
     }
 }

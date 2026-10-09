@@ -28,14 +28,6 @@
                 <span class="absolute top-0 left-1.5 w-3 h-3 rounded-full bg-fuchsia-500 mix-blend-multiply"></span>
                 <span class="absolute top-1.5 left-[3px] w-3 h-3 rounded-full bg-yellow-300 mix-blend-multiply"></span>
               </span>
-
-              <!--
-              <span class="relative z-10 inline-block w-[18px] h-[18px]">
-                <span class="absolute top-0 left-0 w-3 h-3 rounded-full bg-cyan-400 border border-white dark:border-gray-800"></span>
-                <span class="absolute top-0 left-1.5 w-3 h-3 rounded-full bg-fuchsia-500 border border-white dark:border-gray-800"></span>
-                <span class="absolute top-1.5 left-[3px] w-3 h-3 rounded-full bg-yellow-300 border border-white dark:border-gray-800"></span>
-              </span>
-              -->
             </template>
 
             <span v-else class="inline-flex -space-x-1">
@@ -46,7 +38,7 @@
 
           <div class="truncate">
             <p class="font-medium text-gray-800 dark:text-gray-300 text-base truncate">
-              {{ line.photo_type?.name || 'Tipo de foto' }}
+              {{ line.photo_type_name_snapshot || 'Tipo de foto' }}
               <span class="text-gray-400 dark:text-gray-500">
                 x{{ line.quantity }}
               </span>
@@ -55,15 +47,18 @@
             <p class="text-base text-gray-500 dark:text-gray-400">
               <span v-if="line.format === 'color'">Color</span>
               <span v-else>Blanco y negro</span>
-              <span v-if="line.paper_type"> • {{ line.paper_type.name }}</span>
-              <span v-if="line.paper_type">
-                (+{{ formatCurrency(line.paper_type.extra_price) }})
-              </span>
+              <span v-if="line.paper_type_name_snapshot"> • {{ line.paper_type_name_snapshot }}</span>
             </p>
           </div>
         </div>
 
-        <span class="font-semibold text-gray-700 dark:text-gray-300 text-base ml-2 whitespace-nowrap">
+        <span
+          v-if="isIncludedInPackage(line)"
+          class="text-sm font-semibold text-purple-600 dark:text-purple-300 ml-2 whitespace-nowrap px-2 py-0.5 bg-purple-50 dark:bg-purple-900/30 rounded"
+        >
+          Incluido
+        </span>
+        <span v-else class="font-semibold text-gray-700 dark:text-gray-300 text-base ml-2 whitespace-nowrap">
           {{ formatCurrency(line.unit_price * line.quantity) }}
         </span>
       </div>
@@ -78,6 +73,9 @@ export default {
     lines: { type: Array, default: () => [] }
   },
   methods: {
+    isIncludedInPackage(line) {
+      return Boolean(line?.order_package_id || line?.quote_package_id);
+    },
     formatCurrency(value) {
       const num = Number(value || 0);
       return '$' + num.toLocaleString('es-MX', {

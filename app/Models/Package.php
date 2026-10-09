@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Package extends Model
@@ -40,7 +41,7 @@ class Package extends Model
 
     public function school(): BelongsTo
     {
-        return $this->belongsTo(School::class);
+        return $this->belongsTo(School::class)->withTrashed();
     }
 
     public function photoTypes(): BelongsToMany
@@ -48,15 +49,18 @@ class Package extends Model
         return $this->belongsToMany(PhotoType::class, 'package_photo_types')
             ->withPivot('quantity')
             ->withTimestamps()
-            ->using(PackagePhotoType::class);
+            ->using(PackagePhotoType::class)
+            ->withTrashed();
     }
 
-    public function orders(): BelongsToMany
+    public function orderPackages(): HasMany
     {
-        return $this->belongsToMany(Order::class, 'order_packages')
-            ->withPivot(['package_name_snapshot', 'price_snapshot'])
-            ->withTimestamps()
-            ->using(OrderPackage::class);
+        return $this->hasMany(OrderPackage::class);
+    }
+
+    public function quotePackages(): HasMany
+    {
+        return $this->hasMany(QuotePackage::class);
     }
 
     public function getPackageNumberAttribute(): int

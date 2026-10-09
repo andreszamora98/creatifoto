@@ -18,18 +18,11 @@ class OrderController extends Controller
 
     public function index()
     {
-        return Order::with([
-            'customer:id,name,phone,email',
-            'packages:id,sequence,name,total_price',
-            'orderPhotoTypes.photoType:id,name,base_price',
-            'orderPhotoTypes.paperType:id,name,extra_price',
-            'payments',
-            'additionalServices'
-        ])
-        ->orderBy('created_at', 'desc')
-        ->get(['id', 'customer_id', 'total', 'balance_due', 'pose_number', 'notes',
-               'estimated_delivery_date', 'estimated_delivery_time', 'actual_delivery_date', 'status',
-               'signature_id', 'created_at']);
+        return Order::with(OrderService::RELATIONS)
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'customer_id', 'total', 'initial_total', 'balance_due', 'pose_number', 'notes',
+                   'estimated_delivery_date', 'estimated_delivery_time', 'actual_delivery_date', 'status',
+                   'signature_id', 'created_at']);
     }
 
     public function store(Request $request)
@@ -80,10 +73,56 @@ class OrderController extends Controller
                 'message' => 'Orden creada exitosamente',
                 'order' => $order,
             ], 201);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'message' => 'Error al crear la orden: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Edición de contenido. Las líneas existentes viajan con `id` (conservan su precio);
+     * las nuevas no llevan `id` (toman el catálogo vigente). unit_price del cliente se ignora.
+     */
+    public function update(Request $request, Order $order)
+    {
+        // exists simple a propósito: una línea existente puede apuntar a un catálogo ya con soft-delete.
+        // El servicio rechaza elementos eliminados solo cuando son nuevos o recién elegidos.
+        $validated = $request->validate([
+            'estimated_delivery_date' => 'required|date',
+            'estimated_delivery_time' => 'nullable|date_format:H:i',
+            'notes' => 'nullable|string|max:1000',
+
+            'photo_types' => 'nullable|array|required_without:package_ids',
+            'photo_types.*.id' => 'nullable|integer',
+            'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
+            'photo_types.*.quantity' => 'required|integer|min:1',
+            'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
+            'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
+            'package_ids' => 'nullable|array|required_without:photo_types',
+            'package_ids.*' => 'exists:packages,id',
+
+            'additional_services' => 'nullable|array',
+            'additional_services.*.additional_service_id' => 'required|exists:additional_services,id|distinct',
+            'additional_services.*.price' => 'required|numeric|min:0',
+            'additional_services.*.quantity' => 'required|integer|min:1',
+            'additional_services.*.notes' => 'nullable|string|max:255',
+        ], [
+            'photo_types.required_without' => 'Agrega al menos un tipo de fotografía o un paquete escolar.',
+            'package_ids.required_without' => 'Agrega al menos un tipo de fotografía o un paquete escolar.',
+        ]);
+
+        try {
+            $order = $this->orderService->updateOrder($order, $validated);
+            return response()->json(['message' => 'Orden actualizada', 'order' => $order]);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json(['message' => 'Error al actualizar la orden. Inténtalo de nuevo.'], 500);
         }
     }
 
@@ -116,14 +155,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $order->load([
-            'customer:id,name,phone,email',
-            'packages:id,sequence,name,total_price',
-            'orderPhotoTypes.photoType:id,name,base_price',
-            'orderPhotoTypes.paperType:id,name,extra_price',
-            'payments',
-            'additionalServices',
-        ]);
+        $order->load(OrderService::RELATIONS);
 
         return response()->json($order);
     }

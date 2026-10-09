@@ -2,31 +2,40 @@
 
 namespace App\Services;
 
-use App\Models\Order;
 use App\Models\Customer;
-use App\Models\PhotoType;
-use App\Models\Package;
+use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Quote;
 use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
-    public function createOrder(array $data)
-    {
-        return DB::transaction(function () use ($data) {
-            $customer = $this->resolveCustomer($data);
-            $total = $this->calculateTotal($data);
-            $totalPayments = (float) collect($data['payments'])->sum('amount');
+    public const RELATIONS = [
+        'customer:id,name,phone,email',
+        'orderPackages',
+        'orderPhotoTypes',
+        'services',
+        'payments',
+    ];
 
-            if (round($totalPayments, 2) > round($total, 2)) {
-                throw new \DomainException(
-                    'La suma de los pagos no puede exceder el total de la orden ($' . number_format($total, 2) . ').'
-                );
-            }
+    public function __construct(protected ContentSnapshotService $content)
+    {
+    }
+
+    /**
+     * Crea una orden. Si viene $fromQuote, el contenido se copia tal cual de la cotización
+     * (sin consultar el catálogo); si no, se arma desde el payload con precios vigentes.
+     */
+    public function createOrder(array $data, ?Quote $fromQuote = null): Order
+    {
+        return DB::transaction(function () use ($data, $fromQuote) {
+            $customer = $this->resolveCustomer($data);
 
             $order = Order::create([
                 'customer_id' => $customer->id,
-                'total' => $total,
+                'quote_id' => $fromQuote?->id,
+                'total' => 0,
+                'initial_total' => 0,
                 'pose_number' => $data['pose_number'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'estimated_delivery_date' => $data['estimated_delivery_date'],
@@ -36,42 +45,26 @@ class OrderService
                 'signature_id' => null,
             ]);
 
-            $order->balance_due = $total;
-            $order->save();
-
-            foreach ($data['photo_types'] ?? [] as $line) {
-                $photoType = PhotoType::find($line['photo_type_id']);
-                $order->orderPhotoTypes()->create([
-                    'photo_type_id' => $line['photo_type_id'],
-                    'quantity' => $line['quantity'],
-                    'unit_price' => $photoType->base_price ?? 0,
-                    'format' => $line['format'],
-                    'paper_type_id' => $line['paper_type_id'] ?? null,
-                ]);
+            if ($fromQuote) {
+                $this->content->copyQuoteToOrder($fromQuote, $order);
+            } else {
+                $this->content->createFor($order, $data);
             }
 
-            if (!empty($data['package_ids'])) {
-                $packages = Package::whereIn('id', $data['package_ids'])->get();
-                foreach ($packages as $pkg) {
-                    $order->packages()->attach($pkg->id, [
-                        'package_name_snapshot' => $pkg->name ?: ('Paquete ' . $pkg->sequence),
-                        'price_snapshot' => $pkg->total_price,
-                    ]);
-                }
+            $total = $this->content->recalculate($order);
+            $totalPayments = (float) collect($data['payments'])->sum('amount');
+
+            if (round($totalPayments, 2) > round($total, 2)) {
+                throw new \DomainException(
+                    'La suma de los pagos no puede exceder el total de la orden ($' . number_format($total, 2) . ').'
+                );
             }
 
-            if (!empty($data['additional_services'])) {
-                $services = collect($data['additional_services'])
-                    ->mapWithKeys(fn ($s) => [
-                        $s['additional_service_id'] => [
-                            'price' => $s['price'],
-                            'quantity' => $s['quantity'] ?? 1,
-                            'notes' => $s['notes'] ?? null,
-                        ],
-                    ])
-                    ->all();
-                $order->additionalServices()->attach($services);
-            }
+            $order->forceFill([
+                'total' => $total,
+                'initial_total' => $total,
+                'balance_due' => $total,
+            ])->save();
 
             $accumulated = 0;
             foreach ($data['payments'] as $i => $paymentData) {
@@ -88,17 +81,46 @@ class OrderService
                 ]);
             }
 
-            $order->load([
-                'customer:id,name,phone',
-                'packages:id,sequence,name,total_price',
-                'orderPhotoTypes.photoType:id,name,base_price',
-                'orderPhotoTypes.paperType:id,name,extra_price',
-                'additionalServices',
-                'payments',
-            ]);
-            $order->refresh();
+            return $order->refresh()->load(self::RELATIONS);
+        });
+    }
 
-            return $order;
+    /**
+     * Edita el contenido de una orden. Las líneas existentes (con id) conservan su precio;
+     * las nuevas toman el catálogo vigente. El total se recalcula desde las filas de la orden.
+     */
+    public function updateOrder(Order $order, array $data): Order
+    {
+        return DB::transaction(function () use ($order, $data) {
+            $order = Order::lockForUpdate()->findOrFail($order->id);
+
+            if ($order->status === 'delivered') {
+                throw new \DomainException('Una orden entregada no admite modificaciones.');
+            }
+
+            $this->content->syncFor($order, $data);
+
+            $total = $this->content->recalculate($order);
+            $paid = round((float) $order->payments()->sum('amount'), 2);
+
+            if ($total < $paid) {
+                throw new \DomainException(
+                    'El nuevo total ($' . number_format($total, 2) . ') es menor a lo ya pagado ($'
+                    . number_format($paid, 2) . ').'
+                );
+            }
+
+            $order->fill([
+                'notes' => array_key_exists('notes', $data) ? $data['notes'] : $order->notes,
+                'estimated_delivery_date' => $data['estimated_delivery_date'] ?? $order->estimated_delivery_date,
+                'estimated_delivery_time' => $data['estimated_delivery_time'] ?? $order->estimated_delivery_time,
+            ]);
+            $order->forceFill([
+                'total' => $total,
+                'balance_due' => round($total - $paid, 2),
+            ])->save();
+
+            return $order->fresh(self::RELATIONS);
         });
     }
 
@@ -145,30 +167,6 @@ class OrderService
         }
 
         throw new \DomainException('Debe seleccionar un cliente existente o crear uno nuevo.');
-    }
-
-    protected function calculateTotal(array $data): float
-    {
-        $total = 0;
-
-        foreach ($data['photo_types'] ?? [] as $line) {
-            $photoType = PhotoType::find($line['photo_type_id']);
-            $total += ($photoType->base_price ?? 0) * $line['quantity'];
-        }
-
-        if (!empty($data['package_ids'])) {
-            $packages = Package::whereIn('id', $data['package_ids'])->get();
-            $total += $packages->sum('total_price');
-        }
-
-        if (!empty($data['additional_services'])) {
-            $total += collect($data['additional_services'])->sum(function ($s) {
-                $quantity = (int) ($s['quantity'] ?? 1);
-                return (float) $s['price'] * $quantity;
-            });
-        }
-
-        return (float) $total;
     }
 
     public function addPayment(Order $order, array $data): array

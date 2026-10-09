@@ -38,6 +38,7 @@ Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/orders/{order}/payments', [OrderController::class, 'addPayment']);
 Route::patch('/orders/{order}/deliver', [OrderController::class, 'deliver']);
 Route::get('/orders/{order}', [OrderController::class, 'show']);
+Route::put('/orders/{order}', [OrderController::class, 'update']);
 
 //Clientes
 Route::patch('/customers/{customer}/contact', [CustomerController::class, 'updateContact']);

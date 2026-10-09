@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class PhotoType extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -24,22 +25,19 @@ class PhotoType extends Model
     ];
 
     /**
-     * Catálogo: photo_type_id es restrictOnDelete en package_photo_type,
-     * así que no se puede borrar un tipo de foto mientras algún
-     * paquete lo siga usando.
+     * Catálogo con soft-delete. photo_type_id sigue siendo restrictOnDelete en las tablas
+     * históricas, así que un hard-delete accidental queda bloqueado.
+     * (Corregido: la tabla pivote se llama package_photo_types, en plural.)
      */
     public function packages(): BelongsToMany
     {
-        return $this->belongsToMany(Package::class, 'package_photo_type')
+        return $this->belongsToMany(Package::class, 'package_photo_types')
             ->withPivot('quantity')
             ->withTimestamps()
             ->using(PackagePhotoType::class);
     }
 
-    /**
-     * Líneas de "paquete personalizado" capturadas en órdenes.
-     * photo_type_id también es restrictOnDelete aquí.
-     */
+    /** Líneas históricas de órdenes que usan este tipo de foto. */
     public function orderPhotoTypes(): HasMany
     {
         return $this->hasMany(OrderPhotoType::class);

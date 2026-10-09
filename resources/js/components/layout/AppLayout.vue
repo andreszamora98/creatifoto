@@ -1,10 +1,28 @@
 <template>
   <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-    <Sidebar
-      :is-open="sidebarOpen"
-      @toggle="toggleSidebar"
-    />
-    <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+    <transition name="fade">
+      <div
+        v-if="isMobile && sidebarOpen"
+        class="fixed inset-0 z-40 bg-black/50"
+        @click="closeSidebar"
+      ></div>
+    </transition>
+
+    <div
+      class="shrink-0 z-50 transition-transform duration-300"
+      :class="[
+        isMobile ? 'fixed inset-y-0 left-0 transform' : 'relative',
+        isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0',
+      ]"
+    >
+      <Sidebar
+        :is-open="isMobile ? true : sidebarOpen"
+        :is-mobile="isMobile"
+        @close-sidebar="closeSidebar"
+      />
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300 min-w-0">
       <Navbar
         :user-name="userName"
         :user-email="userEmail"
@@ -23,7 +41,8 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { state, setSidebarOpen, setDarkMode } from '../../state';
 import { store } from '../../store';
 import Sidebar from './Sidebar.vue';
@@ -38,33 +57,30 @@ export default {
     profilePic: { type: String, default: 'https://ui-avatars.com/api/?name=User&background=random' },
   },
   setup() {
-    const sidebarOpen = computed({
-      get: () => state.sidebarOpen,
-      set: (val) => setSidebarOpen(val),
-    });
+    const route = useRoute();
 
+    const sidebarOpen = computed(() => state.sidebarOpen);
+    const isMobile = computed(() => state.isMobile);
     const darkMode = computed({
       get: () => state.darkMode,
       set: (val) => setDarkMode(val),
     });
-
     const pageTitle = computed(() => store.pageTitle);
 
-    function toggleSidebar() {
-      setSidebarOpen(!sidebarOpen.value);
-    }
+    function toggleSidebar() { setSidebarOpen(!state.sidebarOpen); }
+    function closeSidebar()  { setSidebarOpen(false); }
+    function toggleTheme()   { setDarkMode(!state.darkMode); }
 
-    function toggleTheme() {
-      setDarkMode(!darkMode.value);
-    }
+    watch(() => route.fullPath, () => {
+      if (state.isMobile && state.sidebarOpen) setSidebarOpen(false);
+    });
 
-    return {
-      sidebarOpen,
-      darkMode,
-      pageTitle,
-      toggleSidebar,
-      toggleTheme,
-    };
+    return { sidebarOpen, isMobile, darkMode, pageTitle, toggleSidebar, closeSidebar, toggleTheme };
   },
 };
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

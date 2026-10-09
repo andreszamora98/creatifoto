@@ -20,16 +20,20 @@ export default {
   },
   computed: {
     summaryLines() {
-      const photoLines = (this.quote?.quote_photo_types || []).map(l => ({
-        key: 'pt-' + (l.id ?? l.photo_type_id),
-        label: `${l.photo_type?.name || 'Tipo de foto'} x${l.quantity}`,
-        amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
-        format: l.format
-      }));
-      const packageLines = (this.quote?.packages || []).map(pkg => ({
+      const photoLines = (this.quote?.quote_photo_types || []).map(l => {
+        const included = Boolean(l.quote_package_id);
+        return {
+          key: 'pt-' + (l.id ?? l.photo_type_id),
+          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}`,
+          amount: included ? 0 : Number(l.unit_price || 0) * Number(l.quantity || 0),
+          format: l.format,
+          icon: included ? 'ti ti-package' : undefined
+        };
+      });
+      const packageLines = (this.quote?.quote_packages || []).map(pkg => ({
         key: 'pkg-' + pkg.id,
-        label: pkg.pivot?.package_name_snapshot || pkg.name || ('Paquete ' + pkg.package_number),
-        amount: Number(pkg.pivot?.price_snapshot || pkg.total_price || 0)
+        label: pkg.package_name_snapshot || ('Paquete #' + pkg.package_id),
+        amount: Number(pkg.price_snapshot || 0)
       }));
       return [...photoLines, ...packageLines];
     }

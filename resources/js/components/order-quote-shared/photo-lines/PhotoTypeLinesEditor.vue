@@ -1,11 +1,6 @@
 <template>
   <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border-2"
        :class="showErrors && error ? 'border-red-500' : 'border-transparent'">
-    <!--  
-    <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
-      <i :class="icon" class="mr-2 text-xl"></i>{{ title }}
-    </h4>
-    -->
     <p v-if="showErrors && error" class="text-base text-red-600 dark:text-red-400 mb-3 font-medium">{{ errorMessage }}</p>
 
     <div v-if="loading" class="text-center py-4 text-lg text-gray-500 dark:text-gray-400 mt-3">
@@ -32,6 +27,7 @@
           :filtered-photo-types="filteredPhotoTypes"
           :photo-type-price="photoTypePrice"
           :show-error="showErrors && error"
+          :included-in-package="lineIsIncludedInPackage(line)"
           :on-open="() => openDropdown(line)"
           :on-input="(v) => onInput(line, v)"
           :on-esc="() => closeDropdown()"
@@ -121,16 +117,26 @@ export default {
       if (!this._lineKeyMap.has(line)) this._lineKeyMap.set(line, this._nextLineKey++);
       return this._lineKeyMap.get(line);
     },
+    // Un tipo de foto existente podría no estar en el catálogo (soft-deleted).
+    // En ese caso mostramos el nombre histórico guardado en el snapshot.
     photoTypeName(id) {
-      return this.photoTypes.find(p => p.id === id)?.name || '';
+      const fromCatalog = this.photoTypes.find(p => p.id === id);
+      if (fromCatalog) return fromCatalog.name;
+      return '';
     },
     photoTypePrice(id) {
       return Number(this.photoTypes.find(p => p.id === id)?.base_price || 0);
     },
+    lineIsIncludedInPackage(line) {
+      return Boolean(line?.order_package_id || line?.quote_package_id);
+    },
     inputValueFor(line) {
       const key = this.lineKey(line);
       if (this.openDropdownKey === key) return this.photoTypeSearch;
-      return line.photo_type_id ? this.photoTypeName(line.photo_type_id) : '';
+      if (!line.photo_type_id) return '';
+      const fromCatalog = this.photoTypes.find(p => p.id === line.photo_type_id);
+      if (fromCatalog) return fromCatalog.name;
+      return line.photo_type_name_snapshot || '';
     },
     openDropdown(line) {
       const key = this.lineKey(line);
@@ -165,10 +171,15 @@ export default {
       this.selectAndReset(idx, line, pt.id);
     },
     selectAndReset(idx, line, photoTypeId) {
+      const isExisting = Boolean(line.id);
       line.photo_type_id = photoTypeId;
-      const photoType = this.photoTypes.find(p => p.id === photoTypeId);
-      const base = Number(photoType?.base_quantity);
-      line.quantity = Number.isFinite(base) && base >= 1 ? base : 1;
+      // Sólo las líneas nuevas heredan cantidad del catálogo.
+      // Las existentes conservan su cantidad original.
+      if (!isExisting) {
+        const photoType = this.photoTypes.find(p => p.id === photoTypeId);
+        const base = Number(photoType?.base_quantity);
+        line.quantity = Number.isFinite(base) && base >= 1 ? base : 1;
+      }
       this.closeDropdown();
     },
     clearLine(idx) {
@@ -195,6 +206,7 @@ export default {
       this.openFormatKey = null;
     },
     addLine() {
+      // `id` no se define: es una línea nueva (precio vigente al guardar).
       this.lines.push({ photo_type_id: null, quantity: 1, format: 'bn', paper_type_id: null });
     },
     removeLine(idx) {

@@ -18,13 +18,8 @@ class QuoteController extends Controller
 
     public function index(Request $request)
     {
-        $query = Quote::with([
-            'customer:id,name,phone,email',
-            'packages:id,sequence,name,total_price',
-            'quotePhotoTypes.photoType:id,name,base_price',
-            'order:id,quote_id,status',
-            'additionalServices',
-        ])->orderBy('created_at', 'desc');
+        $query = Quote::with(array_merge(QuoteService::RELATIONS, ['order:id,quote_id,status']))
+            ->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -72,18 +67,12 @@ class QuoteController extends Controller
 
     public function show(Quote $quote)
     {
-        $quote->load([
-            'customer:id,name,phone,email',
-            'packages:id,sequence,name,total_price',
-            'quotePhotoTypes.photoType:id,name,base_price',
-            'quotePhotoTypes.paperType:id,name,extra_price',
-            'order:id,quote_id,status,total,balance_due',
-            'additionalServices',
-        ]);
+        $quote->load(array_merge(QuoteService::RELATIONS, ['order:id,quote_id,status,total,balance_due']));
 
         return response()->json($quote);
     }
 
+    /** El contenido NO se edita al convertir: la orden nace idéntica a la cotización. */
     public function convert(Request $request, Quote $quote)
     {
         $validated = $request->validate([
@@ -91,13 +80,6 @@ class QuoteController extends Controller
             'estimated_delivery_time' => 'required|date_format:H:i',
             'pose_number' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:1000',
-            'photo_types' => 'nullable|array',
-            'photo_types.*.photo_type_id' => 'required_with:photo_types|exists:photo_types,id',
-            'photo_types.*.quantity' => 'required_with:photo_types|integer|min:1',
-            'photo_types.*.format' => ['required_with:photo_types', Rule::in(['color', 'bn'])],
-            'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
-            'package_ids' => 'nullable|array',
-            'package_ids.*' => 'exists:packages,id',
             'payments' => 'required|array|min:1',
             'payments.*.amount' => 'required|numeric|min:0.01',
             'payments.*.payment_method' => 'nullable|string|max:50',
@@ -152,6 +134,7 @@ class QuoteController extends Controller
     {
         $validated = $request->validate(array_merge([
             'photo_types' => 'nullable|array|required_without:package_ids',
+            'photo_types.*.id' => 'nullable|integer',
             'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
             'photo_types.*.quantity' => 'required|integer|min:1',
             'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],

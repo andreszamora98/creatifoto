@@ -21,11 +21,11 @@ class PackagePhotoType extends Pivot
 
     public function package(): BelongsTo
     {
-        return $this->belongsTo(Package::class);
+        return $this->belongsTo(Package::class)->withTrashed();
     }
 
     public function photoType(): BelongsTo
     {
-        return $this->belongsTo(PhotoType::class);
+        return $this->belongsTo(PhotoType::class)->withTrashed();
     }
 }
