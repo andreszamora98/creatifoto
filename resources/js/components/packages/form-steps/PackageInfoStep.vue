@@ -1,21 +1,21 @@
 <template>
-  <section class="space-y-6">
-    <h4 v-if="sectionTitle" class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
-      <span v-if="sectionBadge !== null" class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">{{ sectionBadge }}</span>
+  <section class="space-y-3 sm:space-y-6 short:space-y-2">
+    <h4 v-if="sectionTitle" class="text-sm sm:text-base short:text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
+      <span v-if="sectionBadge !== null" class="w-6 h-6 sm:w-8 sm:h-8 short:w-6 short:h-6 rounded-full bg-blue-500 text-white text-xs sm:text-sm short:text-xs flex items-center justify-center font-bold">{{ sectionBadge }}</span>
       {{ sectionTitle }}
     </h4>
 
-    <div class="space-y-3">
-      <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+    <div class="space-y-2 sm:space-y-3 short:space-y-2">
+      <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Información del paquete
       </h5>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 short:gap-2">
         <div>
-          <label class="form-label text-lg font-medium block mb-2 text-gray-700 dark:text-gray-300">
+          <label class="form-label text-sm sm:text-lg short:text-sm font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">
             Escuela <span class="text-red-500">*</span>
           </label>
-          <div class="flex gap-2">
+          <div class="flex gap-2 short:gap-1.5">
             <div class="flex-1 min-w-0">
               <SchoolSelect
                 :model-value="form.school_id"
@@ -30,21 +30,21 @@
               @click="$emit('new-school')"
               title="Nueva escuela"
               aria-label="Nueva escuela"
-              class="flex-shrink-0 px-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              class="flex-shrink-0 px-2.5 sm:px-4 short:px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
-              <i class="ti ti-plus text-xl"></i>
+              <i class="ti ti-plus text-base sm:text-xl short:text-base"></i>
             </button>
           </div>
-          <p v-if="showErrors && fieldErrors.school" class="text-base text-red-600 dark:text-red-400 mt-1 font-medium">
+          <p v-if="showErrors && fieldErrors.school" class="text-xs sm:text-base short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
             Campo obligatorio*
           </p>
-          <p v-if="form.school_id && nextPackageNumber" class="text-sm text-gray-400 dark:text-gray-500 mt-1">
+          <p v-if="form.school_id && nextPackageNumber" class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 mt-1">
             Este será el paquete <strong>{{ pad2(nextPackageNumber) }}</strong> de la escuela seleccionada.
           </p>
         </div>
 
         <div>
-          <label class="form-label text-lg font-medium block mb-2 text-gray-700 dark:text-gray-300">
+          <label class="form-label text-sm sm:text-lg short:text-sm font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">
             Nombre (opcional)
           </label>
           <input
@@ -67,7 +67,7 @@
 import SchoolSelect from './SchoolSelect.vue';
 
 const FIELD_BASE =
-  'form-control form-control-sm w-full text-lg p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 ' +
+  'form-control form-control-sm w-full text-sm sm:text-lg short:text-sm p-2.5 sm:p-4 short:p-2 rounded-lg border bg-gray-50 dark:bg-gray-700 ' +
   'text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent ' +
   'disabled:opacity-60 disabled:cursor-not-allowed';
 

@@ -33,6 +33,7 @@
       :show="showModal"
       :editing="!!editingItem"
       :title="editingItem ? 'Editar tipo de fotografía' : 'Nuevo tipo de fotografía'"
+      icon="ti ti-camera"
       name-label="Nombre del tipo"
       name-placeholder="Ej. Credencial"
       price-label="Precio base"

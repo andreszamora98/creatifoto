@@ -1,16 +1,16 @@
 <template>
   <div>
-    <label v-if="label" class="form-label text-lg font-medium mb-2 block text-gray-700 dark:text-gray-300">{{ label }}</label>
+    <label v-if="label" class="form-label text-sm sm:text-lg short:text-sm font-medium mb-1.5 sm:mb-2 short:mb-1 block text-gray-700 dark:text-gray-300">{{ label }}</label>
     <textarea
       :value="modelValue"
       @input="onInput"
       v-blur-on-enter
       enterkeyhint="done"
       :rows="rows"
-      class="form-control form-control-sm w-full text-lg p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none"
+      class="form-control form-control-sm w-full text-sm sm:text-lg short:text-sm p-2.5 sm:p-4 short:p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none"
     ></textarea>
-    <div class="flex justify-end mt-1">
-      <span class="text-sm" :class="wordCount >= maxWords ? 'text-red-500 dark:text-red-400 font-medium' : 'text-gray-400 dark:text-gray-500'">
+    <div class="flex justify-end mt-1 short:mt-0.5">
+      <span class="text-xs sm:text-sm short:text-[11px]" :class="wordCount >= maxWords ? 'text-red-500 dark:text-red-400 font-medium' : 'text-gray-400 dark:text-gray-500'">
         {{ wordCount }}/{{ maxWords }} palabras
       </span>
     </div>

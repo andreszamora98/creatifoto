@@ -1,8 +1,8 @@
 <template>
-  <div v-if="!text" class="text-gray-400 dark:text-gray-500 italic">—</div>
+  <div v-if="!text" class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 italic">—</div>
   <div v-else>
-    <p class="whitespace-pre-wrap break-words" :class="expanded ? '' : 'line-clamp-3'">{{ text }}</p>
-    <button v-if="isLong" @click="expanded = !expanded" type="button" class="text-blue-600 dark:text-blue-400 text-xs font-medium mt-1">
+    <p class="text-xs sm:text-sm short:text-xs whitespace-pre-wrap break-words" :class="expanded ? '' : 'line-clamp-3'">{{ text }}</p>
+    <button v-if="isLong" @click="expanded = !expanded" type="button" class="text-[11px] sm:text-xs short:text-[10px] text-blue-600 dark:text-blue-400 font-medium mt-1">
       {{ expanded ? 'Ver menos' : 'Ver más' }}
     </button>
   </div>

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@tabler/icons-webfont/dist/tabler-icons.css';
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant short (@media (max-height: 500px));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';

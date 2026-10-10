@@ -1,20 +1,20 @@
 <template>
   <section>
-    <h4 v-if="title" class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-5">
+    <h4 v-if="title" class="text-sm sm:text-base short:text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3 sm:mb-5 short:mb-2">
       {{ title }}
     </h4>
 
-    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 space-y-2">
+    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-5 short:p-2 space-y-1.5 sm:space-y-2 short:space-y-1.5">
       <div
         v-for="line in lines"
         :key="line.key"
-        class="flex justify-between items-center text-lg text-gray-700 dark:text-gray-300 p-3 rounded-lg border"
+        class="flex justify-between items-center text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2"
         :class="lineBackgroundClass(line)"
       >
-        <span class="flex items-center gap-3 min-w-0">
+        <span class="flex items-center gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
           <span
             v-if="line.format"
-            class="relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
+            class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
             :class="line.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : ''"
           >
             <template v-if="line.format === 'color'">
@@ -35,23 +35,28 @@
 
           <span
             v-else-if="line.icon"
-            class="w-9 h-9 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700"
+            class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700"
           >
-            <i :class="[line.icon, 'text-xl text-gray-500 dark:text-gray-400']"></i>
+            <i :class="[line.icon, 'text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400']"></i>
           </span>
 
-          <span class="truncate">{{ line.label }}</span>
+          <span class="flex flex-col min-w-0">
+            <span class="truncate">{{ line.label }}</span>
+            <span v-if="hasUnitPrice(line)" class="text-xs sm:text-sm short:text-[11px] text-gray-400 dark:text-gray-500 truncate">
+              {{ formatCurrency(line.unitPrice) }} c/u
+            </span>
+          </span>
         </span>
         <span class="font-medium whitespace-nowrap ml-2">${{ line.amount.toFixed(2) }}</span>
       </div>
 
-      <div v-if="!lines.length" class="text-lg text-gray-400 dark:text-gray-500 italic">
+      <div v-if="!lines.length" class="text-sm sm:text-lg short:text-sm text-gray-400 dark:text-gray-500 italic">
         {{ emptyMessage }}
       </div>
 
-      <div class="border-t border-gray-300 dark:border-gray-600 pt-3 flex justify-between items-center">
-        <span class="text-xl font-semibold text-gray-800 dark:text-gray-200">{{ totalLabel }}</span>
-        <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">${{ estimatedTotal.toFixed(2) }}</span>
+      <div class="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 short:pt-2 flex justify-between items-center gap-2">
+        <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">{{ totalLabel }}</span>
+        <span class="text-lg sm:text-2xl short:text-lg font-bold text-blue-600 dark:text-blue-400">${{ estimatedTotal.toFixed(2) }}</span>
       </div>
     </div>
   </section>
@@ -70,6 +75,13 @@ export default {
   methods: {
     lineBackgroundClass() {
       return 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-600';
+    },
+    hasUnitPrice(line) {
+      return line.unitPrice !== undefined && line.unitPrice !== null;
+    },
+    formatCurrency(value) {
+      const num = Number(value || 0);
+      return '$' + num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
   }
 };

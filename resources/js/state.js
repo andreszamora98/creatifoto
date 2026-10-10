@@ -6,6 +6,7 @@ const storedSidebar = localStorage.getItem('sidebarOpen');
 const storedTheme = localStorage.getItem('darkMode');
 
 const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+const hoverMql = window.matchMedia('(hover: hover) and (pointer: fine)');
 
 const initialSidebarOpen = mql.matches
     ? false
@@ -15,6 +16,7 @@ export const state = reactive({
     sidebarOpen: initialSidebarOpen,
     darkMode: storedTheme !== null ? JSON.parse(storedTheme) : false,
     isMobile: mql.matches,
+    hasHover: hoverMql.matches,
 });
 
 export function setSidebarOpen(value) {
@@ -32,10 +34,19 @@ export function setDarkMode(value) {
 
 function handleViewportChange(e) {
     state.isMobile = e.matches;
-    setSidebarOpen(!e.matches); // móvil=>cerrado, escritorio => abierto
+    setSidebarOpen(!e.matches);
 }
 
+const mqlWithLegacy = /** @type {MediaQueryList & { addListener?: Function }} */ (mql);
+const hoverMqlWithLegacy = /** @type {MediaQueryList & { addListener?: Function }} */ (hoverMql);
+
 if (mql.addEventListener) mql.addEventListener('change', handleViewportChange);
-else mql.addListener(handleViewportChange); //Safari antiguo
+else mqlWithLegacy.addListener?.(handleViewportChange);
+
+if (hoverMql.addEventListener) {
+    hoverMql.addEventListener('change', (e) => { state.hasHover = e.matches; });
+} else {
+    hoverMqlWithLegacy.addListener?.((e) => { state.hasHover = e.matches; });
+}
 
 setDarkMode(state.darkMode);

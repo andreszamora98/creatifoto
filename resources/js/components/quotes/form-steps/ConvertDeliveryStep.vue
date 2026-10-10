@@ -1,6 +1,6 @@
-    <template>
-  <section class="space-y-6">
-    <p class="text-lg text-gray-700 dark:text-gray-300">
+<template>
+  <section class="space-y-3 sm:space-y-6 short:space-y-2">
+    <p class="text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300">
       Define la fecha y hora en que se entregará el pedido.
     </p>
     <DeliveryDateTimeFields

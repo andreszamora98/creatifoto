@@ -1,22 +1,24 @@
 <template>
   <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-6" @click="handleOverlayClick">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden" @click.stop>
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-3 sm:p-4 lg:p-6 short:p-0" @click="handleOverlayClick">
+      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-7xl h-auto max-h-[92dvh] short:h-full short:max-h-full rounded-lg short:rounded-none flex flex-col overflow-hidden" @click.stop>
 
-        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg flex-shrink-0">
-          <div class="flex justify-between items-center px-6 py-3">
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Convertir {{ quoteCode }} a orden</h3>
-            <button @click="requestCancel" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              <i class="ti ti-x text-2xl"></i>
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg short:rounded-none flex-shrink-0">
+          <div class="flex justify-between items-center px-3 sm:px-6 short:px-3 py-2 sm:py-3 short:py-0.5">
+            <h3 class="text-base sm:text-2xl short:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+              Convertir {{ quoteCode }} a orden
+            </h3>
+            <button @click="requestCancel" aria-label="Cerrar" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 sm:p-2 short:p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex-shrink-0">
+              <i class="ti ti-x text-lg sm:text-2xl short:text-base"></i>
             </button>
           </div>
         </div>
 
-        <div class="px-6 pt-6 pb-1 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-3 sm:px-6 short:px-3 pt-3 sm:pt-6 short:pt-1 pb-0 flex-shrink-0 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           <StepIndicator :steps="stepLabels" :current-step="currentStep" />
         </div>
 
-        <div class="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6">
+        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 sm:px-6 short:px-3 py-3 sm:py-6 short:py-1.5">
           <transition :name="transitionName" mode="out-in">
             <ConvertDeliveryStep
               v-if="currentStep === 1"
@@ -61,15 +63,16 @@
           </transition>
         </div>
 
-        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-3 px-6 py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
-          <button v-if="currentStep === 1" @click="requestCancel" class="flex-1 py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-          <button v-else @click="goBack" class="flex-1 py-3 text-lg rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
-            <i class="ti ti-chevron-left mr-1"></i>Atrás
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg short:rounded-none flex gap-2 sm:gap-4 short:gap-2 px-3 sm:px-6 short:px-3 py-2 sm:py-4 short:py-1 short:pb-[max(0.25rem,env(safe-area-inset-bottom))] flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+          <button v-if="currentStep === 1" @click="requestCancel" class="flex-1 py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+          <button v-else @click="goBack" class="flex-1 py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1">
+            <i class="ti ti-chevron-left"></i>Atrás
           </button>
 
-          <button v-if="currentStep === 1" @click="goNext" class="flex-1 py-3 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 text-white">Continuar</button>
-          <button v-else @click="confirmConvert" :disabled="submitting" class="flex-1 py-3 text-lg rounded-lg bg-blue-500 text-white disabled:opacity-50">
-            {{ submitting ? 'Creando...' : 'Confirmar y crear orden' }}
+          <button v-if="currentStep === 1" @click="goNext" class="flex-1 py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg bg-blue-500 hover:bg-blue-600 text-white">Continuar</button>
+          <button v-else @click="confirmConvert" :disabled="submitting" class="flex-1 py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg bg-blue-500 text-white disabled:opacity-50 flex items-center justify-center gap-1">
+            <span v-if="submitting"><i class="ti ti-refresh animate-spin"></i><span class="hidden sm:inline">Creando...</span></span>
+            <span v-else><span class="hidden sm:inline">Confirmar y crear orden</span><span class="sm:hidden">Confirmar</span></span>
           </button>
         </div>
       </div>

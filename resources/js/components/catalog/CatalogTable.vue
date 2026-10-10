@@ -1,6 +1,5 @@
 <template>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-    <!-- Leyenda con contador de registros -->
     <div v-if="!loading && items.length > 0" class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
       <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
         <span>{{ items.length }} {{ items.length === 1 ? itemLabelSingular : itemLabelPlural }}</span>
@@ -17,57 +16,95 @@
       {{ emptyMessage }}
     </div>
 
-    <div v-else class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-              Nombre
-            </th>
-            <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-              {{ priceLabel }}
-            </th>
-            <th 
-              v-if="showBaseQuantity" 
-              class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+    <template v-else>
+      <!-- Móvil / tablets verticales: cards -->
+      <div class="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+        <div
+          v-for="item in items"
+          :key="item.id"
+          @click="$emit('edit', item)"
+          class="p-3 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40 active:bg-gray-100 dark:active:bg-gray-700/60"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200 break-words">
+                {{ item.name }}
+              </h3>
+              <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <span class="font-medium text-gray-700 dark:text-gray-300">{{ formatCurrency(priceOf(item)) }}</span>
+                <span v-if="showBaseQuantity" class="flex items-center gap-1">
+                  <i class="ti ti-hash"></i>
+                  {{ item[baseQuantityKey] ?? item.base_quantity ?? item.baseQuantity ?? '—' }}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              @click.stop="$emit('delete', item)"
+              :aria-label="`Eliminar ${item.name}`"
+              class="flex-shrink-0 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-2 rounded-lg transition-colors"
             >
-              {{ baseQuantityLabel }}
-            </th>
-            <th class="px-3 py-2 w-16"></th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <tr
-            v-for="item in items"
-            :key="item.id"
-            @click="$emit('edit', item)"
-            class="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
-          >
-            <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
-              {{ item.name }}
-            </td>
-            <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              {{ formatCurrency(priceOf(item)) }}
-            </td>
-            <td 
-              v-if="showBaseQuantity" 
-              class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
-            >
-              {{ item[baseQuantityKey] ?? item.base_quantity ?? item.baseQuantity ?? '—' }}
-            </td>
-            <td class="px-3 py-2 whitespace-nowrap" @click.stop>
-              <button
-                type="button"
-                @click="$emit('delete', item)"
-                class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors"
+              <i class="ti ti-trash text-lg"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop: tabla -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+          <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                Nombre
+              </th>
+              <th class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                {{ priceLabel }}
+              </th>
+              <th
+                v-if="showBaseQuantity"
+                class="px-3 py-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
               >
-                <i class="ti ti-trash text-xl"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+                {{ baseQuantityLabel }}
+              </th>
+              <th class="px-3 py-2 w-16"></th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tr
+              v-for="item in items"
+              :key="item.id"
+              @click="$emit('edit', item)"
+              class="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+            >
+              <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
+                {{ item.name }}
+              </td>
+              <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                {{ formatCurrency(priceOf(item)) }}
+              </td>
+              <td
+                v-if="showBaseQuantity"
+                class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+              >
+                {{ item[baseQuantityKey] ?? item.base_quantity ?? item.baseQuantity ?? '—' }}
+              </td>
+              <td class="px-3 py-2 whitespace-nowrap" @click.stop>
+                <button
+                  type="button"
+                  @click="$emit('delete', item)"
+                  class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors"
+                  aria-label="Eliminar"
+                >
+                  <i class="ti ti-trash text-xl"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
   </div>
 </template>
 

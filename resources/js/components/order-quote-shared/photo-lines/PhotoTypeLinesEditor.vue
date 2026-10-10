@@ -1,16 +1,19 @@
 <template>
-  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border-2"
+  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2.5 sm:p-5 short:p-2 border-2"
        :class="showErrors && error ? 'border-red-500' : 'border-transparent'">
-    <p v-if="showErrors && error" class="text-base text-red-600 dark:text-red-400 mb-3 font-medium">{{ errorMessage }}</p>
+    <h4 v-if="title" class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
+      <i :class="icon" class="mr-2 text-lg sm:text-xl"></i>{{ title }}
+    </h4>
+    <p v-if="showErrors && error" class="text-sm sm:text-lg short:text-sm text-red-600 dark:text-red-400 mb-2 sm:mb-3 short:mb-1.5 font-medium">{{ errorMessage }}</p>
 
-    <div v-if="loading" class="text-center py-4 text-lg text-gray-500 dark:text-gray-400 mt-3">
+    <div v-if="loading" class="text-center py-3 sm:py-4 short:py-2 text-base sm:text-lg short:text-base text-gray-500 dark:text-gray-400 mt-2 sm:mt-3 short:mt-1">
       <i class="ti ti-refresh animate-spin"></i> Cargando catálogo...
     </div>
 
-    <div v-else class="mt-3">
-      <p v-if="lines.length === 0 && emptyHint" class="text-base text-gray-400 dark:text-gray-500 italic">{{ emptyHint }}</p>
+    <div v-else class="mt-2 sm:mt-3 short:mt-1">
+      <p v-if="lines.length === 0 && emptyHint" class="text-sm sm:text-lg short:text-sm text-gray-400 dark:text-gray-500 italic">{{ emptyHint }}</p>
 
-      <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 short:gap-2">
         <PhotoTypeLineCard
           v-for="(line, idx) in lines"
           :key="lineKey(line)"
@@ -46,8 +49,8 @@
       </div>
 
       <button type="button" @click="addLine"
-              class="mt-3 text-base font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
-        <i class="ti ti-plus text-lg"></i> {{ lines.length === 0 ? addLabelFirst : addLabel }}
+              class="mt-2 sm:mt-3 short:mt-1 py-1 sm:py-0 text-sm sm:text-lg short:text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
+        <i class="ti ti-plus text-base sm:text-xl short:text-base"></i> {{ lines.length === 0 ? addLabelFirst : addLabel }}
       </button>
     </div>
   </div>
@@ -69,8 +72,8 @@ export default {
     showErrors: { type: Boolean, default: false },
     error: { type: Boolean, default: false },
     errorMessage: { type: String, default: 'Campo obligatorio*' },
-    title: { type: String, default: 'Tipos de fotografía' },
-    icon: { type: String, default: 'ti ti-photo' },
+    title: { type: String, default: '' },
+    icon: { type: String, default: 'ti ti-camera' },
     emptyHint: { type: String, default: '' },
     addLabel: { type: String, default: 'Agregar otro tipo' },
     addLabelFirst: { type: String, default: 'Agregar tipo' }
@@ -117,8 +120,6 @@ export default {
       if (!this._lineKeyMap.has(line)) this._lineKeyMap.set(line, this._nextLineKey++);
       return this._lineKeyMap.get(line);
     },
-    // Un tipo de foto existente podría no estar en el catálogo (soft-deleted).
-    // En ese caso mostramos el nombre histórico guardado en el snapshot.
     photoTypeName(id) {
       const fromCatalog = this.photoTypes.find(p => p.id === id);
       if (fromCatalog) return fromCatalog.name;
@@ -173,8 +174,6 @@ export default {
     selectAndReset(idx, line, photoTypeId) {
       const isExisting = Boolean(line.id);
       line.photo_type_id = photoTypeId;
-      // Sólo las líneas nuevas heredan cantidad del catálogo.
-      // Las existentes conservan su cantidad original.
       if (!isExisting) {
         const photoType = this.photoTypes.find(p => p.id === photoTypeId);
         const base = Number(photoType?.base_quantity);
@@ -206,7 +205,6 @@ export default {
       this.openFormatKey = null;
     },
     addLine() {
-      // `id` no se define: es una línea nueva (precio vigente al guardar).
       this.lines.push({ photo_type_id: null, quantity: 1, format: 'bn', paper_type_id: null });
     },
     removeLine(idx) {

@@ -3,51 +3,48 @@
     <transition name="fade">
       <div
         v-if="show"
-        class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/40 backdrop-blur-[1px] modal-overlay"
+        class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 lg:p-6 short:p-0 bg-black/40 backdrop-blur-[1px] modal-overlay"
       >
-        <div class="modal-zoom w-full max-w-4xl">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-h-[85vh] overflow-y-auto isolate">
-            <!-- Encabezado fijo -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-30">
-              <div>
-                <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                  <i class="ti ti-package mr-2"></i>{{ modalTitle }}
+        <div class="modal-zoom w-full h-full sm:h-auto sm:max-w-4xl">
+          <div class="bg-white dark:bg-gray-800 rounded-lg short:rounded-none shadow-xl w-full h-full sm:h-auto sm:max-h-[85vh] overflow-y-auto isolate">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-3 sm:p-5 short:p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-30">
+              <div class="min-w-0">
+                <h3 class="text-base sm:text-2xl short:text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                  <i class="ti ti-package mr-1.5 sm:mr-2"></i>{{ modalTitle }}
                 </h3>
-                <p class="text-base text-gray-600 dark:text-gray-400 mt-1">
+                <p class="text-xs sm:text-base short:text-xs text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 truncate">
                   {{ modalSubtitle }}
                 </p>
               </div>
-              <div class="flex items-center justify-end gap-2">
+              <div class="flex items-center justify-end gap-2 flex-shrink-0">
                 <button
                   @click="$emit('close')"
                   aria-label="Cerrar"
-                  class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 transition-colors"
+                  class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 sm:p-3 short:p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 transition-colors"
                 >
-                  <i class="ti ti-x text-2xl"></i>
+                  <i class="ti ti-x text-lg sm:text-2xl short:text-base"></i>
                 </button>
               </div>
             </div>
 
-            <!-- Contenido -->
-            <div class="p-4 sm:p-5">
-              <div v-if="loading" class="text-center py-10">
-                <i class="ti ti-refresh animate-spin text-2xl text-blue-500"></i>
+            <div class="p-3 sm:p-5 short:p-2">
+              <div v-if="loading" class="text-center py-6 sm:py-10 short:py-4">
+                <i class="ti ti-refresh animate-spin text-xl sm:text-2xl short:text-lg text-blue-500"></i>
               </div>
 
-              <!-- fieldset disabled bloquea todos los controles nativos en modo solo lectura -->
-              <fieldset v-else :disabled="readonly" class="min-w-0 space-y-5">
-                <!-- Información general -->
-                <div class="rounded-lg p-5 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600" style="border-left-width: 4px;">
-                  <h4 class="font-semibold mb-4 text-lg flex items-center text-blue-800 dark:text-blue-300">
-                    <i class="ti ti-info-circle mr-2 text-xl"></i>Información del paquete
+              <fieldset v-else :disabled="readonly" class="min-w-0 space-y-3 sm:space-y-5 short:space-y-2">
+                <div class="rounded-lg p-3 sm:p-5 short:p-2 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600" style="border-left-width: 4px;">
+                  <h4 class="font-semibold mb-2.5 sm:mb-4 short:mb-2 text-base sm:text-lg short:text-sm flex items-center text-blue-800 dark:text-blue-300">
+                    <i class="ti ti-info-circle mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Información del paquete
                   </h4>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 short:gap-2">
                     <div>
-                      <label class="text-base font-medium text-blue-800 dark:text-blue-300 mb-1.5 block">
+                      <label class="text-sm sm:text-base short:text-xs font-medium text-blue-800 dark:text-blue-300 mb-1 sm:mb-1.5 short:mb-1 block">
                         Escuela <span class="text-red-500">*</span>
                       </label>
-                      <div class="flex gap-2">
+                      <div class="flex gap-2 short:gap-1.5">
                         <select
                           v-model.number="form.school_id"
                           :class="fieldClass(showErrors && !form.school_id)"
@@ -59,18 +56,18 @@
                           v-if="!readonly"
                           type="button"
                           @click="showSchoolModal = true"
-                          class="flex-shrink-0 px-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 transition-colors"
+                          class="flex-shrink-0 px-2.5 sm:px-4 short:px-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 transition-colors"
                           title="Nueva escuela"
                           aria-label="Nueva escuela"
                         >
-                          <i class="ti ti-plus text-xl"></i>
+                          <i class="ti ti-plus text-base sm:text-xl short:text-base"></i>
                         </button>
                       </div>
-                      <p v-if="showErrors && !form.school_id" class="text-base text-red-600 dark:text-red-400 mt-1.5 font-medium">Campo obligatorio*</p>
+                      <p v-if="showErrors && !form.school_id" class="text-xs sm:text-base short:text-xs text-red-600 dark:text-red-400 mt-1 sm:mt-1.5 font-medium">Campo obligatorio*</p>
                     </div>
 
                     <div>
-                      <label class="text-base font-medium text-blue-800 dark:text-blue-300 mb-1.5 block">Nombre (opcional)</label>
+                      <label class="text-sm sm:text-base short:text-xs font-medium text-blue-800 dark:text-blue-300 mb-1 sm:mb-1.5 short:mb-1 block">Nombre (opcional)</label>
                       <input
                         v-model="form.name"
                         type="text"
@@ -80,11 +77,11 @@
                     </div>
 
                     <div>
-                      <label class="text-base font-medium text-blue-800 dark:text-blue-300 mb-1.5 block">
+                      <label class="text-sm sm:text-base short:text-xs font-medium text-blue-800 dark:text-blue-300 mb-1 sm:mb-1.5 short:mb-1 block">
                         Precio total <span class="text-red-500">*</span>
                       </label>
                       <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base">$</span>
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm sm:text-base short:text-xs">$</span>
                         <input
                           v-model.number="form.total_price"
                           type="number"
@@ -94,17 +91,16 @@
                           :class="[fieldClass(showErrors && priceMissing), 'pl-8']"
                         >
                       </div>
-                      <p v-if="showErrors && priceMissing" class="text-base text-red-600 dark:text-red-400 mt-1.5 font-medium">Campo obligatorio*</p>
+                      <p v-if="showErrors && priceMissing" class="text-xs sm:text-base short:text-xs text-red-600 dark:text-red-400 mt-1 sm:mt-1.5 font-medium">Campo obligatorio*</p>
                     </div>
                   </div>
                 </div>
 
-                <!-- Características -->
-                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
-                  <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center mb-4">
-                    <i class="ti ti-list-details mr-2 text-xl"></i>Características
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 sm:p-5 short:p-2">
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg short:text-sm flex items-center mb-2.5 sm:mb-4 short:mb-2">
+                    <i class="ti ti-list-details mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Características
                   </h4>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 short:gap-2">
                     <NotesField
                       label="Características mujeres"
                       :model-value="form.women_features_text"
@@ -122,8 +118,7 @@
                   </div>
                 </div>
 
-                <!-- Tipos de fotografía -->
-                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-5">
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 sm:p-5 short:p-2">
                   <PhotoTypeLinesEditor
                     :lines="photoLines"
                     :photo-types="photoTypes"
@@ -138,11 +133,11 @@
               </fieldset>
             </div>
 
-            <!-- Pie fijo -->
-            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 p-4 sm:p-5 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 z-30">
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 short:gap-2 p-3 sm:p-5 short:p-2 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 z-30"
+                 style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
               <button
                 @click="$emit('close')"
-                class="px-6 py-3 text-base font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 transition-colors"
+                class="px-4 sm:px-6 short:px-4 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 transition-colors"
               >
                 {{ readonly ? 'Cerrar' : 'Cancelar' }}
               </button>
@@ -150,11 +145,12 @@
                 v-if="!readonly"
                 @click="submit"
                 :disabled="submitting || loading"
-                class="px-6 py-3 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-4 sm:px-6 short:px-4 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg flex items-center justify-center gap-2 short:gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <i v-if="submitting" class="ti ti-refresh animate-spin"></i>
-                <i v-else class="ti ti-device-floppy text-lg"></i>
-                {{ submitting ? 'Guardando...' : 'Guardar' }}
+                <i v-else class="ti ti-device-floppy text-base sm:text-lg short:text-base"></i>
+                <span v-if="submitting">Guardando...</span>
+                <span v-else>Guardar</span>
               </button>
             </div>
           </div>
@@ -181,7 +177,7 @@ import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLin
 import NotesField from '../order-quote-shared/NotesField.vue';
 
 const FIELD_BASE =
-  'w-full text-base rounded-lg border bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 px-3 ' +
+  'w-full text-sm sm:text-base short:text-sm rounded-lg border bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-2 sm:py-3 short:py-1.5 px-2.5 sm:px-3 short:px-2.5 ' +
   'disabled:opacity-70 disabled:cursor-not-allowed';
 const FIELD_OK = 'border-gray-300 dark:border-gray-600';
 const FIELD_ERROR = 'border-red-400 dark:border-red-500';

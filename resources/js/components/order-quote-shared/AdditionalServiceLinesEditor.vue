@@ -1,44 +1,44 @@
 <template>
-  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-5 border-2"
+  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2.5 sm:p-5 short:p-2 border-2"
        :class="showErrors && error ? 'border-red-500' : 'border-transparent'">
-    <h4 v-if="title" class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
-      <i :class="icon" class="mr-2 text-xl"></i>{{ title }}
+    <h4 v-if="title" class="text-base sm:text-xl short:text-base font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
+      <i :class="icon" class="mr-1.5 sm:mr-2 text-xl sm:text-2xl short:text-xl"></i>{{ title }}
     </h4>
-    <p v-if="showErrors && error" class="text-base text-red-600 dark:text-red-400 mb-3 font-medium">{{ errorMessage }}</p>
+    <p v-if="showErrors && error" class="text-sm sm:text-lg short:text-sm text-red-600 dark:text-red-400 mb-2 sm:mb-3 short:mb-1.5 font-medium">{{ errorMessage }}</p>
 
-    <div v-if="loading" class="text-center py-4 text-lg text-gray-500 dark:text-gray-400 mt-3">
+    <div v-if="loading" class="text-center py-3 sm:py-4 short:py-2 text-base sm:text-lg short:text-base text-gray-500 dark:text-gray-400 mt-2 sm:mt-3 short:mt-1">
       <i class="ti ti-refresh animate-spin"></i> Cargando catálogo...
     </div>
 
-    <div v-else class="mt-3">
-      <p v-if="lines.length === 0 && emptyHint" class="text-base text-gray-400 dark:text-gray-500 italic">{{ emptyHint }}</p>
+    <div v-else class="mt-2 sm:mt-3 short:mt-1">
+      <p v-if="lines.length === 0 && emptyHint" class="text-sm sm:text-lg short:text-sm text-gray-400 dark:text-gray-500 italic">{{ emptyHint }}</p>
 
-      <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 short:gap-2">
         <div v-for="(line, idx) in lines" :key="lineKey(line)"
-             class="relative bg-white dark:bg-gray-800 border rounded-lg p-4 space-y-3"
+             class="relative bg-white dark:bg-gray-800 border rounded-lg p-2.5 sm:p-4 short:p-2 space-y-2 sm:space-y-3 short:space-y-2"
              :class="showErrors && !line.service_id
                ? 'border-red-500 dark:border-red-500'
                : 'border-gray-200 dark:border-gray-600'">
-          <div class="flex items-center justify-between">
-            <span class="text-base font-semibold text-gray-500 dark:text-gray-400">Servicio {{ idx + 1 }}</span>
-            <button v-if="canRemove" type="button" @click="removeLine(idx)"
-                    class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors">
-              <i class="ti ti-trash text-xl"></i>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-base sm:text-lg short:text-base font-semibold text-gray-500 dark:text-gray-400 truncate">Servicio {{ idx + 1 }}</span>
+            <button v-if="canRemove" type="button" @click="removeLine(idx)" aria-label="Eliminar servicio"
+                    class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1 sm:p-1.5 short:p-1 rounded-lg transition-colors flex-shrink-0">
+              <i class="ti ti-trash text-lg sm:text-2xl short:text-lg"></i>
             </button>
           </div>
 
-          <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 items-end">
+          <div class="grid grid-cols-[1fr_auto] gap-x-1.5 sm:gap-x-3 short:gap-x-1.5 gap-y-1 items-end">
             <span></span>
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400 text-center whitespace-nowrap">Cantidad</span>
+            <span class="text-xs sm:text-base short:text-xs font-medium text-gray-500 dark:text-gray-400 text-center whitespace-nowrap">Cantidad</span>
 
-            <div class="relative min-w-[10rem]" :data-service-dropdown="editorId" @focusout="onFocusOut(line, $event)">
+            <div class="relative min-w-0 sm:min-w-[10rem]" :data-service-dropdown="editorId" @focusout="onFocusOut(line, $event)">
               <div
-                class="w-full text-lg p-3 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center gap-2"
+                class="w-full text-base sm:text-lg short:text-base p-2 sm:p-3 short:p-1.5 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center gap-1.5 sm:gap-2"
                 :class="showErrors && !line.service_id
                   ? 'border-red-500 dark:border-red-500'
                   : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
               >
-                <i class="ti ti-tool text-xl text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
+                <i class="ti ti-tool text-lg sm:text-xl short:text-lg text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
                 <input
                   :value="inputValueFor(line)"
                   @focus="openDropdown(line)"
@@ -52,39 +52,39 @@
                   class="flex-1 min-w-0 bg-transparent border-0 outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 truncate"
                   autocomplete="off"
                 >
-                <span v-if="line.service_id && !isOpen(line)" class="text-sm font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
+                <span v-if="line.service_id && !isOpen(line)" class="text-xs sm:text-sm short:text-xs font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
                   ${{ servicePriceForLine(line).toFixed(2) }} c/u
                 </span>
                 <button
                   v-if="line.service_id && !isOpen(line)"
                   type="button"
                   @mousedown.prevent="clearLine(idx)"
-                  class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 flex-shrink-0 p-1 rounded-lg transition-colors"
+                  class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 flex-shrink-0 p-1 short:p-0.5 rounded-lg transition-colors"
                   title="Limpiar selección"
                 >
-                  <i class="ti ti-x text-2xl"></i>
+                  <i class="ti ti-x text-lg sm:text-2xl short:text-lg"></i>
                 </button>
               </div>
 
               <transition name="dropdown">
                 <div v-if="isOpen(line)"
                      class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
-                  <div class="max-h-56 overflow-y-auto">
+                  <div class="max-h-48 sm:max-h-56 short:max-h-32 overflow-y-auto">
                     <button
                       v-for="(svc, sIdx) in filteredServices"
                       :key="svc.id"
                       type="button"
                       @mousedown.prevent="selectAndReset(idx, line, svc.id)"
                       @mouseover="highlightedIdx = sIdx"
-                      class="w-full px-3 py-2.5 text-base flex items-center gap-2 text-gray-800 dark:text-gray-200"
+                      class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-base sm:text-lg short:text-base flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
                       :class="sIdx === highlightedIdx ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-700'"
                     >
-                      <i v-if="svc.id === line.service_id" class="ti ti-check text-blue-600 dark:text-blue-400 text-base flex-shrink-0"></i>
-                      <span v-else class="w-4 flex-shrink-0"></span>
+                      <i v-if="svc.id === line.service_id" class="ti ti-check text-blue-600 dark:text-blue-400 text-base sm:text-lg flex-shrink-0"></i>
+                      <span v-else class="w-4 sm:w-5 flex-shrink-0"></span>
                       <span class="flex-1 text-left truncate">{{ svc.name }}</span>
-                      <span class="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">${{ Number(svc.default_price).toFixed(2) }} c/u</span>
+                      <span class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap flex-shrink-0">${{ Number(svc.default_price).toFixed(2) }} c/u</span>
                     </button>
-                    <p v-if="filteredServices.length === 0" class="text-sm text-gray-400 dark:text-gray-500 text-center py-3">Sin coincidencias</p>
+                    <p v-if="filteredServices.length === 0" class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 text-center py-2 sm:py-3">Sin coincidencias</p>
                   </div>
                 </div>
               </transition>
@@ -96,15 +96,15 @@
               v-blur-on-enter
               enterkeyhint="done"
               :disabled="!line.service_id"
-              class="form-control form-control-sm text-lg p-3 w-28 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="form-control form-control-sm text-base sm:text-lg short:text-base p-2 sm:p-3 short:p-1.5 w-16 sm:w-28 short:w-14 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
           </div>
         </div>
       </div>
 
       <button type="button" @click="addLine"
-              class="mt-3 text-base font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
-        <i class="ti ti-plus text-lg"></i> {{ lines.length === 0 ? addLabelFirst : addLabel }}
+              class="mt-2 sm:mt-3 short:mt-1 py-1 sm:py-0 text-sm sm:text-lg short:text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
+        <i class="ti ti-plus text-base sm:text-xl short:text-base"></i> {{ lines.length === 0 ? addLabelFirst : addLabel }}
       </button>
     </div>
   </div>
@@ -230,10 +230,7 @@ export default {
     selectAndReset(idx, line, serviceId) {
       const isExisting = Boolean(line.id);
       line.service_id = serviceId;
-      if (isExisting) {
-        // Servicio existente: conservamos su price histórico.
-        // El usuario puede editarlo manualmente si lo necesita.
-      } else {
+      if (!isExisting) {
         line.price = this.servicePrice(serviceId);
         line.quantity = this.serviceDefaultQuantity(serviceId);
       }

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
+  <div class="flex h-dvh overflow-hidden bg-gray-50 dark:bg-gray-900">
     <transition name="fade">
       <div
         v-if="isMobile && sidebarOpen"
@@ -33,7 +33,10 @@
         @toggle-sidebar="toggleSidebar"
         @toggle-theme="toggleTheme"
       />
-      <main class="flex-1 overflow-y-auto p-4">
+      <main
+        class="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 short:p-2"
+        style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));"
+      >
         <slot />
       </main>
     </div>

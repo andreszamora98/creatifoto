@@ -1,54 +1,60 @@
 <template>
-  <div class="p-6 h-full flex flex-col overflow-hidden">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4 flex-shrink-0">
-
-      <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
-        <div class="relative flex-1 md:flex-initial md:w-72">
-          <i class="ti ti-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Buscar por escuela, paquete, precio..."
-            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
+  <div class="h-full flex flex-col overflow-hidden">
+    <div class="flex-shrink-0 mb-3 short:mb-1">
+      <div class="flex flex-col md:flex-row md:items-center gap-2 short:gap-1">
+        <div class="flex-1 w-full md:max-w-sm">
+          <div class="relative">
+            <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Buscar por escuela, paquete, precio..."
+              class="w-full pl-9 pr-3 py-2 short:py-1 text-sm short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+          </div>
         </div>
 
-        <button
-          @click="refreshAll"
-          :disabled="loading"
-          class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
-          Actualizar
-        </button>
+        <div class="grid grid-cols-3 md:flex md:items-center gap-2 short:gap-1">
+          <button
+            @click="refreshAll"
+            :disabled="loading"
+            class="justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            aria-label="Actualizar"
+          >
+            <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
+            <span class="hidden sm:inline short:hidden">Actualizar</span>
+          </button>
 
-        <button
-          @click="openCreateSchool()"
-          class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
-        >
-          <i class="ti ti-school text-base"></i>
-          <span>Nueva escuela</span>
-        </button>
+          <button
+            @click="openCreateSchool()"
+            class="justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+          >
+            <i class="ti ti-school text-base"></i>
+            <span class="hidden sm:inline short:hidden">Nueva escuela</span>
+            <span class="sm:hidden short:inline">Escuela</span>
+          </button>
 
-        <button
-          @click="openCreate()"
-          class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
-        >
-          <i class="ti ti-plus text-base"></i>
-          <span>Nuevo paquete</span>
-        </button>
+          <button
+            @click="openCreate()"
+            class="justify-center bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+          >
+            <i class="ti ti-plus text-base"></i>
+            <span class="hidden sm:inline short:hidden">Nuevo paquete</span>
+            <span class="sm:hidden short:inline">Paquete</span>
+          </button>
+        </div>
       </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow flex-1 flex flex-col overflow-hidden min-h-0">
-      <div class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex-shrink-0 p-2 sm:p-3 short:p-1.5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2 flex-wrap">
         <span class="text-xs text-gray-500 dark:text-gray-400">
           {{ groupedPackages.length }}
           {{ groupedPackages.length === 1 ? 'escuela' : 'escuelas' }}
           <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
           {{ filteredPackages.length }}
           {{ filteredPackages.length === 1 ? 'paquete' : 'paquetes' }}
-          <span v-if="searchQuery" class="text-gray-400 ml-2">(filtrado)</span>
+          <span v-if="searchQuery" class="text-gray-400 ml-2 short:hidden">(filtrado)</span>
         </span>
       </div>
 
@@ -65,15 +71,12 @@
             <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
               <i class="ti ti-package-off text-lg text-gray-400 dark:text-gray-500"></i>
             </div>
-
             <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
               {{ searchQuery ? 'No se encontraron resultados' : 'No hay escuelas ni paquetes registrados' }}
             </h3>
-
             <p class="text-gray-500 dark:text-gray-400 text-xs">
               {{ searchQuery ? 'Intenta con otros términos de búsqueda.' : 'Crea una escuela o un paquete para comenzar.' }}
             </p>
-
             <button
               v-if="searchQuery"
               @click="searchQuery = ''"
@@ -84,214 +87,158 @@
           </div>
         </div>
 
-        <div v-else class="h-full overflow-auto px-3 pb-3">
-          <table class="w-full table-fixed text-sm border-separate border-spacing-0">
-            <colgroup>
-              <col style="width: 64px;">
-              <col style="width: 22%;">
-              <col style="width: 84px;">
-              <col style="width: 200px;">
-              <col style="width: 96px;">
-              <col style="width: 56px;">
-            </colgroup>
-
-            <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th
-                  scope="col"
-                  class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700"
-                >
-                  No. escuela
-                </th>
-
-                <th
-                  scope="col"
-                  class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700"
-                >
-                  Escuela
-                </th>
-
-                <th
-                  scope="col"
-                  class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700"
-                >
-                  No. paquete
-                </th>
-
-                <th
-                  scope="col"
-                  class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700"
-                >
-                  Nombre del paquete
-                </th>
-
-                <th
-                  scope="col"
-                  class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700"
-                >
-                  Precio
-                </th>
-
-                <th
-                  scope="col"
-                  class="px-2 py-2 border-b border-b-gray-200 dark:border-b-gray-700"
-                ></th>
-              </tr>
-            </thead>
-
-            <tbody v-for="group in paginatedGroups" :key="group.key">
-              <tr aria-hidden="true">
-                <td colspan="6" class="h-3 p-0"></td>
-              </tr>
-
-              <tr v-if="group.packages.length === 0">
-                <td
-                  class="w-[64px] px-2 py-2 text-center align-middle whitespace-nowrap text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 pointer-events-none"
-                  :class="schoolCellClasses(true)"
-                >
-                  {{ group.schoolNumber }}
-                </td>
-
-                <td
-                  class="px-3 py-2 text-center align-middle text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-normal break-words table-wrap-cell"
-                  :class="schoolCellClasses(false)"
-                  @click.stop="openEditSchool(group.school)"
-                >
-                  {{ group.school.name }}
-                </td>
-
-                <td class="px-2 py-2 text-center text-sm text-gray-400 dark:text-gray-500" :class="packageCellClasses(0, 1, false)"></td>
-                <td class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic" :class="packageCellClasses(0, 1, false)">Sin paquetes registrados</td>
-                <td class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500" :class="packageCellClasses(0, 1, false)"></td>
-                <td class="px-2 py-2" :class="packageCellClasses(0, 1, true)"></td>
-              </tr>
-
-              <tr
-                v-else
-                v-for="(pkg, i) in group.packages"
-                :key="pkg.id"
-                class="cursor-pointer"
-                @click="openEdit(pkg, false)"
+        <template v-else>
+          <div class="lg:hidden h-full overflow-y-auto p-2 sm:p-3 short:p-1.5 space-y-3 short:space-y-2">
+            <div
+              v-for="group in paginatedGroups"
+              :key="group.key"
+              class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+            >
+              <button
+                class="w-full flex items-center justify-between gap-2 p-2 sm:p-3 short:p-1.5 bg-gray-50 dark:bg-gray-700/40 text-left transition-colors"
+                :class="group.school?.id ? 'hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600' : 'cursor-default'"
+                @click="group.school?.id && openEditSchool(group.school)"
               >
-                <template v-if="i === 0">
-                  <td
-                    :rowspan="group.packages.length"
-                    class="w-[64px] px-2 py-2 text-center align-middle whitespace-nowrap text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 pointer-events-none"
-                    :class="schoolCellClasses(true)"
-                  >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 short:w-6 short:h-6 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 flex items-center justify-center text-xs short:text-[10px] font-bold text-gray-700 dark:text-gray-200">
                     {{ group.schoolNumber }}
-                  </td>
+                  </span>
+                  <span class="text-sm short:text-xs font-bold text-gray-800 dark:text-gray-200 truncate">{{ group.school.name }}</span>
+                </div>
+                <i v-if="group.school?.id" class="ti ti-pencil text-gray-400 flex-shrink-0"></i>
+              </button>
 
-                  <td
-                    :rowspan="group.packages.length"
-                    class="px-3 py-2 text-center align-middle text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-normal break-words table-wrap-cell"
-                    :class="schoolCellClasses(false)"
-                    @click.stop="openEditSchool(group.school)"
+              <div v-if="group.packages.length === 0" class="px-3 py-2 short:py-1 text-xs italic text-gray-400 dark:text-gray-500">
+                Sin paquetes registrados
+              </div>
+
+              <ul v-else class="divide-y divide-gray-100 dark:divide-gray-700">
+                <li
+                  v-for="pkg in group.packages"
+                  :key="pkg.id"
+                  class="flex items-center gap-3 p-2 sm:p-3 short:p-1.5"
+                >
+                  <button
+                    class="flex-1 min-w-0 text-left"
+                    @click="openEdit(pkg, false)"
                   >
-                    {{ group.school.name }}
-                  </td>
-                </template>
-
-                <td
-                  class="px-2 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 text-center transition-colors"
-                  :class="[packageCellClasses(i, group.packages.length, false), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]"
-                  @mouseenter="onPackageMouseEnter(pkg.id)"
-                  @mouseleave="onPackageMouseLeave(pkg.id)"
-                >
-                  {{ String(pkg.package_number).padStart(2, '0') }}
-                </td>
-
-                <td
-                  class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 transition-colors whitespace-normal break-words table-wrap-cell"
-                  :class="[packageCellClasses(i, group.packages.length, false), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]"
-                  @mouseenter="onPackageMouseEnter(pkg.id)"
-                  @mouseleave="onPackageMouseLeave(pkg.id)"
-                >
-                  {{ pkg.name || ('Paquete ' + pkg.package_number) }}
-                </td>
-
-                <td
-                  class="px-3 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 transition-colors"
-                  :class="[packageCellClasses(i, group.packages.length, false), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]"
-                  @mouseenter="onPackageMouseEnter(pkg.id)"
-                  @mouseleave="onPackageMouseLeave(pkg.id)"
-                >
-                  {{ formatCurrency(pkg.total_price) }}
-                </td>
-
-                <td
-                  class="px-2 py-2 text-center transition-colors"
-                  :class="[packageCellClasses(i, group.packages.length, true), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]"
-                  @mouseenter="onPackageMouseEnter(pkg.id)"
-                  @mouseleave="onPackageMouseLeave(pkg.id)"
-                >
+                    <div class="flex items-center gap-2 mb-0.5">
+                      <span class="text-xs short:text-[10px] font-mono text-gray-500 dark:text-gray-400 flex-shrink-0">
+                        #{{ String(pkg.package_number).padStart(2, '0') }}
+                      </span>
+                      <span class="text-sm short:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {{ pkg.name || ('Paquete ' + pkg.package_number) }}
+                      </span>
+                    </div>
+                    <div class="text-xs short:text-[11px] font-medium text-gray-600 dark:text-gray-400">
+                      {{ formatCurrency(pkg.total_price) }}
+                    </div>
+                  </button>
                   <button
                     type="button"
                     @click.stop="requestDelete(pkg)"
-                    class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors"
+                    aria-label="Eliminar paquete"
+                    class="flex-shrink-0 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 active:bg-red-200 dark:active:bg-red-900/60 p-2 short:p-1.5 rounded-lg transition-colors"
                   >
-                    <i class="ti ti-trash text-xl"></i>
+                    <i class="ti ti-trash text-lg short:text-base"></i>
                   </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="hidden lg:block h-full overflow-auto px-3 pb-3">
+            <table class="w-full table-fixed text-sm border-separate border-spacing-0">
+              <colgroup>
+                <col style="width: 64px;">
+                <col style="width: 22%;">
+                <col style="width: 84px;">
+                <col style="width: 200px;">
+                <col style="width: 96px;">
+                <col style="width: 56px;">
+              </colgroup>
+
+              <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700">
+                    No. escuela
+                  </th>
+                  <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700">
+                    Escuela
+                  </th>
+                  <th scope="col" class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700">
+                    No. paquete
+                  </th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700">
+                    Nombre del paquete
+                  </th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-normal break-words leading-tight border-b border-b-gray-200 dark:border-b-gray-700 border-r border-r-gray-200 dark:border-r-gray-700">
+                    Precio
+                  </th>
+                  <th scope="col" class="px-2 py-2 border-b border-b-gray-200 dark:border-b-gray-700"></th>
+                </tr>
+              </thead>
+
+              <tbody v-for="group in paginatedGroups" :key="group.key">
+                <tr aria-hidden="true">
+                  <td colspan="6" class="h-3 p-0"></td>
+                </tr>
+
+                <tr v-if="group.packages.length === 0">
+                  <td class="w-[64px] px-2 py-2 text-center align-middle whitespace-nowrap text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 pointer-events-none" :class="schoolCellClasses(true)">
+                    {{ group.schoolNumber }}
+                  </td>
+                  <td class="px-3 py-2 text-center align-middle text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-normal break-words table-wrap-cell" :class="schoolCellClasses(false)" @click.stop="openEditSchool(group.school)">
+                    {{ group.school.name }}
+                  </td>
+                  <td class="px-2 py-2 text-center text-sm text-gray-400 dark:text-gray-500" :class="packageCellClasses(0, 1, false)"></td>
+                  <td class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 italic" :class="packageCellClasses(0, 1, false)">Sin paquetes registrados</td>
+                  <td class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500" :class="packageCellClasses(0, 1, false)"></td>
+                  <td class="px-2 py-2" :class="packageCellClasses(0, 1, true)"></td>
+                </tr>
+
+                <tr
+                  v-else
+                  v-for="(pkg, i) in group.packages"
+                  :key="pkg.id"
+                  class="cursor-pointer"
+                  @click="openEdit(pkg, false)"
+                >
+                  <template v-if="i === 0">
+                    <td :rowspan="group.packages.length" class="w-[64px] px-2 py-2 text-center align-middle whitespace-nowrap text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 pointer-events-none" :class="schoolCellClasses(true)">
+                      {{ group.schoolNumber }}
+                    </td>
+                    <td :rowspan="group.packages.length" class="px-3 py-2 text-center align-middle text-sm font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/40 cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-normal break-words table-wrap-cell" :class="schoolCellClasses(false)" @click.stop="openEditSchool(group.school)">
+                      {{ group.school.name }}
+                    </td>
+                  </template>
+
+                  <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 text-center transition-colors" :class="[packageCellClasses(i, group.packages.length, false), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]" @mouseenter="onPackageMouseEnter(pkg.id)" @mouseleave="onPackageMouseLeave(pkg.id)">
+                    {{ String(pkg.package_number).padStart(2, '0') }}
+                  </td>
+                  <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 transition-colors whitespace-normal break-words table-wrap-cell" :class="[packageCellClasses(i, group.packages.length, false), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]" @mouseenter="onPackageMouseEnter(pkg.id)" @mouseleave="onPackageMouseLeave(pkg.id)">
+                    {{ pkg.name || ('Paquete ' + pkg.package_number) }}
+                  </td>
+                  <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 transition-colors" :class="[packageCellClasses(i, group.packages.length, false), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]" @mouseenter="onPackageMouseEnter(pkg.id)" @mouseleave="onPackageMouseLeave(pkg.id)">
+                    {{ formatCurrency(pkg.total_price) }}
+                  </td>
+                  <td class="px-2 py-2 text-center transition-colors" :class="[packageCellClasses(i, group.packages.length, true), { 'bg-gray-200 dark:bg-gray-600': hoveredPackageId === pkg.id }]" @mouseenter="onPackageMouseEnter(pkg.id)" @mouseleave="onPackageMouseLeave(pkg.id)">
+                    <button type="button" @click.stop="requestDelete(pkg)" class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-lg transition-colors" aria-label="Eliminar paquete">
+                      <i class="ti ti-trash text-xl"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </div>
 
-      <div
-        v-if="totalPages > 1"
-        class="flex-shrink-0 flex items-center justify-center gap-2 py-3 border-t border-gray-200 dark:border-gray-700"
-      >
-        <button
-          @click="prevPage"
-          :disabled="currentPage === 1"
-          class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-          :class="currentPage === 1
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
-        >
-          <i class="ti ti-chevron-left text-sm"></i> Anterior
-        </button>
-
-        <div class="flex items-center gap-1">
-          <template v-for="(page, i) in visiblePages" :key="i">
-            <span
-              v-if="page === '…'"
-              class="w-8 h-8 flex items-center justify-center text-xs text-gray-400 dark:text-gray-500"
-            >
-              …
-            </span>
-
-            <button
-              v-else
-              @click="goToPage(page)"
-              class="w-8 h-8 rounded-md text-xs font-medium transition-colors"
-              :class="currentPage === page
-                ? 'bg-blue-500 text-white dark:bg-blue-600'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
-            >
-              {{ page }}
-            </button>
-          </template>
-        </div>
-
-        <button
-          @click="nextPage"
-          :disabled="currentPage === totalPages"
-          class="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-          :class="currentPage === totalPages
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
-        >
-          Siguiente <i class="ti ti-chevron-right text-sm"></i>
-        </button>
+      <div v-if="totalPages > 0" class="flex-shrink-0 mt-2 sm:mt-3 short:mt-1 pb-2 sm:pb-3 short:pb-1 pt-2 sm:pt-3 short:pt-1 border-t border-gray-200 dark:border-gray-700 px-3">
+        <ResponsivePagination v-model:current="currentPage" :total="totalPages" />
       </div>
 
-      <div
-        v-if="totalPages > 0"
-        class="flex-shrink-0 flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400 py-2"
-      >
+      <div v-if="totalPages > 0" class="flex-shrink-0 hidden sm:flex short:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 pb-2">
         <span>
           {{ groupedPackages.length === 1 ? 'Escuela' : 'Escuelas' }}
           <template v-if="groupedPackages.length > 1">
@@ -301,7 +248,6 @@
             1 de 1
           </template>
         </span>
-
         <span v-if="totalPages > 1">
           Página {{ currentPage }} de {{ totalPages }}
         </span>
@@ -346,33 +292,18 @@
     />
 
     <transition name="fade-slide">
-      <div
-        v-if="showNotification"
-        class="fixed top-3 right-3 z-50 max-w-xs w-full"
-      >
-        <div
-          class="flex items-center p-3 rounded-lg shadow-lg"
+      <div v-if="showNotification" class="fixed top-3 right-3 left-3 sm:left-auto z-50 max-w-xs sm:w-full mx-auto sm:mx-0">
+        <div class="flex items-center p-3 rounded-lg shadow-lg"
           :class="{
             'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800': notificationType === 'success',
             'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800': notificationType === 'error',
             'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800': notificationType === 'info'
-          }"
-        >
+          }">
           <div class="flex-1 min-w-0">
-            <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-0.5 text-xs">
-              {{ notificationTitle }}
-            </h4>
-
-            <p class="text-xs text-gray-600 dark:text-gray-400">
-              {{ notificationMessage }}
-            </p>
+            <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-0.5 text-xs">{{ notificationTitle }}</h4>
+            <p class="text-xs text-gray-600 dark:text-gray-400">{{ notificationMessage }}</p>
           </div>
-
-          <button
-            @click="showNotification = false"
-            aria-label="Cerrar notificación"
-            class="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
+          <button @click="showNotification = false" aria-label="Cerrar notificación" class="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <i class="ti ti-x text-sm"></i>
           </button>
         </div>
@@ -388,6 +319,7 @@ import PackageModal from './PackageModal.vue';
 import PackageWizardModal from './PackageWizardModal.vue';
 import SchoolModal from './SchoolModal.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
+import ResponsivePagination from '../common/ResponsivePagination.vue';
 
 const currencyFormatter = new Intl.NumberFormat('es-MX', {
   style: 'currency',
@@ -411,7 +343,7 @@ const COL_DIV = 'border-r border-r-gray-200 dark:border-r-gray-700';
 
 export default {
   name: 'PackagesBoard',
-  components: { PackageModal, PackageWizardModal, SchoolModal, ConfirmModal },
+  components: { PackageModal, PackageWizardModal, SchoolModal, ConfirmModal, ResponsivePagination },
 
   data() {
     return {
@@ -554,31 +486,6 @@ export default {
       );
     },
 
-    visiblePages() {
-      const total = this.totalPages;
-      const cur = this.currentPage;
-
-      if (total <= 7) {
-        return Array.from({ length: total }, (_, i) => i + 1);
-      }
-
-      const list = [...new Set([1, total, cur - 1, cur, cur + 1])]
-        .filter(p => p >= 1 && p <= total)
-        .sort((a, b) => a - b);
-
-      const out = [];
-
-      list.forEach((p, i) => {
-        if (i && p - list[i - 1] > 1) {
-          out.push('…');
-        }
-
-        out.push(p);
-      });
-
-      return out;
-    },
-
     deleteMessage() {
       const pkg = this.packageToDelete;
 
@@ -623,11 +530,7 @@ export default {
         const res = await axios.get('/packages');
         this.packages = res.data;
       } catch (error) {
-        this.handleNotify({
-          title: 'Error',
-          message: 'No se pudieron cargar los paquetes',
-          type: 'error'
-        });
+        this.handleNotify({ title: 'Error', message: 'No se pudieron cargar los paquetes', type: 'error' });
       }
     },
 
@@ -636,11 +539,7 @@ export default {
         const res = await axios.get('/schools');
         this.schools = res.data;
       } catch (error) {
-        this.handleNotify({
-          title: 'Error',
-          message: 'No se pudieron cargar las escuelas',
-          type: 'error'
-        });
+        this.handleNotify({ title: 'Error', message: 'No se pudieron cargar las escuelas', type: 'error' });
       }
     },
 
@@ -662,8 +561,6 @@ export default {
     },
 
     async handlePackageCreated() {
-      // El wizard muestra su propio modal de éxito y se cierra solo;
-      // aquí solo se refresca la tabla (también recarga escuelas creadas desde el wizard).
       await this.refreshAll();
     },
 
@@ -761,34 +658,6 @@ export default {
     onPackageMouseLeave(id) {
       if (this.hoveredPackageId === id) {
         this.hoveredPackageId = null;
-      }
-    },
-
-    goToPage(page) {
-      if (
-        this.totalPages > 0 &&
-        page >= 1 &&
-        page <= this.totalPages
-      ) {
-        this.currentPage = page;
-      }
-    },
-
-    nextPage() {
-      if (
-        this.totalPages > 0 &&
-        this.currentPage < this.totalPages
-      ) {
-        this.currentPage++;
-      }
-    },
-
-    prevPage() {
-      if (
-        this.totalPages > 0 &&
-        this.currentPage > 1
-      ) {
-        this.currentPage--;
       }
     },
 

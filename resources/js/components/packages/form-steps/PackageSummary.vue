@@ -1,28 +1,28 @@
 <template>
-  <section class="space-y-4">
-    <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center">
-      <i class="ti ti-package mr-2 text-xl"></i>Resumen del paquete
+  <section class="space-y-3 sm:space-y-4 short:space-y-2">
+    <h4 class="text-base sm:text-lg short:text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center">
+      <i class="ti ti-package mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Resumen del paquete
     </h4>
 
     <div>
-      <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ school?.name || '—' }}</p>
-      <p class="text-base text-gray-500 dark:text-gray-400">{{ title }}</p>
+      <p class="text-base sm:text-lg short:text-sm font-semibold text-gray-800 dark:text-gray-200 break-words">{{ school?.name || '—' }}</p>
+      <p class="text-sm sm:text-base short:text-xs text-gray-500 dark:text-gray-400 break-words">{{ title }}</p>
     </div>
 
     <div>
-      <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+      <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 sm:mb-2 short:mb-1">
         Tipos de fotografía
       </h5>
-      <ul v-if="lines.length" class="space-y-2">
+      <ul v-if="lines.length" class="space-y-1.5 sm:space-y-2 short:space-y-1.5">
         <li
           v-for="(line, idx) in lines"
           :key="idx"
-          class="flex items-center justify-between gap-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3"
+          class="flex items-center justify-between gap-2 sm:gap-3 short:gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 sm:px-4 short:px-2.5 py-2 sm:py-3 short:py-2"
         >
-          <div class="flex items-center gap-3 min-w-0">
+          <div class="flex items-center gap-2 sm:gap-3 short:gap-2 min-w-0">
             <span
               v-if="line.format"
-              class="relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
+              class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
               :class="line.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : ''"
             >
               <template v-if="line.format === 'color'">
@@ -42,58 +42,58 @@
             </span>
 
             <div class="min-w-0">
-              <p class="text-base font-medium text-gray-800 dark:text-gray-200 truncate">{{ line.name }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-sm sm:text-base short:text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ line.name }}</p>
+              <p class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">
                 {{ line.quantity }} × ${{ line.unit_price.toFixed(2) }}
                 <span v-if="line.paper_name"> · {{ line.paper_name }}</span>
               </p>
             </div>
           </div>
-          <span class="text-base font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+          <span class="text-sm sm:text-base short:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
             ${{ line.subtotal.toFixed(2) }}
           </span>
         </li>
       </ul>
-      <p v-else class="text-base text-gray-400 dark:text-gray-500 italic">Sin tipos de fotografía.</p>
+      <p v-else class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 italic">Sin tipos de fotografía.</p>
     </div>
 
     <div v-if="services.length">
-      <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+      <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 sm:mb-2 short:mb-1">
         Servicios adicionales
       </h5>
-      <ul class="space-y-2">
+      <ul class="space-y-1.5 sm:space-y-2 short:space-y-1.5">
         <li
           v-for="s in services"
           :key="s.additional_service_id"
-          class="flex items-center justify-between gap-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3"
+          class="flex items-center justify-between gap-2 sm:gap-3 short:gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 sm:px-4 short:px-2.5 py-2 sm:py-3 short:py-2"
         >
-          <div class="flex items-center gap-3 min-w-0">
-            <span class="w-9 h-9 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-              <i class="ti ti-tool text-xl text-gray-500 dark:text-gray-400"></i>
+          <div class="flex items-center gap-2 sm:gap-3 short:gap-2 min-w-0">
+            <span class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+              <i class="ti ti-tool text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400"></i>
             </span>
             <div class="min-w-0">
-              <p class="text-base font-medium text-gray-800 dark:text-gray-200 truncate">{{ s.name }}</p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-sm sm:text-base short:text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ s.name }}</p>
+              <p class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">
                 {{ s.quantity }} × ${{ Number(s.price).toFixed(2) }}
                 <span v-if="s.notes"> · {{ s.notes }}</span>
               </p>
             </div>
           </div>
-          <span class="text-base font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+          <span class="text-sm sm:text-base short:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
             ${{ Number(s.subtotal ?? (s.price * (s.quantity || 1))).toFixed(2) }}
           </span>
         </li>
       </ul>
     </div>
 
-    <div v-if="womenText || menText" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div v-if="womenText || menText" class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 short:gap-2">
       <div v-if="womenText">
-        <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Mujeres</h5>
-        <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line max-h-28 overflow-y-auto">{{ womenText }}</p>
+        <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Mujeres</h5>
+        <p class="text-xs sm:text-sm short:text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line max-h-24 sm:max-h-28 short:max-h-20 overflow-y-auto">{{ womenText }}</p>
       </div>
       <div v-if="menText">
-        <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Hombres</h5>
-        <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line max-h-28 overflow-y-auto">{{ menText }}</p>
+        <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Hombres</h5>
+        <p class="text-xs sm:text-sm short:text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line max-h-24 sm:max-h-28 short:max-h-20 overflow-y-auto">{{ menText }}</p>
       </div>
     </div>
   </section>

@@ -1,94 +1,95 @@
 <template>
   <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-6" @click="handleOverlayClick">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden" @click.stop>
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-0 sm:p-4 lg:p-6 short:p-2" @click="handleOverlayClick">
+      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-4xl h-full sm:h-auto sm:max-h-[85vh] sm:rounded-lg flex flex-col overflow-hidden" @click.stop>
 
-        <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <div>
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Cotización {{ quoteCode }}</h3>
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 mt-2 text-sm rounded-full" :class="statusClass(quote?.status)">
+        <div class="flex justify-between items-start p-3 sm:p-6 short:p-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 gap-2">
+          <div class="min-w-0">
+            <h3 class="text-base sm:text-2xl short:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">Cotización {{ quoteCode }}</h3>
+            <span class="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 mt-1 sm:mt-2 text-xs sm:text-sm short:text-xs rounded-full" :class="statusClass(quote?.status)">
               {{ statusLabel(quote?.status) }}
             </span>
           </div>
-          <button @click="handleClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <i class="ti ti-x text-2xl"></i>
+          <button @click="handleClose" aria-label="Cerrar" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 sm:p-2 short:p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0">
+            <i class="ti ti-x text-lg sm:text-2xl short:text-lg"></i>
           </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div class="flex-1 overflow-y-auto p-3 sm:p-6 short:p-2 space-y-3 sm:space-y-5 short:space-y-2">
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 short:gap-2">
 
             <div v-show="!editingCustomer"
-                 class="rounded-lg p-5 bg-gray-50 dark:bg-gray-700/40 border-2 border-gray-300 dark:border-gray-600 shadow-sm"
+                 class="rounded-lg p-3 sm:p-5 short:p-3 bg-gray-50 dark:bg-gray-700/40 border-2 border-gray-300 dark:border-gray-600 shadow-sm"
                  style="border-left-width:4px;">
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-semibold text-lg flex items-center text-gray-700 dark:text-gray-300">
-                  <i class="ti ti-info-circle mr-2 text-xl"></i>Vigencia y observaciones
+              <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                <h4 class="font-semibold text-base sm:text-lg short:text-sm flex items-center text-gray-700 dark:text-gray-300 min-w-0">
+                  <i class="ti ti-info-circle mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>
+                  <span class="truncate">Vigencia y observaciones</span>
                 </h4>
-                <button v-if="!editingDetails && canEdit" @click="startEditingDetails" type="button" class="text-gray-400 hover:text-blue-600"><i class="ti ti-pencil"></i></button>
+                <button v-if="!editingDetails && canEdit" @click="startEditingDetails" type="button" aria-label="Editar vigencia" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
               </div>
 
               <template v-if="!editingDetails">
-                <div class="space-y-2 text-base">
-                  <div class="flex justify-between items-center py-2">
+                <div class="space-y-1 sm:space-y-2 text-sm sm:text-base short:text-sm">
+                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
                     <span class="font-medium text-gray-700 dark:text-gray-300">Total:</span>
-                    <span class="font-bold text-gray-700 dark:text-gray-300">{{ formatCurrency(quote?.total) }}</span>
+                    <span class="font-bold text-gray-700 dark:text-gray-300 text-right ml-2 break-words">{{ formatCurrency(quote?.total) }}</span>
                   </div>
-                  <div class="flex justify-between items-center py-2">
+                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
                     <span class="font-medium text-gray-700 dark:text-gray-300">Vigencia:</span>
                     <span class="font-bold text-gray-700 dark:text-gray-300">{{ formatDateOnly(quote?.valid_until) }}</span>
                   </div>
-                  <div v-if="quote?.order" class="flex justify-between items-center py-2">
+                  <div v-if="quote?.order" class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
                     <span class="font-medium text-gray-700 dark:text-gray-300">Orden generada:</span>
                     <span class="font-bold text-green-600 dark:text-green-400">#{{ quote.order.id }}</span>
                   </div>
                 </div>
-                <div v-if="quote?.notes" class="mt-3 bg-white dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-700">
-                  <p class="text-gray-700 dark:text-gray-300 text-base whitespace-pre-wrap break-words">{{ quote.notes }}</p>
+                <div v-if="quote?.notes" class="mt-2 sm:mt-3 bg-white dark:bg-gray-800 rounded p-2 sm:p-3 border border-gray-200 dark:border-gray-700">
+                  <p class="text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">{{ quote.notes }}</p>
                 </div>
               </template>
 
               <template v-else>
-                <div class="mb-4">
-                  <label class="text-base font-medium block mb-2 text-gray-700 dark:text-gray-300">Vigencia</label>
-                  <input v-model="detailsForm.validUntil" type="date" :min="minDateStr" class="form-control text-base p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full">
+                <div class="mb-3 sm:mb-4">
+                  <label class="text-sm sm:text-base short:text-sm font-medium block mb-1.5 sm:mb-2 text-gray-700 dark:text-gray-300">Vigencia</label>
+                  <input v-model="detailsForm.validUntil" type="date" :min="minDateStr" class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full">
                 </div>
-                <div class="mb-4">
-                  <label class="text-base font-medium block mb-2 text-gray-700 dark:text-gray-300">Observaciones</label>
-                  <textarea v-model="detailsForm.notes" v-blur-on-enter enterkeyhint="done" rows="3" class="form-control text-base p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full resize-none"></textarea>
+                <div class="mb-3 sm:mb-4">
+                  <label class="text-sm sm:text-base short:text-sm font-medium block mb-1.5 sm:mb-2 text-gray-700 dark:text-gray-300">Observaciones</label>
+                  <textarea v-model="detailsForm.notes" v-blur-on-enter enterkeyhint="done" rows="3" class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full resize-none"></textarea>
                 </div>
-                <div class="flex gap-3">
-                  <button @click="cancelEditingDetails" type="button" class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                  <button @click="saveDetails" :disabled="savingDetails" type="button" class="flex-1 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
+                <div class="flex gap-2 sm:gap-3">
+                  <button @click="cancelEditingDetails" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+                  <button @click="saveDetails" :disabled="savingDetails" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
                     {{ savingDetails ? 'Guardando...' : 'Guardar' }}
                   </button>
                 </div>
               </template>
             </div>
 
-            <div class="rounded-lg p-5 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600"
+            <div class="rounded-lg p-3 sm:p-5 short:p-3 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600"
                  :class="editingCustomer ? 'lg:col-span-2' : ''"
                  style="border-left-width:4px;">
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-semibold text-lg flex items-center text-blue-800 dark:text-blue-300">
-                  <i class="ti ti-user mr-2 text-xl"></i>Cliente
+              <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                <h4 class="font-semibold text-base sm:text-lg short:text-sm flex items-center text-blue-800 dark:text-blue-300">
+                  <i class="ti ti-user mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Cliente
                 </h4>
-                <button v-if="!editingCustomer && canEdit" @click="startEditingCustomer" type="button" class="text-blue-400 hover:text-blue-600"><i class="ti ti-pencil"></i></button>
+                <button v-if="!editingCustomer && canEdit" @click="startEditingCustomer" type="button" aria-label="Editar cliente" class="text-blue-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
               </div>
 
               <template v-if="!editingCustomer">
-                <div class="space-y-2 text-base">
-                  <div class="flex justify-between items-center py-2">
-                    <span class="font-medium text-blue-800 dark:text-blue-300">Nombre:</span>
+                <div class="space-y-1 sm:space-y-2 text-sm sm:text-base short:text-sm">
+                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
+                    <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Nombre:</span>
                     <span class="font-bold text-blue-800 dark:text-blue-300 text-right ml-2 min-w-0 break-words">{{ quote?.customer?.name || 'Sin cliente' }}</span>
                   </div>
-                  <div class="flex justify-between items-center py-2">
-                    <span class="font-medium text-blue-800 dark:text-blue-300">Teléfono:</span>
+                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
+                    <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Teléfono:</span>
                     <span class="font-bold text-blue-800 dark:text-blue-300">{{ quote?.customer?.phone || '—' }}</span>
                   </div>
-                  <div class="flex justify-between items-center py-2">
-                    <span class="font-medium text-blue-800 dark:text-blue-300">Correo:</span>
+                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
+                    <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Correo:</span>
                     <span class="font-bold text-blue-800 dark:text-blue-300 text-right ml-2 min-w-0 break-all">{{ quote?.customer?.email || '—' }}</span>
                   </div>
                 </div>
@@ -131,9 +132,9 @@
                   @update:customerPhone="customerPhone = $event"
                   @update:customerEmail="customerEmail = $event"
                 />
-                <div class="flex gap-3 mt-4">
-                  <button @click="cancelEditingCustomer" type="button" class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                  <button @click="saveCustomer" :disabled="savingCustomer" type="button" class="flex-1 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
+                <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
+                  <button @click="cancelEditingCustomer" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+                  <button @click="saveCustomer" :disabled="savingCustomer" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
                     {{ savingCustomer ? 'Guardando...' : 'Guardar' }}
                   </button>
                 </div>
@@ -142,24 +143,24 @@
 
           </div>
 
-          <div class="bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 rounded-lg p-5 shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-lg flex items-center">
-                <i class="ti ti-photo mr-2 text-xl"></i>Conceptos
+          <div class="bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-5 short:p-3 shadow-sm">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
+              <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg short:text-sm flex items-center">
+                <i class="ti ti-photo mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Conceptos
               </h4>
             </div>
 
             <PackagesSummaryList v-if="quote?.quote_packages?.length" :packages="quote.quote_packages" />
 
-            <div class="mt-4 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
-              <div class="flex items-center justify-between mb-3">
-                <h5 class="font-medium text-gray-700 dark:text-gray-300">Tipos de fotografía</h5>
-                <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" class="text-gray-400 hover:text-blue-600"><i class="ti ti-pencil"></i></button>
+            <div class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
+              <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                <h5 class="font-medium text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300">Tipos de fotografía</h5>
+                <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" aria-label="Editar conceptos" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
               </div>
 
               <template v-if="!editingConcepts">
                 <PhotoTypesSummaryList v-if="quote?.quote_photo_types?.length" :lines="quote.quote_photo_types" />
-                <p v-else class="text-base text-gray-500 dark:text-gray-400 italic">
+                <p v-else class="text-sm sm:text-base short:text-sm text-gray-500 dark:text-gray-400 italic">
                   Sin tipos de fotografía registrados.
                 </p>
               </template>
@@ -175,9 +176,9 @@
                   title=""
                   empty-hint="Sin tipos de fotografía."
                 />
-                <div class="flex gap-3 mt-4">
-                  <button @click="cancelEditingConcepts" type="button" class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                  <button @click="saveConcepts" :disabled="savingConcepts" type="button" class="flex-1 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
+                <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
+                  <button @click="cancelEditingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+                  <button @click="saveConcepts" :disabled="savingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
                     {{ savingConcepts ? 'Guardando...' : 'Guardar' }}
                   </button>
                 </div>
@@ -186,7 +187,7 @@
 
             <div
               v-if="quote?.services?.length"
-              class="mt-4 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+              class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
             >
               <AdditionalServicesSummaryList :services="quote.services" nested />
             </div>
@@ -194,14 +195,16 @@
 
         </div>
 
-        <div class="flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <button v-if="isPending" @click="updateStatus('rejected')" class="flex-1 py-3 rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+        <div class="flex gap-2 sm:gap-3 p-3 sm:p-6 short:p-2 border-t border-gray-200 dark:border-gray-700 flex-shrink-0"
+             style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
+          <button v-if="isPending" @click="updateStatus('rejected')" class="flex-1 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             Rechazar
           </button>
-          <button v-if="canConvert" @click="requestConvert" class="flex-1 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors">
-            Convertir a orden
+          <button v-if="canConvert" @click="requestConvert" class="flex-1 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors">
+            <span class="hidden sm:inline">Convertir a orden</span>
+            <span class="sm:hidden">Convertir</span>
           </button>
-          <button v-if="!canConvert" @click="handleClose" class="flex-1 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
+          <button v-if="!canConvert" @click="handleClose" class="flex-1 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
             Cerrar
           </button>
         </div>
@@ -281,7 +284,6 @@ export default {
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
       const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
-      // Regla de negocio: al menos una fotografía O un paquete
       const hasContent = this.activeLines.length > 0 || this.selectedPackageIds.length > 0;
       return {
         customer: !hasCustomer,
@@ -317,9 +319,6 @@ export default {
         paper_type_id: line.paper_type_id
       }));
 
-      // selectedPackageIds es un computed derivado de packageLines (ver orderQuoteFormMixin),
-      // por eso se escribe en packageLines y no directamente en selectedPackageIds.
-      // OJO: p.id aquí es el id de la fila de la cotización; el id del catálogo es p.package_id.
       this.packageLines = (this.quote.quote_packages || []).map(p => ({ package_id: p.package_id }));
     },
     getCurrentState() {
@@ -498,8 +497,6 @@ export default {
 
       this.savingConcepts = true;
       try {
-        // Los servicios adicionales no se envían: el backend conserva los existentes
-        // y recalcula el total con ellos.
         const res = await axios.put(`/quotes/${this.quote.id}/concepts`, {
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds

@@ -1,27 +1,28 @@
 <template>
   <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-6">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[85vh] flex flex-col overflow-hidden">
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-3 sm:p-4 lg:p-6 short:p-0">
+      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-7xl h-auto max-h-[92dvh] short:h-full short:max-h-full rounded-lg short:rounded-none flex flex-col overflow-hidden">
 
-        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg flex-shrink-0">
-          <div class="flex justify-between items-center px-6 py-3">
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
-              <i class="ti ti-file-description mr-2"></i>Nueva cotización
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg short:rounded-none flex-shrink-0">
+          <div class="flex justify-between items-center px-3 sm:px-6 short:px-3 py-2 sm:py-3 short:py-0.5">
+            <h3 class="text-base sm:text-2xl short:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+              <i class="ti ti-file-description mr-1.5 sm:mr-2 short:mr-1"></i>Nueva cotización
             </h3>
             <button
               @click="handleClose"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              aria-label="Cerrar"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 sm:p-2 short:p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex-shrink-0"
             >
-              <i class="ti ti-x text-2xl"></i>
+              <i class="ti ti-x text-lg sm:text-2xl short:text-base"></i>
             </button>
           </div>
         </div>
 
-        <div class="px-6 pt-6 pb-0 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-3 sm:px-6 short:px-3 pt-3 sm:pt-6 short:pt-1 pb-0 flex-shrink-0 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           <StepIndicator :steps="stepLabels" :current-step="currentStep" />
         </div>
 
-        <div class="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6" @input="markDirty" @change="markDirty" @click="markDirty">
+        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 sm:px-6 short:px-3 py-3 sm:py-6 short:py-1.5" @input="markDirty" @change="markDirty" @click="markDirty">
           <transition :name="transitionName" mode="out-in">
             <CustomerStep
               v-if="currentStep === 1"
@@ -100,21 +101,21 @@
           </transition>
         </div>
 
-        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg flex gap-4 px-6 py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
-          <button @click="handleClose" class="flex-1 btn btn-light py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors">
+        <div class="bg-gray-100 dark:bg-gray-700/60 rounded-b-lg short:rounded-none flex gap-2 sm:gap-4 short:gap-2 px-3 sm:px-6 short:px-3 py-2 sm:py-4 short:py-1 short:pb-[max(0.25rem,env(safe-area-inset-bottom))] flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+          <button @click="handleClose" class="flex-1 btn btn-light py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors">
             Cancelar
           </button>
           <button v-if="currentStep > 1" @click="goBack" type="button"
-                  class="flex-1 btn btn-light py-4 text-lg rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors font-medium">
-            <i class="ti ti-chevron-left mr-1"></i>Atrás
+                  class="flex-1 btn btn-light py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors font-medium flex items-center justify-center gap-1">
+            <i class="ti ti-chevron-left"></i><span>Atrás</span>
           </button>
           <button v-if="currentStep < 3" @click="goNext" type="button"
-                  class="flex-1 btn btn-primary py-4 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors">
-            Siguiente<i class="ti ti-chevron-right ml-1"></i>
+                  class="flex-1 btn btn-primary py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors flex items-center justify-center gap-1">
+            Siguiente<i class="ti ti-chevron-right"></i>
           </button>
-          <button v-else @click="submit" :disabled="submitting" class="flex-1 btn btn-primary py-4 text-lg rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <span v-if="submitting"><i class="ti ti-refresh animate-spin mr-2"></i>Guardando...</span>
-            <span v-else><i class="ti ti-check mr-2"></i>Guardar cotización</span>
+          <button v-else @click="submit" :disabled="submitting" class="flex-1 btn btn-primary py-2 sm:py-4 short:py-1.5 text-sm sm:text-lg short:text-sm rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1">
+            <span v-if="submitting"><i class="ti ti-refresh animate-spin"></i><span class="hidden sm:inline">Guardando...</span></span>
+            <span v-else><i class="ti ti-check"></i><span class="hidden sm:inline">Guardar cotización</span><span class="sm:hidden">Guardar</span></span>
           </button>
         </div>
 

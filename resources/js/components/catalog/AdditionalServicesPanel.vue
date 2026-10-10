@@ -35,6 +35,7 @@
       :show="showModal"
       :editing="!!editingItem"
       :title="editingItem ? 'Editar servicio adicional' : 'Nuevo servicio adicional'"
+      icon="ti ti-tool"
       name-label="Nombre del servicio"
       name-placeholder="Ej. Retoque digital"
       price-label="Precio por defecto"

@@ -1,24 +1,24 @@
 <template>
-  <div class="space-y-4">
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Total inicial</p>
-        <p class="text-lg font-bold text-gray-700 dark:text-gray-300">{{ formatCurrency(initialTotal) }}</p>
+  <div class="space-y-3 sm:space-y-4 short:space-y-2">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 short:gap-2">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-4 short:p-2 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
+        <p class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">Total inicial</p>
+        <p class="text-sm sm:text-lg short:text-sm font-bold text-gray-700 dark:text-gray-300">{{ formatCurrency(initialTotal) }}</p>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Total actual</p>
-        <p class="text-lg font-bold"
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-4 short:p-2 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
+        <p class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">Total actual</p>
+        <p class="text-sm sm:text-lg short:text-sm font-bold"
            :class="totalChanged ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
           {{ formatCurrency(estimatedTotal) }}
         </p>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Pagado</p>
-        <p class="text-lg font-bold text-green-600 dark:text-green-400">{{ formatCurrency(paidTotal) }}</p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-4 short:p-2 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
+        <p class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">Pagado</p>
+        <p class="text-sm sm:text-lg short:text-sm font-bold text-green-600 dark:text-green-400">{{ formatCurrency(paidTotal) }}</p>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Saldo resultante</p>
-        <p class="text-lg font-bold"
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-2.5 sm:p-4 short:p-2 border border-gray-200 dark:border-gray-600 text-center shadow-sm">
+        <p class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">Saldo resultante</p>
+        <p class="text-sm sm:text-lg short:text-sm font-bold"
            :class="balanceResult > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
           {{ formatCurrency(balanceResult) }}
         </p>
@@ -27,10 +27,10 @@
 
     <div
       v-if="balanceResult < 0"
-      class="flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700"
+      class="flex items-start gap-2 sm:gap-3 short:gap-2 p-2.5 sm:p-3 short:p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700"
     >
-      <i class="ti ti-alert-triangle text-xl text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"></i>
-      <p class="text-sm text-amber-800 dark:text-amber-300">
+      <i class="ti ti-alert-triangle text-base sm:text-xl short:text-base text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"></i>
+      <p class="text-xs sm:text-sm short:text-xs text-amber-800 dark:text-amber-300">
         El nuevo total es menor a lo ya pagado. Ajusta el contenido o reduce el monto antes de guardar.
       </p>
     </div>
@@ -89,6 +89,8 @@ export default {
             key: `pt-${l.id ?? 'new'}-${idx}`,
             label: `${name} x${qty}${included ? ' (incluido)' : ''}`,
             amount: included ? 0 : unitPrice * qty,
+            unitPrice,
+            quantity: qty,
             format: l.format
           };
         });
@@ -132,6 +134,8 @@ export default {
             key: `svc-${l.id ?? 'new'}-${idx}`,
             label: `${name} x${qty}`,
             amount: unitPrice * qty,
+            unitPrice,
+            quantity: qty,
             icon: 'ti ti-tool'
           };
         });

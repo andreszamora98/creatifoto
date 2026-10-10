@@ -1,21 +1,21 @@
 <template>
-  <section class="space-y-6">
-    <h4 v-if="sectionTitle" class="text-base font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
-      <span v-if="sectionBadge !== null" class="w-8 h-8 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center font-bold">{{ sectionBadge }}</span>
+  <section class="space-y-3 sm:space-y-6 short:space-y-2">
+    <h4 v-if="sectionTitle" class="text-sm sm:text-base short:text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
+      <span v-if="sectionBadge !== null" class="w-6 h-6 sm:w-8 sm:h-8 short:w-5 short:h-5 rounded-full bg-blue-500 text-white text-xs sm:text-sm short:text-[10px] flex items-center justify-center font-bold">{{ sectionBadge }}</span>
       {{ sectionTitle }}
     </h4>
 
     <div
-      class="space-y-3"
+      class="space-y-2 sm:space-y-3 short:space-y-2"
       :data-error-anchor="conceptSectionError ? '' : null"
     >
-      <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Conceptos de la orden
       </h5>
 
       <div>
         <div
-          class="relative z-10 flex w-fit rounded-t-lg bg-gray-200 dark:bg-gray-800"
+          class="relative z-10 flex w-full lg:w-fit rounded-t-lg bg-gray-200 dark:bg-gray-800"
           role="tablist"
         >
           <button
@@ -27,20 +27,21 @@
             :aria-selected="activeTab === tab.key"
             :aria-controls="`order-panel-${tab.key}`"
             @click="activeTab = tab.key"
-            class="relative flex items-center gap-2 px-4 py-2.5 text-lg font-medium rounded-t-lg"
+            class="relative flex-1 min-w-0 lg:flex-initial flex flex-col sm:flex-row justify-center items-center gap-0.5 sm:gap-2.5
+            short:gap-2 px-2 sm:px-5 short:px-4 py-2.5 sm:py-3 short:py-2 text-sm sm:text-xl short:text-base font-medium rounded-t-lg"
             :class="tabClasses(tab, index)"
           >
-            <i :class="['ti', tab.icon, 'text-xl']"></i>
-            <span>{{ tab.label }}</span>
+            <i :class="['ti', tab.icon, 'text-lg sm:text-2xl short:text-xl flex-shrink-0']"></i>
+            <span class="min-w-0 text-center">{{ tab.label }}</span>
             <span
               v-if="tab.count > 0"
-              class="min-w-[1.75rem] h-7 px-2 rounded-full text-white text-sm font-bold flex items-center justify-center"
+              class=" absolute top-1 right-1 sm:static flex-shrink-0 min-w-[1.25rem] sm:min-w-[1.9rem] short:min-w-[1.6rem] h-5 sm:h-8 short:h-6 px-1 sm:px-2.5 short:px-1.5 rounded-full text-white text-xs sm:text-base short:text-sm font-bold flex items-center justify-center"
               :class="activeTab === tab.key ? 'bg-blue-500' : 'bg-gray-400 dark:bg-gray-600'"
             >{{ tab.count }}</span>
           </button>
         </div>
 
-        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg rounded-tr-lg p-3 transition-none">
+        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg lg:rounded-tr-lg p-2 sm:p-3 short:p-2 transition-none">
           <div
             v-show="activeTab === 'packages'"
             class="absolute top-0 left-0 w-2 h-2 bg-gray-200 dark:bg-gray-800 pointer-events-none"
@@ -85,8 +86,8 @@
             />
           </div>
 
-          <p v-if="showErrors && contentError" class="mt-3 text-sm text-red-500 flex items-center gap-1">
-            <i class="ti ti-alert-circle"></i>
+          <p v-if="showErrors && contentError" class="mt-2 sm:mt-3 short:mt-1.5 text-sm sm:text-lg short:text-sm text-red-500 flex items-center gap-1.5 sm:gap-2">
+            <i class="ti ti-alert-circle text-base sm:text-xl short:text-base"></i>
             Agrega al menos un tipo de fotografía o un paquete escolar para continuar.
           </p>
         </div>
@@ -109,14 +110,14 @@
     </div>
 
     <div
-      class="space-y-3"
+      class="space-y-2 sm:space-y-3 short:space-y-2"
       :data-error-anchor="deliverySectionError ? '' : null"
     >
-      <h5 class="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         Entrega
       </h5>
 
-      <div class="grid grid-cols-1 md:grid-cols-7 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-7 gap-3 sm:gap-6 short:gap-2">
         <div v-if="!hideDeliveryDate" class="md:col-span-2">
           <DeliveryDateTimeFields
             stacked
@@ -137,9 +138,9 @@
       </div>
     </div>
 
-    <div v-if="showEstimatedTotal" class="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-lg p-5">
-      <span class="text-lg font-semibold text-blue-800 dark:text-blue-300">Total estimado</span>
-      <span class="text-2xl font-bold text-blue-800 dark:text-blue-300">${{ estimatedTotal.toFixed(2) }}</span>
+    <div v-if="showEstimatedTotal" class="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 sm:p-5 short:p-2">
+      <span class="text-sm sm:text-lg short:text-sm font-semibold text-blue-800 dark:text-blue-300">Total estimado</span>
+      <span class="text-lg sm:text-2xl short:text-base font-bold text-blue-800 dark:text-blue-300">${{ estimatedTotal.toFixed(2) }}</span>
     </div>
   </section>
 </template>
