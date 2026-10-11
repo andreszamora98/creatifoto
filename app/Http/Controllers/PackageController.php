@@ -51,7 +51,7 @@ class PackageController extends Controller
 
     public function update(Request $request, Package $package)
     {
-        $validated = $this->validated($request);
+        $validated = $this->validated($request, $package);
 
         try {
             $package = $this->packageService->updatePackage($package, $validated);
@@ -61,7 +61,6 @@ class PackageController extends Controller
         }
     }
 
-    /** Soft-delete permitido aunque el paquete tenga órdenes: ellas conservan su snapshot. */
     public function destroy(Package $package)
     {
         try {
@@ -88,11 +87,21 @@ class PackageController extends Controller
         }
     }
 
-    protected function validated(Request $request): array
+    protected function validated(Request $request, ?Package $package = null): array
     {
+        $nameUnique = Rule::unique('packages', 'name')
+            ->where(fn ($q) => $q
+                ->whereNull('deleted_at')
+                ->where('school_id', $request->input('school_id'))
+            );
+
+        if ($package) {
+            $nameUnique->ignore($package->id);
+        }
+
         return $request->validate([
             'school_id' => ['required', Rule::exists('schools', 'id')->whereNull('deleted_at')],
-            'name' => 'nullable|string|max:255',
+            'name' => ['required', 'string', 'max:255', $nameUnique],
             'total_price' => 'required|numeric|min:0',
             'women_features_text' => ['nullable', 'string', function ($attribute, $value, $fail) {
                 if ($value !== null && str_word_count(trim($value)) > 1000) {
@@ -107,6 +116,9 @@ class PackageController extends Controller
             'photo_types' => 'required|array|min:1',
             'photo_types.*.photo_type_id' => ['required', Rule::exists('photo_types', 'id')->whereNull('deleted_at')],
             'photo_types.*.quantity' => 'required|integer|min:1',
+        ], [
+            'name.unique' => 'Ya existe un paquete con ese nombre en esta escuela.',
+            'name.required' => 'El nombre del paquete es obligatorio.',
         ]);
     }
 }

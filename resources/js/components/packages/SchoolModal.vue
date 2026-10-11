@@ -47,7 +47,8 @@
               autocapitalize="words"
               spellcheck="false"
               placeholder="Ej. Colegio Bilingüe del Valle"
-              class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 short:p-2 pr-10 sm:pr-11 short:pr-9 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 w-full"
+              class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 short:p-2 pr-10 sm:pr-11 short:pr-9 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 w-full"
+              :class="(showError || nameDuplicatedMessage) ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'"
             >
             <button
               v-if="name"
@@ -60,6 +61,7 @@
             </button>
           </div>
           <p v-if="showError" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">Campo obligatorio*</p>
+          <p v-else-if="nameDuplicatedMessage" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{{ nameDuplicatedMessage }}</p>
         </div>
 
         <div class="flex gap-2 sm:gap-3 short:gap-2 mt-4 sm:mt-7 short:mt-3 flex-shrink-0"
@@ -74,7 +76,7 @@
           <button
             @mousedown.prevent
             @click="submit"
-            :disabled="submitting || !hasChanges"
+            :disabled="submitting || !hasChanges || !!nameDuplicatedMessage"
             class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {{ submitting ? 'Guardando...' : (editing ? 'Actualizar' : 'Crear') }}
@@ -122,7 +124,9 @@ export default {
       submitting: false,
       showConfirmDelete: false,
       showSuccess: false,
-      createdSchool: null
+      createdSchool: null,
+      existingSchools: [],
+      backendNameError: ''
     };
   },
   computed: {
@@ -133,20 +137,47 @@ export default {
       const current = this.name.trim();
       const original = (this.school?.name || '').trim();
       return current.length > 0 && current !== original;
+    },
+    localNameDuplicated() {
+      const current = this.name.trim().toLowerCase();
+      if (!current) return false;
+      return this.existingSchools.some(s =>
+        Number(s.id) !== Number(this.school?.id)
+        && String(s.name || '').trim().toLowerCase() === current
+      );
+    },
+    nameDuplicatedMessage() {
+      if (this.backendNameError) return this.backendNameError;
+      if (this.localNameDuplicated) return 'Ya existe una escuela con ese nombre.';
+      return '';
     }
   },
   watch: {
-    show(val) {
+    async show(val) {
       if (val) {
         this.name = this.school?.name || '';
         this.showError = false;
         this.showConfirmDelete = false;
         this.showSuccess = false;
         this.createdSchool = null;
+        this.backendNameError = '';
+        await this.loadSchools();
       }
+    },
+    name() {
+      if (this.backendNameError) this.backendNameError = '';
+      if (this.showError) this.showError = false;
     }
   },
   methods: {
+    async loadSchools() {
+      try {
+        const res = await axios.get('/schools');
+        this.existingSchools = res.data;
+      } catch (error) {
+        this.existingSchools = [];
+      }
+    },
     syncName() {
       const el = this.$refs.nameInput;
       if (el && el.value !== this.name) this.name = el.value;
@@ -162,7 +193,9 @@ export default {
         this.showError = true;
         return;
       }
+      if (this.nameDuplicatedMessage) return;
       this.submitting = true;
+      this.backendNameError = '';
       try {
         if (this.editing) {
           const res = await axios.put(`/schools/${this.school.id}`, { name: this.name.trim() });
@@ -173,7 +206,13 @@ export default {
           this.showSuccess = true;
         }
       } catch (error) {
-        this.$emit('notify', { title: 'Error', message: error.response?.data?.message || 'No se pudo guardar la escuela', type: 'error' });
+        const data = error.response?.data;
+        const nameError = data?.errors?.name?.[0];
+        if (nameError) {
+          this.backendNameError = nameError;
+        } else {
+          this.$emit('notify', { title: 'Error', message: data?.message || 'No se pudo guardar la escuela', type: 'error' });
+        }
       } finally {
         this.submitting = false;
       }

@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-3 sm:p-4 lg:p-6 short:p-0">
-      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-7xl h-auto max-h-[92dvh] short:h-full short:max-h-full rounded-lg short:rounded-none flex flex-col overflow-hidden">
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-start justify-center z-50 p-2 sm:p-4 lg:p-6 short:p-0 overflow-y-auto short:items-center short:overflow-hidden">
+      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-7xl h-auto rounded-lg short:rounded-none flex flex-col my-auto short:my-0 short:h-full short:overflow-hidden">
 
         <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg short:rounded-none flex-shrink-0">
           <div class="flex justify-between items-center px-3 sm:px-6 short:px-3 py-2 sm:py-3 short:py-0.5">
@@ -22,7 +22,7 @@
           <StepIndicator :steps="stepLabels" :current-step="currentStep" />
         </div>
 
-        <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 sm:px-6 short:px-3 py-3 sm:py-6 short:py-1.5">
+        <div class="px-3 sm:px-6 short:px-3 py-3 sm:py-6 short:py-1.5 short:flex-1 short:min-h-0 short:overflow-y-auto short:overflow-x-hidden short:overscroll-contain">
           <transition :name="transitionName" mode="out-in">
             <PackageInfoStep
               v-if="currentStep === 1"
@@ -283,11 +283,24 @@ export default {
     },
 
     nextPackageNumber() {
-        if (!this.form.school_id) return null;
-        const numbers = this.existingPackages
-            .filter(p => Number(p.school_id) === Number(this.form.school_id))
-            .map(p => Number(p.package_number) || 0);
-        return (numbers.length ? Math.max(...numbers) : 0) + 1;
+      if (!this.form.school_id) return null;
+      const numbers = this.existingPackages
+        .filter(p => Number(p.school_id) === Number(this.form.school_id))
+        .map(p => Number(p.package_number) || 0);
+      return (numbers.length ? Math.max(...numbers) : 0) + 1;
+    },
+
+    nameMissing() {
+      return !String(this.form.name || '').trim();
+    },
+
+    nameDuplicated() {
+      if (this.nameMissing || !this.form.school_id) return false;
+      const target = String(this.form.name || '').trim().toLowerCase();
+      return this.existingPackages.some(p =>
+        Number(p.school_id) === Number(this.form.school_id)
+        && String(p.name || '').trim().toLowerCase() === target
+      );
     },
 
     activeLines() {
@@ -400,22 +413,24 @@ export default {
     },
 
     fieldErrors() {
-        return {
-            school: !this.form.school_id,
-            photo_content: this.activeLines.length === 0,
-            photo_lines: this.photoLines.some(l => !l.photo_type_id),
-            photo_duplicates: this.hasDuplicatePhotoTypes,
-            service_prices: this.servicePricesInvalid,
-            price_subtotal: this.subtotalInvalid,
-            price_discount: this.discountInvalid
-        };
+      return {
+        school: !this.form.school_id,
+        name: this.nameMissing,
+        name_duplicated: this.nameDuplicated,
+        photo_content: this.activeLines.length === 0,
+        photo_lines: this.photoLines.some(l => !l.photo_type_id),
+        photo_duplicates: this.hasDuplicatePhotoTypes,
+        service_prices: this.servicePricesInvalid,
+        price_subtotal: this.subtotalInvalid,
+        price_discount: this.discountInvalid
+      };
     },
     stepKeys() {
-        return {
-            1: ['school'],
-            2: ['photo_content', 'photo_lines', 'photo_duplicates', 'service_prices'],
-            3: ['price_subtotal', 'price_discount']
-        };
+      return {
+        1: ['school', 'name', 'name_duplicated'],
+        2: ['photo_content', 'photo_lines', 'photo_duplicates', 'service_prices'],
+        3: ['price_subtotal', 'price_discount']
+      };
     },
     currentStepValid() {
       return this.keysValid(this.stepKeys[this.currentStep] || []);
@@ -449,6 +464,14 @@ export default {
     },
 
     getValidationMessage() {
+      /*
+      if (this.fieldErrors.name) {
+        return 'El nombre del paquete es obligatorio.';
+      }
+      */
+      if (this.fieldErrors.name_duplicated) {
+        return 'Ya existe un paquete con ese nombre en esta escuela.';
+      }
       if (this.fieldErrors.photo_duplicates) {
         return 'Hay líneas repetidas (mismo tipo, formato y papel). Déjalas en una sola línea.';
       }
@@ -484,10 +507,10 @@ export default {
     },
 
     handleSchoolCreated(school) {
-        this.schools.push(school);
-        this.form = { ...this.form, school_id: school.id };
-        this.showSchoolModal = false;
-        this.$emit('school-created', school);
+      this.schools.push(school);
+      this.form = { ...this.form, school_id: school.id };
+      this.showSchoolModal = false;
+      this.$emit('school-created', school);
     },
 
     async submit() {
@@ -497,7 +520,7 @@ export default {
       try {
         const payload = {
           school_id: this.form.school_id,
-          name: (this.form.name || '').trim() || null,
+          name: String(this.form.name || '').trim(),
           women_features_text: this.form.women_features_text,
           men_features_text: this.form.men_features_text,
           photo_types: this.activeLines,
@@ -514,9 +537,13 @@ export default {
           this.close();
         });
       } catch (error) {
+        const data = error.response?.data;
+        const firstValidationError = data?.errors
+          ? Object.values(data.errors)[0]?.[0]
+          : null;
         this.$emit('notify', {
           title: 'Error',
-          message: error.response?.data?.message || 'No se pudo crear el paquete',
+          message: firstValidationError || data?.message || 'No se pudo crear el paquete',
           type: 'error'
         });
         this.submitting = false;

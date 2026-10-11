@@ -13,7 +13,7 @@ class PackageService
             $package = Package::create([
                 'school_id' => $data['school_id'],
                 'sequence' => $data['sequence'],
-                'name' => $data['name'] ?? null,
+                'name' => trim($data['name']),
                 'total_price' => $data['total_price'],
                 'women_features' => $this->buildFeatures($data['women_features_text'] ?? null),
                 'men_features' => $this->buildFeatures($data['men_features_text'] ?? null),
@@ -29,7 +29,7 @@ class PackageService
     {
         return DB::transaction(function () use ($package, $data) {
             $package->update([
-                'name' => $data['name'] ?? null,
+                'name' => trim($data['name']),
                 'total_price' => $data['total_price'],
                 'women_features' => $this->buildFeatures($data['women_features_text'] ?? null),
                 'men_features' => $this->buildFeatures($data['men_features_text'] ?? null),
@@ -41,7 +41,6 @@ class PackageService
         });
     }
 
-    /** Soft-delete: las órdenes históricas conservan su snapshot, así que no hay nada que bloquear. */
     public function deletePackage(Package $package): void
     {
         $package->delete();

@@ -1,6 +1,6 @@
 <template>
   <div class="relative" ref="root" @focusout="onFocusOut">
-    <div class="relative">
+    <div class="relative" ref="trigger">
       <i class="ti ti-building-community absolute left-2.5 sm:left-3 short:left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base sm:text-xl short:text-base pointer-events-none"></i>
       <input
         type="text"
@@ -31,9 +31,10 @@
     <transition name="dropdown">
       <div
         v-if="isOpen"
-        class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden"
+        class="absolute z-20 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden"
+        :class="openUp ? 'bottom-full mb-1' : 'top-full mt-1'"
       >
-        <div ref="list" class="max-h-48 sm:max-h-56 short:max-h-32 overflow-y-auto">
+        <div ref="list" class="max-h-32 sm:max-h-44 short:max-h-32 overflow-y-auto">
           <button
             v-for="(s, idx) in filteredSchools"
             :key="s.id"
@@ -77,7 +78,8 @@ export default {
     return {
       isOpen: false,
       search: '',
-      highlightedIdx: 0
+      highlightedIdx: 0,
+      openUp: false
     };
   },
   computed: {
@@ -125,7 +127,18 @@ export default {
       if (this.disabled || this.isOpen) return;
       this.search = '';
       this.highlightedIdx = 0;
+      this.updateDirection();
       this.isOpen = true;
+    },
+    updateDirection() {
+      const trigger = this.$refs.trigger;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 224;
+      const margin = 24;
+      const spaceBelow = viewportHeight - rect.bottom;
+      this.openUp = spaceBelow < dropdownHeight + margin;
     },
     closeDropdown() {
       this.isOpen = false;
@@ -134,6 +147,7 @@ export default {
     onInput(value) {
       this.search = value;
       this.highlightedIdx = 0;
+      if (!this.isOpen) this.updateDirection();
       this.isOpen = true;
     },
     onFocusOut(event) {

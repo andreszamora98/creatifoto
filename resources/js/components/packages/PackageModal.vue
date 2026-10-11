@@ -67,13 +67,17 @@
                     </div>
 
                     <div>
-                      <label class="text-sm sm:text-base short:text-xs font-medium text-blue-800 dark:text-blue-300 mb-1 sm:mb-1.5 short:mb-1 block">Nombre (opcional)</label>
+                      <label class="text-sm sm:text-base short:text-xs font-medium text-blue-800 dark:text-blue-300 mb-1 sm:mb-1.5 short:mb-1 block">
+                        Nombre <span class="text-red-500">*</span>
+                      </label>
                       <input
                         v-model="form.name"
                         type="text"
                         placeholder="Ej. Paquete Premium"
-                        :class="fieldClass(false)"
+                        :class="fieldClass(showErrors && nameMissing || !!nameDuplicatedMessage)"
                       >
+                      <p v-if="showErrors && nameMissing" class="text-xs sm:text-base short:text-xs text-red-600 dark:text-red-400 mt-1 sm:mt-1.5 font-medium">Campo obligatorio*</p>
+                      <p v-else-if="nameDuplicatedMessage" class="text-xs sm:text-base short:text-xs text-red-600 dark:text-red-400 mt-1 sm:mt-1.5 font-medium">{{ nameDuplicatedMessage }}</p>
                     </div>
 
                     <div>
@@ -144,7 +148,7 @@
               <button
                 v-if="!readonly"
                 @click="submit"
-                :disabled="submitting || loading"
+                :disabled="submitting || loading || !!nameDuplicatedMessage"
                 class="px-4 sm:px-6 short:px-4 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg flex items-center justify-center gap-2 short:gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <i v-if="submitting" class="ti ti-refresh animate-spin"></i>
@@ -199,9 +203,11 @@ export default {
       showAlertModal: false,
       showSchoolModal: false,
       alertMessage: '',
+      backendNameError: '',
       schools: [],
       photoTypes: [],
       paperTypes: [],
+      existingPackages: [],
       photoLines: [],
       form: {
         school_id: null,
@@ -217,6 +223,23 @@ export default {
       return this.form.total_price === null
         || this.form.total_price === undefined
         || this.form.total_price === '';
+    },
+    nameMissing() {
+      return !String(this.form.name || '').trim();
+    },
+    localNameDuplicated() {
+      const name = String(this.form.name || '').trim().toLowerCase();
+      if (!name || !this.form.school_id) return false;
+      return this.existingPackages.some(p =>
+        Number(p.school_id) === Number(this.form.school_id)
+        && Number(p.id) !== Number(this.packageId)
+        && String(p.name || '').trim().toLowerCase() === name
+      );
+    },
+    nameDuplicatedMessage() {
+      if (this.backendNameError) return this.backendNameError;
+      if (this.localNameDuplicated) return 'Ya existe un paquete con ese nombre en esta escuela.';
+      return '';
     },
     modalTitle() {
       if (this.readonly) return 'Detalle del paquete';
@@ -240,6 +263,12 @@ export default {
       } else {
         this.resetForm();
       }
+    },
+    'form.name'() {
+      if (this.backendNameError) this.backendNameError = '';
+    },
+    'form.school_id'() {
+      if (this.backendNameError) this.backendNameError = '';
     }
   },
   methods: {
@@ -249,14 +278,16 @@ export default {
     async loadCatalogs() {
       this.loading = true;
       try {
-        const [schoolsRes, photoTypesRes, paperTypesRes] = await Promise.all([
+        const [schoolsRes, photoTypesRes, paperTypesRes, packagesRes] = await Promise.all([
           axios.get('/schools'),
           axios.get('/photo-types'),
-          axios.get('/paper-types')
+          axios.get('/paper-types'),
+          axios.get('/packages')
         ]);
         this.schools = schoolsRes.data;
         this.photoTypes = photoTypesRes.data;
         this.paperTypes = paperTypesRes.data;
+        this.existingPackages = packagesRes.data;
       } catch (error) {
         this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los catálogos', type: 'error' });
       } finally {
@@ -291,6 +322,7 @@ export default {
       this.form = { school_id: null, name: '', total_price: null, women_features_text: '', men_features_text: '' };
       this.photoLines = [];
       this.showErrors = false;
+      this.backendNameError = '';
     },
     handleSchoolCreated(school) {
       this.schools.push(school);
@@ -301,15 +333,19 @@ export default {
       if (this.readonly || this.submitting) return;
       this.showErrors = true;
       const validLines = this.photoLines.filter(l => l.photo_type_id);
-      if (!this.form.school_id || this.priceMissing || validLines.length === 0) {
-        this.alertMessage = 'Completa todos los campos obligatorios antes de continuar.';
-        this.showAlertModal = true;
+      if (!this.form.school_id || this.priceMissing || validLines.length === 0 || this.nameMissing || this.nameDuplicatedMessage) {
+        if (!this.nameDuplicatedMessage) {
+          this.alertMessage = 'Completa todos los campos obligatorios antes de continuar.';
+          this.showAlertModal = true;
+        }
         return;
       }
       this.submitting = true;
+      this.backendNameError = '';
       try {
         const payload = {
           ...this.form,
+          name: String(this.form.name || '').trim(),
           photo_types: validLines.map(l => ({
             photo_type_id: l.photo_type_id,
             quantity: l.quantity,
@@ -324,8 +360,14 @@ export default {
         }
         this.$emit('saved');
       } catch (error) {
-        this.alertMessage = error.response?.data?.message || 'No se pudo guardar el paquete';
-        this.showAlertModal = true;
+        const data = error.response?.data;
+        const nameError = data?.errors?.name?.[0];
+        if (nameError) {
+          this.backendNameError = nameError;
+        } else {
+          this.alertMessage = data?.message || 'No se pudo guardar el paquete';
+          this.showAlertModal = true;
+        }
       } finally {
         this.submitting = false;
       }

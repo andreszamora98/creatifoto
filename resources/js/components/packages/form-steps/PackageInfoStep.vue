@@ -45,7 +45,7 @@
 
         <div>
           <label class="form-label text-sm sm:text-lg short:text-sm font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">
-            Nombre (opcional)
+            Nombre <span class="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -55,8 +55,14 @@
             enterkeyhint="done"
             maxlength="255"
             placeholder="Ej. Paquete Premium"
-            :class="fieldClass(false)"
+            :class="fieldClass(showErrors && (fieldErrors.name || fieldErrors.name_duplicated))"
           />
+          <p v-if="showErrors && fieldErrors.name" class="text-xs sm:text-base short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
+            Campo obligatorio*
+          </p>
+          <p v-else-if="showErrors && fieldErrors.name_duplicated" class="text-xs sm:text-base short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
+            Ya existe un paquete con ese nombre en esta escuela.
+          </p>
         </div>
       </div>
     </div>

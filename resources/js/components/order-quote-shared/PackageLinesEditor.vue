@@ -223,13 +223,20 @@ export default {
       return this._lineKeyMap.get(line);
     },
     packageById(id) {
+      if (id === null || id === undefined) return null;
       return this.packages.find(p => p.id === id) || null;
     },
     schoolById(id) {
       return this.schools.find(s => Number(s.id) === Number(id)) || null;
     },
+    // Formato: "N.- Nombre" (o "Paquete N" si no tiene nombre, o "Paquete" si no hay número).
     packageLabel(pkg) {
-      return pkg.name || ('Paquete ' + pkg.package_number);
+      const number = Number(pkg?.package_number || 0);
+      const name = String(pkg?.name || '').trim();
+      if (number > 0) {
+        return name ? `${number}.- ${name}` : `Paquete ${number}`;
+      }
+      return name || 'Paquete';
     },
     packagePrice(id) {
       return Number(this.packageById(id)?.total_price || 0);
@@ -240,8 +247,11 @@ export default {
       return Number(line.price_snapshot || 0);
     },
     packageNameForLine(line) {
+      // Sin paquete seleccionado: no mostrar nada (evita "Paquete #null").
+      if (!line.package_id) return '';
       const pkg = this.packageById(line.package_id);
       if (pkg) return this.packageLabel(pkg);
+      // Paquete fuera del catálogo activo (soft-deleted): usar snapshot.
       return line.package_name_snapshot || ('Paquete #' + line.package_id);
     },
     schoolNameForLine(line) {
@@ -358,7 +368,14 @@ export default {
       }
       const q = this.normalize(this.packageSearch);
       if (!q) return list;
-      return list.filter(p => this.normalize(this.packageLabel(p)).startsWith(q));
+      // Coincide por etiqueta completa ("1.- Titulación"), por nombre ("Titulación")
+      // o por número de paquete ("1").
+      return list.filter(p => {
+        const label = this.normalize(this.packageLabel(p));
+        const name = this.normalize(p.name || '');
+        const number = String(p.package_number ?? '');
+        return label.startsWith(q) || name.startsWith(q) || number.startsWith(q);
+      });
     },
     movePackageHighlight(delta) {
       const line = this.lines.find(l => this.lineKey(l) === this.openPackageDropdownKey);
