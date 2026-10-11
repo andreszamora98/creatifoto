@@ -12,24 +12,14 @@ use DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
-/**
- * Único lugar que construye/edita el contenido (paquetes, líneas, servicios)
- * de una Order o una Quote. Reglas:
- *  - Elemento NUEVO  -> toma datos y precio del catálogo vigente (solo activos).
- *  - Elemento EXISTENTE -> conserva su unit_price / price_snapshot; nunca consulta precios.
- *  - El total se calcula SIEMPRE desde las filas propias del documento.
- * Usar dentro de DB::transaction().
- */
 class ContentSnapshotService
 {
     private function r(Model $doc): array
     {
         return $doc instanceof Order
-            ? ['packages' => 'orderPackages', 'lines' => 'orderPhotoTypes', 'fk' => 'order_package_id']
-            : ['packages' => 'quotePackages', 'lines' => 'quotePhotoTypes', 'fk' => 'quote_package_id'];
+            ? ['packages' => 'orderPackages', 'lines' => 'orderPhotoTypes', 'fk' => 'order_package_id', 'serviceFk' => 'order_package_id']
+            : ['packages' => 'quotePackages', 'lines' => 'quotePhotoTypes', 'fk' => 'quote_package_id', 'serviceFk' => 'quote_package_id'];
     }
-
-    /* ---------------- creación ---------------- */
 
     public function createFor(Model $doc, array $data): void
     {
@@ -43,28 +33,16 @@ class ContentSnapshotService
         }
     }
 
-    /* ---------------- edición ---------------- */
-
-    /**
-     * Sincroniza el contenido con el payload.
-     * - package_ids: los ya presentes se conservan (snapshot intacto), los ausentes se quitan
-     *   (con sus líneas incluidas), los nuevos se agregan desde el catálogo.
-     * - photo_types[].id: línea existente => solo cantidad/formato/papel/sustitución.
-     *   Sin id => línea nueva a precio vigente.
-     * - additional_services: se empareja por additional_service_id; el nombre snapshot se conserva.
-     */
     public function syncFor(Model $doc, array $data): void
     {
         $r = $this->r($doc);
 
-        // Paquetes
         $wanted = array_values(array_unique($data['package_ids'] ?? []));
         $existing = $doc->{$r['packages']}()->get()->keyBy('package_id');
-        $existing->filter(fn ($row, $pkgId) => !in_array($pkgId, $wanted))->each->delete(); // cascade borra sus líneas incluidas
+        $existing->filter(fn ($row, $pkgId) => !in_array($pkgId, $wanted))->each->delete();
         $new = array_values(array_diff($wanted, $existing->keys()->all()));
         $this->loadPackages($new)->each(fn (Package $p) => $this->addPackage($doc, $p));
 
-        // Líneas de foto
         $current = $doc->{$r['lines']}()->get()->keyBy('id');
         $keep = [];
         foreach ($data['photo_types'] ?? [] as $in) {
@@ -80,11 +58,14 @@ class ContentSnapshotService
         }
         $doc->{$r['lines']}()->whereNotIn('id', $keep)->delete();
 
-        // Servicios (si la clave no viene en el payload, se conservan tal cual)
         if (!array_key_exists('additional_services', $data)) {
             return;
         }
-        $currentSvc = $doc->services()->get()->keyBy('additional_service_id');
+        $currentSvc = $doc->services()
+            ->whereNull('order_package_id')
+            ->whereNull('quote_package_id')
+            ->get()
+            ->keyBy('additional_service_id');
         $keepSvc = [];
         foreach ($data['additional_services'] ?? [] as $s) {
             if ($row = $currentSvc[$s['additional_service_id']] ?? null) {
@@ -98,27 +79,31 @@ class ContentSnapshotService
                 $keepSvc[] = $this->addService($doc, $s)->id;
             }
         }
-        $doc->services()->whereNotIn('id', $keepSvc)->delete();
+        $doc->services()
+            ->whereNull('order_package_id')
+            ->whereNull('quote_package_id')
+            ->whereNotIn('id', $keepSvc)
+            ->delete();
     }
-
-    /* ---------------- total ---------------- */
 
     public function recalculate(Model $doc): float
     {
         $r = $this->r($doc);
 
         $packages = (float) $doc->{$r['packages']}()->sum('price_snapshot');
+
         $lines = (float) $doc->{$r['lines']}()
+            ->whereNull($r['fk'])
             ->selectRaw('COALESCE(SUM(unit_price * quantity), 0) AS t')->value('t');
+
         $services = (float) $doc->services()
+            ->whereNull('order_package_id')
+            ->whereNull('quote_package_id')
             ->selectRaw('COALESCE(SUM(price * quantity), 0) AS t')->value('t');
 
         return round($packages + $lines + $services, 2);
     }
 
-    /* ---------------- cotización -> orden ---------------- */
-
-    /** Copia tal cual (sin consultar catálogo) el contenido de la cotización a la orden. */
     public function copyQuoteToOrder(Quote $quote, Order $order): void
     {
         $map = [];
@@ -139,13 +124,14 @@ class ContentSnapshotService
         }
 
         foreach ($quote->services as $s) {
-            $order->services()->create($s->only([
-                'additional_service_id', 'additional_service_name_snapshot', 'price', 'quantity', 'notes',
-            ]));
+            $order->services()->create([
+                ...$s->only([
+                    'additional_service_id', 'additional_service_name_snapshot', 'price', 'quantity', 'notes',
+                ]),
+                'order_package_id' => $s->quote_package_id ? ($map[$s->quote_package_id] ?? null) : null,
+            ]);
         }
     }
-
-    /* ---------------- internos ---------------- */
 
     public function loadPackages(array $ids): Collection
     {
@@ -153,7 +139,9 @@ class ContentSnapshotService
         if (!$ids) {
             return collect();
         }
-        $packages = Package::with(['school', 'photoTypes'])->whereIn('id', $ids)->get();
+        $packages = Package::with(['school', 'photoTypes', 'additionalServices'])
+            ->whereIn('id', $ids)
+            ->get();
         if ($packages->count() !== count($ids)) {
             throw new DomainException('Uno de los paquetes seleccionados ya no está disponible. Actualiza e inténtalo de nuevo.');
         }
@@ -172,17 +160,32 @@ class ContentSnapshotService
             'price_snapshot' => $pkg->total_price,
         ]);
 
-        // El contenido del paquete se copia como líneas propias, ya pagadas dentro del precio del paquete.
         foreach ($pkg->photoTypes as $pt) {
+            $paperId = $pt->pivot->paper_type_id;
+            $paperName = $paperId
+                ? PaperType::withTrashed()->find($paperId)?->name
+                : null;
+
             $doc->{$r['lines']}()->create([
                 'photo_type_id' => $pt->id,
                 'photo_type_name_snapshot' => $pt->name,
                 'quantity' => $pt->pivot->quantity,
-                'unit_price' => 0,
-                'format' => 'color',
-                'paper_type_id' => null,
-                'paper_type_name_snapshot' => null,
+                'unit_price' => (float) ($pt->pivot->unit_price ?? 0),
+                'format' => $pt->pivot->format ?? 'color',
+                'paper_type_id' => $paperId,
+                'paper_type_name_snapshot' => $paperName,
                 $r['fk'] => $row->id,
+            ]);
+        }
+
+        foreach ($pkg->additionalServices as $svc) {
+            $doc->services()->create([
+                'additional_service_id' => $svc->id,
+                'additional_service_name_snapshot' => $svc->name,
+                'price' => (float) ($svc->pivot->unit_price ?? 0),
+                'quantity' => $svc->pivot->quantity,
+                'notes' => null,
+                $r['serviceFk'] => $row->id,
             ]);
         }
     }
@@ -209,8 +212,6 @@ class ContentSnapshotService
         $attrs = ['quantity' => $in['quantity'], 'format' => $in['format']];
         $inPackage = ($line->order_package_id ?? $line->quote_package_id) !== null;
 
-        // Sustitución explícita de concepto: datos nuevos del catálogo.
-        // (Una línea incluida en un paquete sigue a $0: el paquete ya la cubre.)
         if ((int) $in['photo_type_id'] !== (int) $line->photo_type_id) {
             $pt = PhotoType::find($in['photo_type_id'])
                 ?? throw new DomainException('Un tipo de fotografía ya no está disponible.');
@@ -221,7 +222,6 @@ class ContentSnapshotService
             }
         }
 
-        // Papel: solo se relee del catálogo si el usuario lo cambió.
         $newPaper = $in['paper_type_id'] ?? null;
         if ((int) $newPaper !== (int) $line->paper_type_id) {
             $paper = $this->paper($newPaper);
@@ -229,7 +229,7 @@ class ContentSnapshotService
             $attrs['paper_type_name_snapshot'] = $paper?->name;
         }
 
-        $line->update($attrs); // unit_price del cliente se ignora siempre
+        $line->update($attrs);
     }
 
     private function addService(Model $doc, array $s): Model

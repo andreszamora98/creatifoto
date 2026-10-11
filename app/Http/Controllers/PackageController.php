@@ -7,6 +7,7 @@ use App\Services\PackageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PackageController extends Controller
 {
@@ -19,7 +20,11 @@ class PackageController extends Controller
 
     public function index()
     {
-        return Package::with(['school:id,name,sequence', 'photoTypes:id,name,base_price'])
+        return Package::with([
+                'school:id,name,sequence',
+                'photoTypes:id,name,base_price',
+                'additionalServices:id,name,default_price',
+            ])
             ->orderBy('school_id')
             ->orderBy('sequence')
             ->get(['id', 'school_id', 'sequence', 'name', 'total_price', 'women_features', 'men_features']);
@@ -27,7 +32,11 @@ class PackageController extends Controller
 
     public function show(Package $package)
     {
-        $package->load(['school:id,name,sequence', 'photoTypes:id,name,base_price']);
+        $package->load([
+            'school:id,name,sequence',
+            'photoTypes:id,name,base_price',
+            'additionalServices:id,name,default_price',
+        ]);
         return response()->json($package);
     }
 
@@ -99,7 +108,7 @@ class PackageController extends Controller
             $nameUnique->ignore($package->id);
         }
 
-        return $request->validate([
+        $validated = $request->validate([
             'school_id' => ['required', Rule::exists('schools', 'id')->whereNull('deleted_at')],
             'name' => ['required', 'string', 'max:255', $nameUnique],
             'total_price' => 'required|numeric|min:0',
@@ -116,9 +125,39 @@ class PackageController extends Controller
             'photo_types' => 'required|array|min:1',
             'photo_types.*.photo_type_id' => ['required', Rule::exists('photo_types', 'id')->whereNull('deleted_at')],
             'photo_types.*.quantity' => 'required|integer|min:1',
+            'photo_types.*.format' => ['nullable', Rule::in(['color', 'bn'])],
+            'photo_types.*.paper_type_id' => ['nullable', Rule::exists('paper_types', 'id')],
+            'additional_services' => 'nullable|array',
+            'additional_services.*.additional_service_id' => ['required', Rule::exists('additional_services', 'id')->whereNull('deleted_at')],
+            'additional_services.*.quantity' => 'required|integer|min:1',
         ], [
             'name.unique' => 'Ya existe un paquete con ese nombre en esta escuela.',
             'name.required' => 'El nombre del paquete es obligatorio.',
         ]);
+
+        $this->assertNoDuplicatePhotoLines($validated['photo_types']);
+
+        return $validated;
+    }
+
+    protected function assertNoDuplicatePhotoLines(array $photoTypes): void
+    {
+        $seen = [];
+
+        foreach ($photoTypes as $index => $line) {
+            $key = implode('|', [
+                (int) $line['photo_type_id'],
+                $line['format'] ?? 'color',
+                $line['paper_type_id'] ?? '',
+            ]);
+
+            if (isset($seen[$key])) {
+                throw ValidationException::withMessages([
+                    "photo_types.{$index}.photo_type_id" => 'Hay líneas repetidas (mismo tipo, formato y papel). Déjalas en una sola línea.',
+                ]);
+            }
+
+            $seen[$key] = true;
+        }
     }
 }

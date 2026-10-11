@@ -14,6 +14,8 @@ class Serviceable extends Model
         'additional_service_id',
         'serviceable_id',
         'serviceable_type',
+        'order_package_id',
+        'quote_package_id',
         'additional_service_name_snapshot',
         'price',
         'quantity',
@@ -33,5 +35,15 @@ class Serviceable extends Model
     public function serviceable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function orderPackage(): BelongsTo
+    {
+        return $this->belongsTo(OrderPackage::class);
+    }
+
+    public function quotePackage(): BelongsTo
+    {
+        return $this->belongsTo(QuotePackage::class);
     }
 }

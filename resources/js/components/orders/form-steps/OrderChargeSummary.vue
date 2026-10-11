@@ -40,9 +40,11 @@ export default {
 
       const packageLines = this.selectedPackages.map(pkg => ({
         key: 'pkg-' + pkg.id,
-        label: pkg.name || ('Paquete ' + pkg.package_number),
+        isPackage: true,
+        packageName: pkg.name || ('Paquete ' + pkg.package_number),
+        schoolName: pkg.school?.name || '',
         amount: Number(pkg.total_price || 0),
-        icon: 'ti ti-school'
+        children: this.buildPackageChildren(pkg)
       }));
 
       const serviceLines = this.selectedServices.map(s => {
@@ -61,6 +63,43 @@ export default {
       });
 
       return [...photoLines, ...packageLines, ...serviceLines];
+    }
+  },
+  methods: {
+    buildPackageChildren(pkg) {
+      const children = [];
+
+      const photoTypes = Array.isArray(pkg.photo_types) ? pkg.photo_types : [];
+      photoTypes.forEach((pt, idx) => {
+        const quantity = Number(pt.pivot?.quantity || 0);
+        const unitPrice = Number(pt.pivot?.unit_price ?? pt.base_price ?? 0);
+        const format = pt.pivot?.format || 'color';
+        const formatLabel = format === 'color' ? 'Color' : 'Blanco/negro';
+        children.push({
+          key: `pkg-${pkg.id}-pt-${pt.id}-${idx}`,
+          label: `${pt.name || 'Tipo de foto'} x${quantity} · ${formatLabel}`,
+          amount: unitPrice * quantity,
+          unitPrice,
+          quantity,
+          format
+        });
+      });
+
+      const services = Array.isArray(pkg.additional_services) ? pkg.additional_services : [];
+      services.forEach((svc, idx) => {
+        const quantity = Number(svc.pivot?.quantity || 0);
+        const unitPrice = Number(svc.pivot?.unit_price ?? svc.default_price ?? 0);
+        children.push({
+          key: `pkg-${pkg.id}-svc-${svc.id}-${idx}`,
+          label: `${svc.name || 'Servicio adicional'} x${quantity}`,
+          amount: unitPrice * quantity,
+          unitPrice,
+          quantity,
+          icon: 'ti ti-tool'
+        });
+      });
+
+      return children;
     }
   }
 };

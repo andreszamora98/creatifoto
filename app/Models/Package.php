@@ -47,9 +47,18 @@ class Package extends Model
     public function photoTypes(): BelongsToMany
     {
         return $this->belongsToMany(PhotoType::class, 'package_photo_types')
-            ->withPivot('quantity')
+            ->withPivot(['quantity', 'format', 'paper_type_id', 'unit_price'])
             ->withTimestamps()
             ->using(PackagePhotoType::class)
+            ->withTrashed();
+    }
+
+    public function additionalServices(): BelongsToMany
+    {
+        return $this->belongsToMany(AdditionalService::class, 'package_additional_services')
+            ->withPivot(['quantity', 'unit_price'])
+            ->withTimestamps()
+            ->using(PackageAdditionalService::class)
             ->withTrashed();
     }
 

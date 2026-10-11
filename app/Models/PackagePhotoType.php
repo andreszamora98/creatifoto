@@ -5,10 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-/**
- * Plantilla del paquete: cuántas fotos de cada tipo incluye.
- * Único por (package_id, photo_type_id) para evitar duplicados lógicos.
- */
 class PackagePhotoType extends Pivot
 {
     public $incrementing = true;
@@ -17,6 +13,14 @@ class PackagePhotoType extends Pivot
         'package_id',
         'photo_type_id',
         'quantity',
+        'format',
+        'paper_type_id',
+        'unit_price',
+    ];
+
+    protected $casts = [
+        'quantity' => 'integer',
+        'unit_price' => 'decimal:2',
     ];
 
     public function package(): BelongsTo
@@ -27,5 +31,10 @@ class PackagePhotoType extends Pivot
     public function photoType(): BelongsTo
     {
         return $this->belongsTo(PhotoType::class)->withTrashed();
+    }
+
+    public function paperType(): BelongsTo
+    {
+        return $this->belongsTo(PaperType::class)->withTrashed();
     }
 }

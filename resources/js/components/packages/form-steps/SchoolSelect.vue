@@ -31,8 +31,8 @@
     <transition name="dropdown">
       <div
         v-if="isOpen"
-        class="absolute z-20 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden"
-        :class="openUp ? 'bottom-full mb-1' : 'top-full mt-1'"
+        :style="dropdownStyle"
+        class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden"
       >
         <div ref="list" class="max-h-32 sm:max-h-44 short:max-h-32 overflow-y-auto">
           <button
@@ -79,7 +79,7 @@ export default {
       isOpen: false,
       search: '',
       highlightedIdx: 0,
-      openUp: false
+      dropdownStyle: {}
     };
   },
   computed: {
@@ -110,14 +110,16 @@ export default {
   },
   mounted() {
     this._outsideTapHandler = (event) => {
-      if (this.isOpen && this.$refs.root && !this.$refs.root.contains(event.target)) {
-        this.closeDropdown();
-      }
+      if (!this.isOpen) return;
+      const inRoot = this.$refs.root && this.$refs.root.contains(event.target);
+      const inList = this.$refs.list && this.$refs.list.contains(event.target);
+      if (!inRoot && !inList) this.closeDropdown();
     };
     document.addEventListener('touchstart', this._outsideTapHandler, true);
   },
   beforeUnmount() {
     document.removeEventListener('touchstart', this._outsideTapHandler, true);
+    this.removePositionListeners();
   },
   methods: {
     normalize(value) {
@@ -127,32 +129,63 @@ export default {
       if (this.disabled || this.isOpen) return;
       this.search = '';
       this.highlightedIdx = 0;
-      this.updateDirection();
+      this.updatePosition();
       this.isOpen = true;
-    },
-    updateDirection() {
-      const trigger = this.$refs.trigger;
-      if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const dropdownHeight = 224;
-      const margin = 24;
-      const spaceBelow = viewportHeight - rect.bottom;
-      this.openUp = spaceBelow < dropdownHeight + margin;
+      this.addPositionListeners();
     },
     closeDropdown() {
       this.isOpen = false;
       this.search = '';
+      this.removePositionListeners();
+    },
+    addPositionListeners() {
+      window.addEventListener('resize', this.updatePosition);
+      window.addEventListener('scroll', this.updatePosition, true);
+    },
+    removePositionListeners() {
+      window.removeEventListener('resize', this.updatePosition);
+      window.removeEventListener('scroll', this.updatePosition, true);
+    },
+    updatePosition() {
+      const trigger = this.$refs.trigger;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 180;
+      const margin = 24;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const openUp = spaceBelow < dropdownHeight + margin;
+
+      const style = {
+        position: 'fixed',
+        left: rect.left + 'px',
+        width: rect.width + 'px',
+        zIndex: 100
+      };
+
+      if (openUp) {
+        style.bottom = (viewportHeight - rect.top + 4) + 'px';
+      } else {
+        style.top = (rect.bottom + 4) + 'px';
+      }
+
+      this.dropdownStyle = style;
     },
     onInput(value) {
       this.search = value;
       this.highlightedIdx = 0;
-      if (!this.isOpen) this.updateDirection();
-      this.isOpen = true;
+      if (!this.isOpen) {
+        this.updatePosition();
+        this.isOpen = true;
+        this.addPositionListeners();
+      }
     },
     onFocusOut(event) {
       if (!this.isOpen) return;
-      if (!event.currentTarget.contains(event.relatedTarget)) this.closeDropdown();
+      const next = event.relatedTarget;
+      const inRoot = this.$refs.root && this.$refs.root.contains(next);
+      const inList = this.$refs.list && this.$refs.list.contains(next);
+      if (!inRoot && !inList) this.closeDropdown();
     },
     moveHighlight(delta) {
       if (!this.isOpen) {

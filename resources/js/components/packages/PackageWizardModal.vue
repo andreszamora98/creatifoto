@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-start justify-center z-50 p-2 sm:p-4 lg:p-6 short:p-0 overflow-y-auto short:items-center short:overflow-hidden">
-      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-7xl h-auto rounded-lg short:rounded-none flex flex-col my-auto short:my-0 short:h-full short:overflow-hidden">
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-start lg:items-center justify-center z-50 p-2 sm:p-4 lg:p-6 short:p-0 overflow-y-auto lg:overflow-hidden short:items-center short:overflow-hidden">
+      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-7xl h-auto lg:max-h-[92dvh] short:max-h-full rounded-lg short:rounded-none flex flex-col my-auto lg:my-0 short:my-0 lg:overflow-hidden short:h-full short:overflow-hidden">
 
         <div class="bg-gray-100 dark:bg-gray-700/60 rounded-t-lg short:rounded-none flex-shrink-0">
           <div class="flex justify-between items-center px-3 sm:px-6 short:px-3 py-2 sm:py-3 short:py-0.5">
@@ -22,7 +22,7 @@
           <StepIndicator :steps="stepLabels" :current-step="currentStep" />
         </div>
 
-        <div class="px-3 sm:px-6 short:px-3 py-3 sm:py-6 short:py-1.5 short:flex-1 short:min-h-0 short:overflow-y-auto short:overflow-x-hidden short:overscroll-contain">
+        <div class="px-3 sm:px-6 short:px-3 py-3 sm:py-6 short:py-1.5 lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain short:flex-1 short:min-h-0 short:overflow-y-auto short:overflow-x-hidden short:overscroll-contain">
           <transition :name="transitionName" mode="out-in">
             <PackageInfoStep
               v-if="currentStep === 1"

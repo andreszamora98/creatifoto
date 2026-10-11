@@ -140,25 +140,14 @@
                 </div>
               </div>
 
-              <div
-                v-if="localOrder.order_packages && localOrder.order_packages.length"
-                class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
-              >
-                <PackagesSummaryList :packages="localOrder.order_packages" />
-              </div>
-
-              <div
-                v-if="localOrder.order_photo_types && localOrder.order_photo_types.length"
-                class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
-              >
-                <PhotoTypesSummaryList :lines="localOrder.order_photo_types" />
-              </div>
-
-              <div
-                v-if="localOrder.services && localOrder.services.length"
-                class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm"
-              >
-                <AdditionalServicesSummaryList :services="localOrder.services" />
+              <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <ChargeSummary
+                  title="Conceptos"
+                  :lines="summaryLines"
+                  :estimated-total="Number(localOrder.total || 0)"
+                  hide-total
+                  empty-message="Sin conceptos registrados."
+                />
               </div>
 
               <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
@@ -316,13 +305,11 @@ import axios from 'axios';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
-import PackagesSummaryList from '../order-quote-shared/detail-parts/PackagesSummaryList.vue';
-import PhotoTypesSummaryList from '../order-quote-shared/detail-parts/PhotoTypesSummaryList.vue';
-import AdditionalServicesSummaryList from '../order-quote-shared/detail-parts/AdditionalServicesSummaryList.vue';
+import ChargeSummary from '../order-quote-shared/ChargeSummary.vue';
 
 export default {
   name: 'OrderDetailModal',
-  components: { ConfirmModal, SuccessModal, AlertModal, PackagesSummaryList, PhotoTypesSummaryList, AdditionalServicesSummaryList },
+  components: { ConfirmModal, SuccessModal, AlertModal, ChargeSummary },
   props: {
     show: { type: Boolean, default: false },
     order: { type: Object, default: null },
@@ -398,6 +385,77 @@ export default {
         return 'El monto excede el saldo pendiente';
       }
       return null;
+    },
+    summaryLines() {
+      if (!this.localOrder) return [];
+
+      const packages = this.localOrder.order_packages || [];
+      const photos = this.localOrder.order_photo_types || [];
+      const services = this.localOrder.services || [];
+
+      const result = [];
+
+      photos.filter(l => !l.order_package_id).forEach((l, idx) => {
+        result.push({
+          key: `pt-${l.id}-${idx}`,
+          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}`,
+          amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
+          unitPrice: Number(l.unit_price || 0),
+          quantity: Number(l.quantity || 0),
+          format: l.format
+        });
+      });
+
+      packages.forEach(pkg => {
+        const childPhotos = photos.filter(l => l.order_package_id === pkg.id);
+        const childServices = services.filter(s => s.order_package_id === pkg.id);
+        const children = [];
+
+        childPhotos.forEach((l, idx) => {
+          const formatLabel = l.format === 'color' ? 'Color' : 'Blanco/negro';
+          children.push({
+            key: `pkg-${pkg.id}-pt-${l.id}-${idx}`,
+            label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity} · ${formatLabel}`,
+            amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
+            unitPrice: Number(l.unit_price || 0),
+            quantity: Number(l.quantity || 0),
+            format: l.format
+          });
+        });
+
+        childServices.forEach((s, idx) => {
+          children.push({
+            key: `pkg-${pkg.id}-svc-${s.id}-${idx}`,
+            label: `${s.additional_service_name_snapshot || 'Servicio adicional'} x${s.quantity}`,
+            amount: Number(s.price || 0) * Number(s.quantity || 0),
+            unitPrice: Number(s.price || 0),
+            quantity: Number(s.quantity || 0),
+            icon: 'ti ti-tool'
+          });
+        });
+
+        result.push({
+          key: `pkg-${pkg.id}`,
+          isPackage: true,
+          packageName: pkg.package_name_snapshot || ('Paquete #' + pkg.package_id),
+          schoolName: pkg.school_name_snapshot || '',
+          amount: Number(pkg.price_snapshot || 0),
+          children
+        });
+      });
+
+      services.filter(s => !s.order_package_id).forEach((s, idx) => {
+        result.push({
+          key: `svc-${s.id}-${idx}`,
+          label: `${s.additional_service_name_snapshot || 'Servicio adicional'} x${s.quantity}`,
+          amount: Number(s.price || 0) * Number(s.quantity || 0),
+          unitPrice: Number(s.price || 0),
+          quantity: Number(s.quantity || 0),
+          icon: 'ti ti-tool'
+        });
+      });
+
+      return result;
     }
   },
   watch: {
@@ -411,12 +469,10 @@ export default {
     }
   },
   methods: {
-
     requestEdit() {
       if (!this.canEdit) return;
       this.$emit('edit', this.localOrder);
     },
-
     async loadOrderDetail() {
       this.loading = true;
       try {

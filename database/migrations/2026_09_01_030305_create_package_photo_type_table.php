@@ -13,9 +13,10 @@ return new class extends Migration
             $table->foreignId('package_id')->constrained()->cascadeOnDelete();
             $table->foreignId('photo_type_id')->constrained()->restrictOnDelete();
             $table->unsignedInteger('quantity');
+            $table->enum('format', ['color', 'bn'])->default('color');
+            $table->foreignId('paper_type_id')->nullable()->constrained()->restrictOnDelete();
+            $table->decimal('unit_price', 10, 2)->default(0);
             $table->timestamps();
-
-            $table->unique(['package_id', 'photo_type_id']);
         });
     }
 

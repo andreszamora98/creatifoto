@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\AdditionalService;
 use App\Models\Package;
+use App\Models\PhotoType;
 use Illuminate\Support\Facades\DB;
 
 class PackageService
@@ -20,8 +22,9 @@ class PackageService
             ]);
 
             $this->syncPhotoTypes($package, $data['photo_types'] ?? []);
+            $this->syncServices($package, $data['additional_services'] ?? []);
 
-            return $package->fresh(['school:id,name,sequence', 'photoTypes']);
+            return $package->fresh(['school:id,name,sequence', 'photoTypes', 'additionalServices']);
         });
     }
 
@@ -36,8 +39,9 @@ class PackageService
             ]);
 
             $this->syncPhotoTypes($package, $data['photo_types'] ?? []);
+            $this->syncServices($package, $data['additional_services'] ?? []);
 
-            return $package->fresh(['school:id,name,sequence', 'photoTypes']);
+            return $package->fresh(['school:id,name,sequence', 'photoTypes', 'additionalServices']);
         });
     }
 
@@ -54,10 +58,29 @@ class PackageService
 
     protected function syncPhotoTypes(Package $package, array $photoTypes): void
     {
-        $syncData = [];
+        $package->photoTypes()->detach();
+
         foreach ($photoTypes as $line) {
-            $syncData[$line['photo_type_id']] = ['quantity' => $line['quantity']];
+            $photoType = PhotoType::find($line['photo_type_id']);
+            $package->photoTypes()->attach($line['photo_type_id'], [
+                'quantity' => $line['quantity'],
+                'format' => $line['format'] ?? 'color',
+                'paper_type_id' => $line['paper_type_id'] ?? null,
+                'unit_price' => (float) ($photoType?->base_price ?? 0),
+            ]);
         }
-        $package->photoTypes()->sync($syncData);
+    }
+
+    protected function syncServices(Package $package, array $services): void
+    {
+        $syncData = [];
+        foreach ($services as $line) {
+            $svc = AdditionalService::find($line['additional_service_id']);
+            $syncData[$line['additional_service_id']] = [
+                'quantity' => $line['quantity'] ?? 1,
+                'unit_price' => (float) ($svc?->default_price ?? 0),
+            ];
+        }
+        $package->additionalServices()->sync($syncData);
     }
 }

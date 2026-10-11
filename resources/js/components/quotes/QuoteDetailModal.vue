@@ -148,24 +148,23 @@
               <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg short:text-sm flex items-center">
                 <i class="ti ti-photo mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Conceptos
               </h4>
+              <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" aria-label="Editar conceptos" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
             </div>
 
-            <PackagesSummaryList v-if="quote?.quote_packages?.length" :packages="quote.quote_packages" />
+            <template v-if="!editingConcepts">
+              <ChargeSummary
+                :lines="summaryLines"
+                :estimated-total="Number(quote?.total || 0)"
+                hide-total
+                empty-message="Sin conceptos registrados."
+              />
+            </template>
 
-            <div class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
-              <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
-                <h5 class="font-medium text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300">Tipos de fotografía</h5>
-                <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" aria-label="Editar conceptos" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
-              </div>
+            <template v-else>
+              <PackagesSummaryList v-if="quote?.quote_packages?.length" :packages="quote.quote_packages" />
 
-              <template v-if="!editingConcepts">
-                <PhotoTypesSummaryList v-if="quote?.quote_photo_types?.length" :lines="quote.quote_photo_types" />
-                <p v-else class="text-sm sm:text-base short:text-sm text-gray-500 dark:text-gray-400 italic">
-                  Sin tipos de fotografía registrados.
-                </p>
-              </template>
-
-              <template v-else>
+              <div class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <h5 class="font-medium text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Tipos de fotografía</h5>
                 <PhotoTypeLinesEditor
                   :lines="photoLines"
                   :photo-types="photoTypes"
@@ -182,15 +181,15 @@
                     {{ savingConcepts ? 'Guardando...' : 'Guardar' }}
                   </button>
                 </div>
-              </template>
-            </div>
+              </div>
 
-            <div
-              v-if="quote?.services?.length"
-              class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
-            >
-              <AdditionalServicesSummaryList :services="quote.services" nested />
-            </div>
+              <div
+                v-if="quote?.services?.length"
+                class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+              >
+                <AdditionalServicesSummaryList :services="quote.services" nested />
+              </div>
+            </template>
           </div>
 
         </div>
@@ -232,9 +231,9 @@ import axios from 'axios';
 import orderQuoteFormMixin from '../order-quote-shared/orderQuoteFormMixin.js';
 import CustomerStep from '../order-quote-shared/form-steps/CustomerStep.vue';
 import PackagesSummaryList from '../order-quote-shared/detail-parts/PackagesSummaryList.vue';
-import PhotoTypesSummaryList from '../order-quote-shared/detail-parts/PhotoTypesSummaryList.vue';
 import AdditionalServicesSummaryList from '../order-quote-shared/detail-parts/AdditionalServicesSummaryList.vue';
 import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLinesEditor.vue';
+import ChargeSummary from '../order-quote-shared/ChargeSummary.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
@@ -243,8 +242,8 @@ export default {
   name: 'QuoteDetailModal',
   mixins: [orderQuoteFormMixin],
   components: {
-    CustomerStep, PackagesSummaryList, PhotoTypesSummaryList, AdditionalServicesSummaryList,
-    PhotoTypeLinesEditor, ConfirmModal, SuccessModal, AlertModal
+    CustomerStep, PackagesSummaryList, AdditionalServicesSummaryList,
+    PhotoTypeLinesEditor, ChargeSummary, ConfirmModal, SuccessModal, AlertModal
   },
   props: {
     show: { type: Boolean, default: false },
@@ -300,6 +299,77 @@ export default {
     },
     anyEditingActive() {
       return this.editingPhone || this.editingEmail || this.editingCustomer || this.editingDetails || this.editingConcepts;
+    },
+    summaryLines() {
+      if (!this.quote) return [];
+
+      const packages = this.quote.quote_packages || [];
+      const photos = this.quote.quote_photo_types || [];
+      const services = this.quote.services || [];
+
+      const result = [];
+
+      photos.filter(l => !l.quote_package_id).forEach((l, idx) => {
+        result.push({
+          key: `pt-${l.id}-${idx}`,
+          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}`,
+          amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
+          unitPrice: Number(l.unit_price || 0),
+          quantity: Number(l.quantity || 0),
+          format: l.format
+        });
+      });
+
+      packages.forEach(pkg => {
+        const childPhotos = photos.filter(l => l.quote_package_id === pkg.id);
+        const childServices = services.filter(s => s.quote_package_id === pkg.id);
+        const children = [];
+
+        childPhotos.forEach((l, idx) => {
+          const formatLabel = l.format === 'color' ? 'Color' : 'Blanco/negro';
+          children.push({
+            key: `pkg-${pkg.id}-pt-${l.id}-${idx}`,
+            label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity} · ${formatLabel}`,
+            amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
+            unitPrice: Number(l.unit_price || 0),
+            quantity: Number(l.quantity || 0),
+            format: l.format
+          });
+        });
+
+        childServices.forEach((s, idx) => {
+          children.push({
+            key: `pkg-${pkg.id}-svc-${s.id}-${idx}`,
+            label: `${s.additional_service_name_snapshot || 'Servicio adicional'} x${s.quantity}`,
+            amount: Number(s.price || 0) * Number(s.quantity || 0),
+            unitPrice: Number(s.price || 0),
+            quantity: Number(s.quantity || 0),
+            icon: 'ti ti-tool'
+          });
+        });
+
+        result.push({
+          key: `pkg-${pkg.id}`,
+          isPackage: true,
+          packageName: pkg.package_name_snapshot || ('Paquete #' + pkg.package_id),
+          schoolName: pkg.school_name_snapshot || '',
+          amount: Number(pkg.price_snapshot || 0),
+          children
+        });
+      });
+
+      services.filter(s => !s.quote_package_id).forEach((s, idx) => {
+        result.push({
+          key: `svc-${s.id}-${idx}`,
+          label: `${s.additional_service_name_snapshot || 'Servicio adicional'} x${s.quantity}`,
+          amount: Number(s.price || 0) * Number(s.quantity || 0),
+          unitPrice: Number(s.price || 0),
+          quantity: Number(s.quantity || 0),
+          icon: 'ti ti-tool'
+        });
+      });
+
+      return result;
     }
   },
   methods: {

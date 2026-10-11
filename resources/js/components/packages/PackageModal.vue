@@ -134,6 +134,18 @@
                     empty-hint="Agrega al menos un tipo de fotografía."
                   />
                 </div>
+
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 sm:p-5 short:p-2">
+                  <AdditionalServiceLinesEditor
+                    :lines="serviceLines"
+                    :services="additionalServices"
+                    :loading="loading"
+                    :show-errors="showErrors"
+                    :error="servicePricesInvalid"
+                    title="Servicios adicionales"
+                    empty-hint="Sin servicios adicionales agregados."
+                  />
+                </div>
               </fieldset>
             </div>
 
@@ -178,6 +190,7 @@ import axios from 'axios';
 import AlertModal from '../common/AlertModal.vue';
 import SchoolModal from './SchoolModal.vue';
 import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLinesEditor.vue';
+import AdditionalServiceLinesEditor from '../order-quote-shared/AdditionalServiceLinesEditor.vue';
 import NotesField from '../order-quote-shared/NotesField.vue';
 
 const FIELD_BASE =
@@ -188,7 +201,7 @@ const FIELD_ERROR = 'border-red-400 dark:border-red-500';
 
 export default {
   name: 'PackageModal',
-  components: { AlertModal, SchoolModal, PhotoTypeLinesEditor, NotesField },
+  components: { AlertModal, SchoolModal, PhotoTypeLinesEditor, AdditionalServiceLinesEditor, NotesField },
   props: {
     show: { type: Boolean, default: false },
     packageId: { type: Number, default: null },
@@ -207,8 +220,10 @@ export default {
       schools: [],
       photoTypes: [],
       paperTypes: [],
+      additionalServices: [],
       existingPackages: [],
       photoLines: [],
+      serviceLines: [],
       form: {
         school_id: null,
         name: '',
@@ -240,6 +255,11 @@ export default {
       if (this.backendNameError) return this.backendNameError;
       if (this.localNameDuplicated) return 'Ya existe un paquete con ese nombre en esta escuela.';
       return '';
+    },
+    servicePricesInvalid() {
+      return this.serviceLines.some(l =>
+        l.service_id && !this.additionalServices.find(s => s.id === l.service_id)
+      );
     },
     modalTitle() {
       if (this.readonly) return 'Detalle del paquete';
@@ -278,16 +298,18 @@ export default {
     async loadCatalogs() {
       this.loading = true;
       try {
-        const [schoolsRes, photoTypesRes, paperTypesRes, packagesRes] = await Promise.all([
+        const [schoolsRes, photoTypesRes, paperTypesRes, packagesRes, servicesRes] = await Promise.all([
           axios.get('/schools'),
           axios.get('/photo-types'),
           axios.get('/paper-types'),
-          axios.get('/packages')
+          axios.get('/packages'),
+          axios.get('/additional-services')
         ]);
         this.schools = schoolsRes.data;
         this.photoTypes = photoTypesRes.data;
         this.paperTypes = paperTypesRes.data;
         this.existingPackages = packagesRes.data;
+        this.additionalServices = servicesRes.data;
       } catch (error) {
         this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los catálogos', type: 'error' });
       } finally {
@@ -312,6 +334,10 @@ export default {
           format: pt.pivot?.format || 'bn',
           paper_type_id: pt.pivot?.paper_type_id || null
         }));
+        this.serviceLines = (pkg.additional_services || []).map(svc => ({
+          service_id: svc.id,
+          quantity: svc.pivot?.quantity || 1
+        }));
       } catch (error) {
         this.$emit('notify', { title: 'Error', message: 'No se pudo cargar el paquete', type: 'error' });
       } finally {
@@ -321,6 +347,7 @@ export default {
     resetForm() {
       this.form = { school_id: null, name: '', total_price: null, women_features_text: '', men_features_text: '' };
       this.photoLines = [];
+      this.serviceLines = [];
       this.showErrors = false;
       this.backendNameError = '';
     },
@@ -333,6 +360,7 @@ export default {
       if (this.readonly || this.submitting) return;
       this.showErrors = true;
       const validLines = this.photoLines.filter(l => l.photo_type_id);
+      const validServices = this.serviceLines.filter(l => l.service_id);
       if (!this.form.school_id || this.priceMissing || validLines.length === 0 || this.nameMissing || this.nameDuplicatedMessage) {
         if (!this.nameDuplicatedMessage) {
           this.alertMessage = 'Completa todos los campos obligatorios antes de continuar.';
@@ -351,7 +379,18 @@ export default {
             quantity: l.quantity,
             format: l.format,
             paper_type_id: l.paper_type_id
-          }))
+          })),
+          additional_services: validServices.map(l => {
+            const svc = this.additionalServices.find(s => s.id === l.service_id);
+            const unitPrice = Number(svc?.default_price || 0);
+            const quantity = Number(l.quantity) || 1;
+            return {
+              additional_service_id: l.service_id,
+              price: unitPrice,
+              quantity,
+              subtotal: unitPrice * quantity
+            };
+          })
         };
         if (this.packageId) {
           await axios.put(`/packages/${this.packageId}`, payload);
