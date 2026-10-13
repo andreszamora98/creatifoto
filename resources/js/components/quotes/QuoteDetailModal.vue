@@ -1,229 +1,272 @@
 <template>
-  <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-0 sm:p-4 lg:p-6 short:p-2" @click="handleOverlayClick">
-      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-4xl h-full sm:h-auto sm:max-h-[85vh] sm:rounded-lg flex flex-col overflow-hidden" @click.stop>
-
-        <div class="flex justify-between items-start p-3 sm:p-6 short:p-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 gap-2">
-          <div class="min-w-0">
-            <h3 class="text-base sm:text-2xl short:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">Cotización {{ quoteCode }}</h3>
-            <span class="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 mt-1 sm:mt-2 text-xs sm:text-sm short:text-xs rounded-full" :class="statusClass(quote?.status)">
-              {{ statusLabel(quote?.status) }}
-            </span>
-          </div>
-          <button @click="handleClose" aria-label="Cerrar" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1.5 sm:p-2 short:p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0">
-            <i class="ti ti-x text-lg sm:text-2xl short:text-lg"></i>
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-3 sm:p-6 short:p-2 space-y-3 sm:space-y-5 short:space-y-2">
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 short:gap-2">
-
-            <div v-show="!editingCustomer"
-                 class="rounded-lg p-3 sm:p-5 short:p-3 bg-gray-50 dark:bg-gray-700/40 border-2 border-gray-300 dark:border-gray-600 shadow-sm"
-                 style="border-left-width:4px;">
-              <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
-                <h4 class="font-semibold text-base sm:text-lg short:text-sm flex items-center text-gray-700 dark:text-gray-300 min-w-0">
-                  <i class="ti ti-info-circle mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>
-                  <span class="truncate">Vigencia y observaciones</span>
-                </h4>
-                <button v-if="!editingDetails && canEdit" @click="startEditingDetails" type="button" aria-label="Editar vigencia" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
+  <Teleport to="body">
+    <transition name="fade">
+      <div
+        v-if="show"
+        class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 short:p-2 bg-black/40 backdrop-blur-[1px] modal-overlay"
+        @click="handleOverlayClick"
+      >
+        <div class="modal-zoom w-full h-full sm:h-auto sm:max-w-4xl" @click.stop>
+          <div class="bg-white dark:bg-gray-800 sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-h-[85vh] overflow-y-auto isolate">
+            <div class="relative sm:flex sm:items-center sm:justify-between sm:gap-3 p-3 sm:p-5 short:p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-30">
+              <div class="min-w-0 flex-1 pr-10 sm:pr-0">
+                <h3 class="text-lg sm:text-2xl short:text-base font-semibold text-gray-800 dark:text-gray-200 truncate">
+                  <i class="ti ti-file-description mr-2"></i>Cotización: {{ quoteCode }}
+                </h3>
+                <p class="text-sm sm:text-base short:text-xs text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">
+                  Creada el {{ formatDate(quote?.created_at) }}
+                </p>
               </div>
 
-              <template v-if="!editingDetails">
-                <div class="space-y-1 sm:space-y-2 text-sm sm:text-base short:text-sm">
-                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
-                    <span class="font-medium text-gray-700 dark:text-gray-300">Total:</span>
-                    <span class="font-bold text-gray-700 dark:text-gray-300 text-right ml-2 break-words">{{ formatCurrency(quote?.total) }}</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
-                    <span class="font-medium text-gray-700 dark:text-gray-300">Vigencia:</span>
-                    <span class="font-bold text-gray-700 dark:text-gray-300">{{ formatDateOnly(quote?.valid_until) }}</span>
-                  </div>
-                  <div v-if="quote?.order" class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
-                    <span class="font-medium text-gray-700 dark:text-gray-300">Orden generada:</span>
-                    <span class="font-bold text-green-600 dark:text-green-400">#{{ quote.order.id }}</span>
-                  </div>
-                </div>
-                <div v-if="quote?.notes" class="mt-2 sm:mt-3 bg-white dark:bg-gray-800 rounded p-2 sm:p-3 border border-gray-200 dark:border-gray-700">
-                  <p class="text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">{{ quote.notes }}</p>
-                </div>
-              </template>
+              <div v-if="isPending || canConvert" class="mt-3 sm:mt-0 short:mt-1 flex items-center justify-center sm:justify-end gap-2 flex-shrink-0">
+                <button
+                  v-if="isPending"
+                  @click="updateStatus('rejected')"
+                  class="px-3 sm:px-5 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-sm font-medium text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg flex items-center gap-1.5 sm:gap-2 transition-colors"
+                  title="Rechazar cotización"
+                >
+                  <i class="ti ti-x text-base sm:text-lg"></i>
+                  Rechazar
+                </button>
 
-              <template v-else>
-                <div class="mb-3 sm:mb-4">
-                  <label class="text-sm sm:text-base short:text-sm font-medium block mb-1.5 sm:mb-2 text-gray-700 dark:text-gray-300">Vigencia</label>
-                  <input v-model="detailsForm.validUntil" type="date" :min="minDateStr" class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full">
-                </div>
-                <div class="mb-3 sm:mb-4">
-                  <label class="text-sm sm:text-base short:text-sm font-medium block mb-1.5 sm:mb-2 text-gray-700 dark:text-gray-300">Observaciones</label>
-                  <textarea v-model="detailsForm.notes" v-blur-on-enter enterkeyhint="done" rows="3" class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full resize-none"></textarea>
-                </div>
-                <div class="flex gap-2 sm:gap-3">
-                  <button @click="cancelEditingDetails" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                  <button @click="saveDetails" :disabled="savingDetails" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
-                    {{ savingDetails ? 'Guardando...' : 'Guardar' }}
-                  </button>
-                </div>
-              </template>
-            </div>
-
-            <div class="rounded-lg p-3 sm:p-5 short:p-3 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600"
-                 :class="editingCustomer ? 'lg:col-span-2' : ''"
-                 style="border-left-width:4px;">
-              <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
-                <h4 class="font-semibold text-base sm:text-lg short:text-sm flex items-center text-blue-800 dark:text-blue-300">
-                  <i class="ti ti-user mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Cliente
-                </h4>
-                <button v-if="!editingCustomer && canEdit" @click="startEditingCustomer" type="button" aria-label="Editar cliente" class="text-blue-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
+                <button
+                  v-if="canConvert"
+                  @click="requestConvert"
+                  class="px-3 sm:px-5 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg flex items-center gap-1.5 sm:gap-2 transition-colors"
+                  title="Convertir a orden"
+                >
+                  <i class="ti ti-shopping-cart text-base sm:text-lg"></i>
+                  <span class="hidden sm:inline">Convertir a orden</span>
+                  <span class="sm:hidden">Convertir</span>
+                </button>
               </div>
 
-              <template v-if="!editingCustomer">
-                <div class="space-y-1 sm:space-y-2 text-sm sm:text-base short:text-sm">
-                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
-                    <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Nombre:</span>
-                    <span class="font-bold text-blue-800 dark:text-blue-300 text-right ml-2 min-w-0 break-words">{{ quote?.customer?.name || 'Sin cliente' }}</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
-                    <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Teléfono:</span>
-                    <span class="font-bold text-blue-800 dark:text-blue-300">{{ quote?.customer?.phone || '—' }}</span>
-                  </div>
-                  <div class="flex justify-between items-center py-1.5 sm:py-2 gap-2">
-                    <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Correo:</span>
-                    <span class="font-bold text-blue-800 dark:text-blue-300 text-right ml-2 min-w-0 break-all">{{ quote?.customer?.email || '—' }}</span>
-                  </div>
-                </div>
-              </template>
-
-              <template v-else>
-                <CustomerStep
-                  section-title=""
-                  :on-phone-blur="onPhoneBlur"
-                  :clear-phone="clearPhone"
-                  :clear-email="clearEmail"
-                  :customer-search="customerSearch"
-                  :customer-phone="customerPhone"
-                  :customer-email="customerEmail"
-                  :selected-customer="selectedCustomer"
-                  :filtered-customers="filteredCustomers"
-                  :exact-customer-match="exactCustomerMatch"
-                  :show-customer-dropdown="showCustomerDropdown"
-                  :show-errors="customerSubmittingAttempted"
-                  :field-errors="fieldErrors"
-                  :editing-phone="editingPhone"
-                  :editing-email="editingEmail"
-                  :can-confirm-phone="canConfirmPhone"
-                  :phone-error="phoneError"
-                  :phone-exists="phoneExists"
-                  :email-changed="emailChanged"
-                  :email-error="emailError"
-                  :email-exists="emailExists"
-                  :open-customer-dropdown="openCustomerDropdown"
-                  :hide-customer-dropdown="hideCustomerDropdown"
-                  :clear-customer-search="clearCustomerSearch"
-                  :select-customer="selectCustomer"
-                  :toggle-edit-phone="toggleEditPhone"
-                  :confirm-phone-change="confirmPhoneChange"
-                  :cancel-phone-edit="cancelPhoneEdit"
-                  :toggle-edit-email="toggleEditEmail"
-                  :confirm-email-change="confirmEmailChange"
-                  :cancel-email-edit="cancelEmailEdit"
-                  @update:customerSearch="customerSearch = $event"
-                  @update:customerPhone="customerPhone = $event"
-                  @update:customerEmail="customerEmail = $event"
-                />
-                <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
-                  <button @click="cancelEditingCustomer" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                  <button @click="saveCustomer" :disabled="savingCustomer" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
-                    {{ savingCustomer ? 'Guardando...' : 'Guardar' }}
-                  </button>
-                </div>
-              </template>
-            </div>
-
-          </div>
-
-          <div class="bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-5 short:p-3 shadow-sm">
-            <div class="flex items-center justify-between mb-2 sm:mb-3">
-              <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg short:text-sm flex items-center">
-                <i class="ti ti-photo mr-1.5 sm:mr-2 text-base sm:text-xl short:text-base"></i>Conceptos
-              </h4>
-              <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" aria-label="Editar conceptos" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
-            </div>
-
-            <template v-if="!editingConcepts">
-              <ChargeSummary
-                :lines="summaryLines"
-                :estimated-total="Number(quote?.total || 0)"
-                hide-total
-                empty-message="Sin conceptos registrados."
-              />
-            </template>
-
-            <template v-else>
-              <PackagesSummaryList v-if="quote?.quote_packages?.length" :packages="quote.quote_packages" />
-
-              <div class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
-                <h5 class="font-medium text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Tipos de fotografía</h5>
-                <PhotoTypeLinesEditor
-                  :lines="photoLines"
-                  :photo-types="photoTypes"
-                  :paper-types="paperTypes"
-                  :loading="loadingCatalogs"
-                  :show-errors="conceptsSubmittingAttempted"
-                  :error="fieldErrors.photo_lines || fieldErrors.order_content"
-                  title=""
-                  empty-hint="Sin tipos de fotografía."
-                />
-                <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
-                  <button @click="cancelEditingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                  <button @click="saveConcepts" :disabled="savingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
-                    {{ savingConcepts ? 'Guardando...' : 'Guardar' }}
-                  </button>
-                </div>
-              </div>
-
-              <div
-                v-if="quote?.services?.length"
-                class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+              <button
+                @click="handleClose"
+                aria-label="Cerrar"
+                class="absolute top-3 right-3 sm:static sm:flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 sm:p-3 short:p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 transition-colors"
               >
-                <AdditionalServicesSummaryList :services="quote.services" nested />
+                <i class="ti ti-x text-xl sm:text-2xl"></i>
+              </button>
+            </div>
+
+            <div v-if="quote" class="p-3 sm:p-5 short:p-2 space-y-4 sm:space-y-5 short:space-y-2">
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 short:gap-2">
+
+                <div v-show="!editingCustomer"
+                     class="rounded-lg p-3 sm:p-5 short:p-3 bg-gray-50 dark:bg-gray-700/40 border-2 border-gray-300 dark:border-gray-600 shadow-sm"
+                     style="border-left-width:4px;">
+                  <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                    <h4 class="font-semibold text-base sm:text-lg short:text-sm flex items-center text-gray-700 dark:text-gray-300 min-w-0">
+                      <i class="ti ti-info-circle mr-2 text-lg sm:text-xl short:text-base"></i>
+                      <span class="truncate">Información de la cotización</span>
+                    </h4>
+                    <button v-if="!editingDetails && canEdit" @click="startEditingDetails" type="button" aria-label="Editar vigencia" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
+                  </div>
+
+                  <template v-if="!editingDetails">
+                    <div class="space-y-1 sm:space-y-2 text-sm sm:text-base short:text-sm">
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Folio:</span>
+                        <span class="font-bold text-gray-700 dark:text-gray-300">{{ quoteCode }}</span>
+                      </div>
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Fecha de creación:</span>
+                        <span class="font-bold text-gray-700 dark:text-gray-300 text-right">{{ formatDate(quote.created_at) }}</span>
+                      </div>
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Vigencia:</span>
+                        <span class="font-bold text-gray-700 dark:text-gray-300">{{ formatDateOnly(quote.valid_until) }}</span>
+                      </div>
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Estado:</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-sm sm:text-base short:text-xs rounded-full" :class="statusClass(quote.status)">
+                          <i :class="statusIcon(quote.status)" class="text-base"></i>
+                          {{ statusLabel(quote.status) }}
+                        </span>
+                      </div>
+                      <div v-if="quote.order" class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Orden generada:</span>
+                        <span class="font-bold text-green-600 dark:text-green-400">#{{ quote.order.id }}</span>
+                      </div>
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-gray-700 dark:text-gray-300">Total:</span>
+                        <span class="font-bold text-gray-700 dark:text-gray-300 text-right ml-2 break-words">{{ formatCurrency(quote.total) }}</span>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template v-else>
+                    <div class="mb-3 sm:mb-4">
+                      <label class="text-sm sm:text-base short:text-sm font-medium block mb-1.5 sm:mb-2 text-gray-700 dark:text-gray-300">Vigencia</label>
+                      <input v-model="detailsForm.validUntil" type="date" :min="minDateStr" class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full">
+                    </div>
+                    <div class="mb-3 sm:mb-4">
+                      <label class="text-sm sm:text-base short:text-sm font-medium block mb-1.5 sm:mb-2 text-gray-700 dark:text-gray-300">Observaciones</label>
+                      <textarea v-model="detailsForm.notes" v-blur-on-enter enterkeyhint="done" rows="3" class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-full resize-none"></textarea>
+                    </div>
+                    <div class="flex gap-2 sm:gap-3">
+                      <button @click="cancelEditingDetails" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+                      <button @click="saveDetails" :disabled="savingDetails" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
+                        {{ savingDetails ? 'Guardando...' : 'Guardar' }}
+                      </button>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="rounded-lg p-3 sm:p-5 short:p-3 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600"
+                     :class="editingCustomer ? 'lg:col-span-2' : ''"
+                     style="border-left-width:4px;">
+                  <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                    <h4 class="font-semibold text-base sm:text-lg short:text-sm flex items-center text-blue-800 dark:text-blue-300">
+                      <i class="ti ti-user mr-2 text-lg sm:text-xl short:text-base"></i>Cliente
+                    </h4>
+                    <button v-if="!editingCustomer && canEdit" @click="startEditingCustomer" type="button" aria-label="Editar cliente" class="text-blue-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
+                  </div>
+
+                  <template v-if="!editingCustomer">
+                    <div class="space-y-1 sm:space-y-2 text-sm sm:text-base short:text-sm">
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Nombre:</span>
+                        <span class="font-bold text-blue-800 dark:text-blue-300 text-right ml-2 min-w-0 break-words">{{ quote.customer?.name || 'Sin cliente' }}</span>
+                      </div>
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Teléfono:</span>
+                        <span class="font-bold text-blue-800 dark:text-blue-300">{{ quote.customer?.phone || '—' }}</span>
+                      </div>
+                      <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                        <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">Correo:</span>
+                        <span class="font-bold text-blue-800 dark:text-blue-300 text-right ml-2 min-w-0 break-all">{{ quote.customer?.email || '—' }}</span>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template v-else>
+                    <CustomerStep
+                      section-title=""
+                      :on-phone-blur="onPhoneBlur"
+                      :clear-phone="clearPhone"
+                      :clear-email="clearEmail"
+                      :customer-search="customerSearch"
+                      :customer-phone="customerPhone"
+                      :customer-email="customerEmail"
+                      :selected-customer="selectedCustomer"
+                      :filtered-customers="filteredCustomers"
+                      :exact-customer-match="exactCustomerMatch"
+                      :show-customer-dropdown="showCustomerDropdown"
+                      :show-errors="customerSubmittingAttempted"
+                      :field-errors="fieldErrors"
+                      :editing-phone="editingPhone"
+                      :editing-email="editingEmail"
+                      :can-confirm-phone="canConfirmPhone"
+                      :phone-error="phoneError"
+                      :phone-exists="phoneExists"
+                      :email-changed="emailChanged"
+                      :email-error="emailError"
+                      :email-exists="emailExists"
+                      :open-customer-dropdown="openCustomerDropdown"
+                      :hide-customer-dropdown="hideCustomerDropdown"
+                      :clear-customer-search="clearCustomerSearch"
+                      :select-customer="selectCustomer"
+                      :toggle-edit-phone="toggleEditPhone"
+                      :confirm-phone-change="confirmPhoneChange"
+                      :cancel-phone-edit="cancelPhoneEdit"
+                      :toggle-edit-email="toggleEditEmail"
+                      :confirm-email-change="confirmEmailChange"
+                      :cancel-email-edit="cancelEmailEdit"
+                      @update:customerSearch="customerSearch = $event"
+                      @update:customerPhone="customerPhone = $event"
+                      @update:customerEmail="customerEmail = $event"
+                    />
+                    <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
+                      <button @click="cancelEditingCustomer" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+                      <button @click="saveCustomer" :disabled="savingCustomer" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
+                        {{ savingCustomer ? 'Guardando...' : 'Guardar' }}
+                      </button>
+                    </div>
+                  </template>
+                </div>
+
               </div>
-            </template>
+
+              <div v-if="quote.notes && !editingDetails" class="rounded-lg p-3 sm:p-5 short:p-3 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg short:text-sm flex items-center mb-2 sm:mb-3">
+                  <i class="ti ti-notes mr-2 text-lg sm:text-xl short:text-base"></i>Observaciones
+                </h4>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                  <p class="text-gray-700 dark:text-gray-300 text-sm sm:text-base short:text-sm whitespace-pre-wrap break-words">{{ quote.notes }}</p>
+                </div>
+              </div>
+
+              <div class="bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-5 short:p-3 shadow-sm">
+                <div class="flex items-center justify-between mb-2 sm:mb-3">
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg short:text-sm flex items-center">
+                    <i class="ti ti-photo mr-2 text-lg sm:text-xl short:text-base"></i>Conceptos
+                  </h4>
+                  <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" aria-label="Editar conceptos" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
+                </div>
+
+                <template v-if="!editingConcepts">
+                  <ChargeSummary
+                    :lines="summaryLines"
+                    :estimated-total="Number(quote.total || 0)"
+                    hide-total
+                    empty-message="Sin conceptos registrados."
+                  />
+                </template>
+
+                <template v-else>
+                  <PackagesSummaryList v-if="quote.quote_packages?.length" :packages="quote.quote_packages" />
+
+                  <div class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
+                    <h5 class="font-medium text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Tipos de fotografía</h5>
+                    <PhotoTypeLinesEditor
+                      :lines="photoLines"
+                      :photo-types="photoTypes"
+                      :paper-types="paperTypes"
+                      :loading="loadingCatalogs"
+                      :show-errors="conceptsSubmittingAttempted"
+                      :error="fieldErrors.photo_lines || fieldErrors.order_content"
+                      title=""
+                      empty-hint="Sin tipos de fotografía."
+                    />
+                    <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
+                      <button @click="cancelEditingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
+                      <button @click="saveConcepts" :disabled="savingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
+                        {{ savingConcepts ? 'Guardando...' : 'Guardar' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="quote.services?.length"
+                    class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+                  >
+                    <AdditionalServicesSummaryList :services="quote.services" nested />
+                  </div>
+                </template>
+              </div>
+
+            </div>
           </div>
-
         </div>
-
-        <div class="flex gap-2 sm:gap-3 p-3 sm:p-6 short:p-2 border-t border-gray-200 dark:border-gray-700 flex-shrink-0"
-             style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
-          <button v-if="isPending" @click="updateStatus('rejected')" class="flex-1 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-            Rechazar
-          </button>
-          <button v-if="canConvert" @click="requestConvert" class="flex-1 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors">
-            <span class="hidden sm:inline">Convertir a orden</span>
-            <span class="sm:hidden">Convertir</span>
-          </button>
-          <button v-if="!canConvert" @click="handleClose" class="flex-1 py-2 sm:py-3 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
-            Cerrar
-          </button>
-        </div>
-
       </div>
-    </div>
-  </transition>
+    </transition>
 
-  <ConfirmModal
-    :show="showConfirmModal"
-    title="¿Descartar cambios?"
-    message="Hay una edición sin guardar. ¿Estás seguro de que quieres salir sin guardarla?"
-    confirm-text="Descartar"
-    cancel-text="Seguir editando"
-    @confirm="closeConfirmed"
-    @cancel="showConfirmModal = false"
-  />
+    <ConfirmModal
+      :show="showConfirmModal"
+      title="¿Descartar cambios?"
+      message="Hay una edición sin guardar. ¿Estás seguro de que quieres salir sin guardarla?"
+      confirm-text="Descartar"
+      cancel-text="Seguir editando"
+      @confirm="closeConfirmed"
+      @cancel="showConfirmModal = false"
+    />
 
-  <SuccessModal :show="showSuccessModal" :title="successModalTitle" :message="successModalMessage" @closed="showSuccessModal = false" />
-  <AlertModal :show="showAlertModal" title="Atención" :message="alertMessage" @closed="showAlertModal = false" />
+    <SuccessModal :show="showSuccessModal" :title="successModalTitle" :message="successModalMessage" @closed="showSuccessModal = false" />
+    <AlertModal :show="showAlertModal" title="Atención" :message="alertMessage" @closed="showAlertModal = false" />
+  </Teleport>
 </template>
 
 <script>
@@ -633,9 +676,24 @@ export default {
       };
       return colors[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
     },
+    statusIcon(status) {
+      const icons = {
+        pending: 'ti ti-clock',
+        accepted: 'ti ti-check',
+        rejected: 'ti ti-x',
+        expired: 'ti ti-calendar-off',
+        converted: 'ti ti-checkbox'
+      };
+      return icons[status] || 'ti ti-question-mark';
+    },
     formatCurrency(value) {
       const num = Number(value || 0);
       return '$' + num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    },
+    formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     },
     formatDateOnly(dateString) {
       if (!dateString) return '—';
@@ -649,6 +707,48 @@ export default {
 </script>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.modal-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-zoom {
+  width: 100%;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.dark .overflow-y-auto::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
 </style>

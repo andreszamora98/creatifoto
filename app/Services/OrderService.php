@@ -22,10 +22,6 @@ class OrderService
     {
     }
 
-    /**
-     * Crea una orden. Si viene $fromQuote, el contenido se copia tal cual de la cotización
-     * (sin consultar el catálogo); si no, se arma desde el payload con precios vigentes.
-     */
     public function createOrder(array $data, ?Quote $fromQuote = null): Order
     {
         return DB::transaction(function () use ($data, $fromQuote) {
@@ -85,10 +81,6 @@ class OrderService
         });
     }
 
-    /**
-     * Edita el contenido de una orden. Las líneas existentes (con id) conservan su precio;
-     * las nuevas toman el catálogo vigente. El total se recalcula desde las filas de la orden.
-     */
     public function updateOrder(Order $order, array $data): Order
     {
         return DB::transaction(function () use ($order, $data) {
@@ -119,6 +111,25 @@ class OrderService
                 'total' => $total,
                 'balance_due' => round($total - $paid, 2),
             ])->save();
+
+            return $order->fresh(self::RELATIONS);
+        });
+    }
+
+    public function updateMetadata(Order $order, array $data): Order
+    {
+        return DB::transaction(function () use ($order, $data) {
+            $order = Order::lockForUpdate()->findOrFail($order->id);
+
+            if ($order->status === 'delivered') {
+                throw new \DomainException('Una orden entregada no admite modificaciones.');
+            }
+
+            $order->update([
+                'pose_number' => $data['pose_number'] ?? null,
+                'archive_name' => $data['archive_name'] ?? null,
+                'pose_range' => $data['pose_range'] ?? null,
+            ]);
 
             return $order->fresh(self::RELATIONS);
         });

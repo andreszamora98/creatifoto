@@ -19,6 +19,8 @@ class Order extends Model
         'total',
         'initial_total',
         'pose_number',
+        'archive_name',
+        'pose_range',
         'notes',
         'estimated_delivery_date',
         'estimated_delivery_time',

@@ -103,10 +103,6 @@
                         {{ statusLabel(localOrder.status) }}
                       </span>
                     </div>
-                    <div v-if="localOrder.pose_number" class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
-                      <span class="font-medium" :style="{ color: textActive }">Toma:</span>
-                      <span class="font-bold" :style="{ color: textActive }">#{{ localOrder.pose_number }}</span>
-                    </div>
                   </div>
                 </div>
 
@@ -138,6 +134,94 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                   <p class="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-wrap break-words">{{ localOrder.notes }}</p>
                 </div>
+              </div>
+
+              <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center">
+                    <i class="ti ti-archive mr-2 text-lg sm:text-xl"></i>Datos de archivo
+                  </h4>
+                  <button
+                    v-if="canEdit && !editingMetadata"
+                    @click="startEditingMetadata"
+                    type="button"
+                    aria-label="Editar datos de archivo"
+                    class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"
+                  >
+                    <i class="ti ti-pencil"></i>
+                  </button>
+                </div>
+
+                <template v-if="!editingMetadata">
+                  <div class="space-y-1 sm:space-y-2 text-sm sm:text-base">
+                    <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                      <span class="font-medium text-gray-600 dark:text-gray-400">Toma:</span>
+                      <span class="font-bold text-gray-800 dark:text-gray-200">{{ localOrder.pose_number ? '#' + localOrder.pose_number : '—' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                      <span class="font-medium text-gray-600 dark:text-gray-400">Rango de tomas:</span>
+                      <span class="font-bold text-gray-800 dark:text-gray-200 text-right ml-2 break-words">{{ localOrder.pose_range || '—' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
+                      <span class="font-medium text-gray-600 dark:text-gray-400">Nombre del archivo:</span>
+                      <span class="font-bold text-gray-800 dark:text-gray-200 text-right ml-2 break-all">{{ localOrder.archive_name || '—' }}</span>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-else>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1 sm:mb-1.5 block">Toma</label>
+                      <input
+                        v-model.number="metadataForm.pose_number"
+                        type="number"
+                        min="1"
+                        placeholder="Ej. 5"
+                        class="w-full text-base rounded-lg border bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 px-3"
+                        :class="metadataErrors.pose_number ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
+                      />
+                      <p v-if="metadataErrors.pose_number" class="text-sm text-red-500 mt-1">{{ metadataErrors.pose_number }}</p>
+                    </div>
+                    <div>
+                      <label class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1 sm:mb-1.5 block">Rango de tomas</label>
+                      <input
+                        v-model="metadataForm.pose_range"
+                        type="text"
+                        maxlength="255"
+                        placeholder="Ej. 1-10"
+                        class="w-full text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 px-3"
+                      />
+                    </div>
+                    <div>
+                      <label class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1 sm:mb-1.5 block">Nombre del archivo</label>
+                      <input
+                        v-model="metadataForm.archive_name"
+                        type="text"
+                        maxlength="255"
+                        placeholder="Ej. Graduacion_2026"
+                        class="w-full text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 px-3"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
+                    <button
+                      @click="cancelEditingMetadata"
+                      type="button"
+                      class="flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      @click="saveMetadata"
+                      :disabled="savingMetadata"
+                      type="button"
+                      class="flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
+                    >
+                      {{ savingMetadata ? 'Guardando...' : 'Guardar' }}
+                    </button>
+                  </div>
+                </template>
               </div>
 
               <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
@@ -331,7 +415,15 @@ export default {
       newPayment: {
         amount: null,
         payment_method: ''
-      }
+      },
+      editingMetadata: false,
+      savingMetadata: false,
+      metadataForm: {
+        pose_number: null,
+        pose_range: '',
+        archive_name: ''
+      },
+      metadataErrors: {}
     };
   },
   computed: {
@@ -462,6 +554,8 @@ export default {
     show(val) {
       if (val && this.order) {
         this.localOrder = this.order;
+        this.editingMetadata = false;
+        this.metadataErrors = {};
         this.silentRefresh();
       } else if (!val) {
         this.resetState();
@@ -472,6 +566,58 @@ export default {
     requestEdit() {
       if (!this.canEdit) return;
       this.$emit('edit', this.localOrder);
+    },
+    startEditingMetadata() {
+      this.metadataForm = {
+        pose_number: this.localOrder?.pose_number ?? null,
+        pose_range: this.localOrder?.pose_range || '',
+        archive_name: this.localOrder?.archive_name || ''
+      };
+      this.metadataErrors = {};
+      this.editingMetadata = true;
+    },
+    cancelEditingMetadata() {
+      this.editingMetadata = false;
+      this.metadataErrors = {};
+    },
+    async saveMetadata() {
+      this.savingMetadata = true;
+      this.metadataErrors = {};
+      try {
+        const payload = {
+          pose_number: this.metadataForm.pose_number === '' || this.metadataForm.pose_number === null
+            ? null
+            : Number(this.metadataForm.pose_number),
+          pose_range: String(this.metadataForm.pose_range || '').trim() || null,
+          archive_name: String(this.metadataForm.archive_name || '').trim() || null
+        };
+        const res = await axios.patch(`/orders/${this.localOrder.id}/metadata`, payload);
+        this.localOrder = res.data.order;
+        this.editingMetadata = false;
+        this.successTitle = 'Datos actualizados';
+        this.successMessage = 'Los datos de archivo se actualizaron correctamente.';
+        this.showSuccess = true;
+        this.$emit('updated', this.localOrder);
+      } catch (error) {
+        const data = error.response?.data;
+        if (data?.errors) {
+          if (data.errors.pose_number) {
+            this.metadataErrors.pose_number = data.errors.pose_number[0];
+          } else if (data.errors.archive_name) {
+            this.metadataErrors.archive_name = data.errors.archive_name[0];
+          } else if (data.errors.pose_range) {
+            this.metadataErrors.pose_range = data.errors.pose_range[0];
+          } else {
+            this.alertMessage = data?.message || 'No se pudieron actualizar los datos';
+            this.showAlert = true;
+          }
+        } else {
+          this.alertMessage = data?.message || 'No se pudieron actualizar los datos';
+          this.showAlert = true;
+        }
+      } finally {
+        this.savingMetadata = false;
+      }
     },
     async loadOrderDetail() {
       this.loading = true;
@@ -562,6 +708,10 @@ export default {
       this.showSuccess = false;
       this.showAlert = false;
       this.loading = false;
+      this.editingMetadata = false;
+      this.savingMetadata = false;
+      this.metadataForm = { pose_number: null, pose_range: '', archive_name: '' };
+      this.metadataErrors = {};
     },
     handleClose() {
       this.$emit('close');

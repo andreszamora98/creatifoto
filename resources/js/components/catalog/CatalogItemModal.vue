@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
-    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-3 sm:p-6 short:p-0" @click="$emit('close')">
-      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-md h-auto max-h-[92dvh] short:h-full short:max-h-full rounded-lg short:rounded-none p-4 sm:p-6 short:p-3 flex flex-col overflow-hidden" @click.stop>
+    <div v-if="show" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-50 p-3 sm:p-6 short:p-0">
+      <div class="bg-white dark:bg-gray-800 shadow-xl w-full max-w-md h-auto max-h-[92dvh] short:h-full short:max-h-full rounded-lg short:rounded-none p-4 sm:p-6 short:p-3 flex flex-col overflow-hidden">
         <div class="flex justify-between items-center mb-3 sm:mb-5 short:mb-2 gap-2 flex-shrink-0">
           <div class="flex items-center gap-2 sm:gap-3 short:gap-2 min-w-0">
             <i :class="[icon, 'text-lg sm:text-2xl short:text-base text-blue-500 dark:text-blue-400 shrink-0']"></i>

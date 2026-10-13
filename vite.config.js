@@ -12,7 +12,7 @@ export default defineConfig({
         vue(),
         tailwindcss(),
     ],
-    server: {
+    server: {   
         host: '192.168.100.94', //Dirección IP de la Mac
         port: 5173,
         strictPort: true,

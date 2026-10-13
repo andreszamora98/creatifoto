@@ -42,7 +42,10 @@ class OrderController extends Controller
 
             'estimated_delivery_date' => 'required|date|after_or_equal:today',
             'estimated_delivery_time' => 'nullable|date_format:H:i',
-            'pose_number' => 'nullable|integer|min:1',
+            'pose_number' => [
+                'nullable', 'integer', 'min:1',
+                Rule::unique('orders', 'pose_number')->whereNull('deleted_at'),
+            ],
             'notes' => 'nullable|string|max:1000',
 
             'photo_types' => 'nullable|array|required_without:package_ids',
@@ -65,6 +68,7 @@ class OrderController extends Controller
         ], [
             'photo_types.required_without' => 'Agrega al menos un tipo de fotografía o un paquete escolar.',
             'package_ids.required_without' => 'Agrega al menos un tipo de fotografía o un paquete escolar.',
+            'pose_number.unique' => 'Ya existe una orden activa con ese número de toma.',
         ]);
 
         try {
@@ -83,14 +87,8 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Edición de contenido. Las líneas existentes viajan con `id` (conservan su precio);
-     * las nuevas no llevan `id` (toman el catálogo vigente). unit_price del cliente se ignora.
-     */
     public function update(Request $request, Order $order)
     {
-        // exists simple a propósito: una línea existente puede apuntar a un catálogo ya con soft-delete.
-        // El servicio rechaza elementos eliminados solo cuando son nuevos o recién elegidos.
         $validated = $request->validate([
             'estimated_delivery_date' => 'required|date',
             'estimated_delivery_time' => 'nullable|date_format:H:i',
@@ -123,6 +121,32 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             report($e);
             return response()->json(['message' => 'Error al actualizar la orden. Inténtalo de nuevo.'], 500);
+        }
+    }
+
+    public function updateMetadata(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'pose_number' => [
+                'nullable', 'integer', 'min:1',
+                Rule::unique('orders', 'pose_number')
+                    ->whereNull('deleted_at')
+                    ->ignore($order->id),
+            ],
+            'archive_name' => 'nullable|string|max:255',
+            'pose_range' => 'nullable|string|max:255',
+        ], [
+            'pose_number.unique' => 'Ya existe una orden activa con ese número de toma.',
+        ]);
+
+        try {
+            $order = $this->orderService->updateMetadata($order, $validated);
+            return response()->json(['message' => 'Datos actualizados', 'order' => $order]);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json(['message' => 'Error al actualizar los datos. Inténtalo de nuevo.'], 500);
         }
     }
 

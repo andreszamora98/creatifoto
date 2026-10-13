@@ -37,6 +37,7 @@ Route::get('/orders-table', [OrderController::class, 'index']);
 Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/orders/{order}/payments', [OrderController::class, 'addPayment']);
 Route::patch('/orders/{order}/deliver', [OrderController::class, 'deliver']);
+Route::patch('/orders/{order}/metadata', [OrderController::class, 'updateMetadata']);
 Route::get('/orders/{order}', [OrderController::class, 'show']);
 Route::put('/orders/{order}', [OrderController::class, 'update']);
 
