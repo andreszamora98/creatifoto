@@ -20,7 +20,7 @@ class OrderController extends Controller
     {
         return Order::with(OrderService::RELATIONS)
             ->orderBy('created_at', 'desc')
-            ->get(['id', 'customer_id', 'total', 'initial_total', 'balance_due', 'pose_number', 'notes',
+            ->get(['id', 'customer_id', 'total', 'initial_total', 'balance_due', 'pose_number', 'archive_name', 'pose_range', 'notes',
                    'estimated_delivery_date', 'estimated_delivery_time', 'actual_delivery_date', 'status',
                    'signature_id', 'created_at']);
     }

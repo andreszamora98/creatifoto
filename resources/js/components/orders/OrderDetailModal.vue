@@ -153,57 +153,64 @@
                 </div>
 
                 <template v-if="!editingMetadata">
-                  <div class="space-y-1 sm:space-y-2 text-sm sm:text-base">
-                    <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
-                      <span class="font-medium text-gray-600 dark:text-gray-400">Toma:</span>
-                      <span class="font-bold text-gray-800 dark:text-gray-200">{{ localOrder.pose_number ? '#' + localOrder.pose_number : '—' }}</span>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                      <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-0.5">Toma</p>
+                      <p class="font-bold text-gray-800 dark:text-gray-200 text-sm sm:text-base break-words">
+                        {{ localOrder.pose_number ? '#' + localOrder.pose_number : '—' }}
+                      </p>
                     </div>
-                    <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
-                      <span class="font-medium text-gray-600 dark:text-gray-400">Rango de tomas:</span>
-                      <span class="font-bold text-gray-800 dark:text-gray-200 text-right ml-2 break-words">{{ localOrder.pose_range || '—' }}</span>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                      <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-0.5">Rango de tomas</p>
+                      <p class="font-bold text-gray-800 dark:text-gray-200 text-sm sm:text-base break-words">
+                        {{ localOrder.pose_range || '—' }}
+                      </p>
                     </div>
-                    <div class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
-                      <span class="font-medium text-gray-600 dark:text-gray-400">Nombre del archivo:</span>
-                      <span class="font-bold text-gray-800 dark:text-gray-200 text-right ml-2 break-all">{{ localOrder.archive_name || '—' }}</span>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                      <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-0.5">Nombre del archivo</p>
+                      <p class="font-bold text-gray-800 dark:text-gray-200 text-sm sm:text-base break-all">
+                        {{ localOrder.archive_name || '—' }}
+                      </p>
                     </div>
                   </div>
                 </template>
 
                 <template v-else>
-                  <div class="space-y-3">
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                     <div>
-                      <label class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1 sm:mb-1.5 block">Toma</label>
+                      <label class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1 block">Toma</label>
                       <input
                         v-model.number="metadataForm.pose_number"
                         type="number"
                         min="1"
                         placeholder="Ej. 5"
-                        class="w-full text-base rounded-lg border bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 px-3"
+                        class="w-full text-sm sm:text-base rounded-lg border bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-2.5 px-3"
                         :class="metadataErrors.pose_number ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
                       />
-                      <p v-if="metadataErrors.pose_number" class="text-sm text-red-500 mt-1">{{ metadataErrors.pose_number }}</p>
+                      <p v-if="metadataErrors.pose_number" class="text-xs sm:text-sm text-red-500 mt-1">{{ metadataErrors.pose_number }}</p>
                     </div>
                     <div>
-                      <label class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1 sm:mb-1.5 block">Rango de tomas</label>
+                      <label class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1 block">Rango de tomas</label>
                       <input
                         v-model="metadataForm.pose_range"
                         type="text"
                         maxlength="255"
                         placeholder="Ej. 1-10"
-                        class="w-full text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 px-3"
+                        class="w-full text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-2.5 px-3"
                       />
                     </div>
                     <div>
-                      <label class="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1 sm:mb-1.5 block">Nombre del archivo</label>
+                      <label class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1 block">Nombre del archivo</label>
                       <input
                         v-model="metadataForm.archive_name"
                         type="text"
                         maxlength="255"
                         placeholder="Ej. Graduacion_2026"
-                        class="w-full text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-3 px-3"
+                        class="w-full text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-2.5 px-3"
                       />
                     </div>
                   </div>
+
                   <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
                     <button
                       @click="cancelEditingMetadata"
@@ -214,9 +221,9 @@
                     </button>
                     <button
                       @click="saveMetadata"
-                      :disabled="savingMetadata"
+                      :disabled="savingMetadata || !metadataHasChanges"
                       type="button"
-                      class="flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
+                      class="flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {{ savingMetadata ? 'Guardando...' : 'Guardar' }}
                     </button>
@@ -478,6 +485,25 @@ export default {
       }
       return null;
     },
+    metadataHasChanges() {
+      if (!this.editingMetadata || !this.localOrder) return false;
+
+      const formPoseNumber = (this.metadataForm.pose_number === '' || this.metadataForm.pose_number === null || this.metadataForm.pose_number === undefined)
+        ? null
+        : Number(this.metadataForm.pose_number);
+      const formPoseRange = String(this.metadataForm.pose_range || '').trim() || null;
+      const formArchiveName = String(this.metadataForm.archive_name || '').trim() || null;
+
+      const currentPoseNumber = (this.localOrder.pose_number === null || this.localOrder.pose_number === undefined || this.localOrder.pose_number === '')
+        ? null
+        : Number(this.localOrder.pose_number);
+      const currentPoseRange = String(this.localOrder.pose_range || '').trim() || null;
+      const currentArchiveName = String(this.localOrder.archive_name || '').trim() || null;
+
+      return formPoseNumber !== currentPoseNumber
+        || formPoseRange !== currentPoseRange
+        || formArchiveName !== currentArchiveName;
+    },
     summaryLines() {
       if (!this.localOrder) return [];
 
@@ -581,11 +607,12 @@ export default {
       this.metadataErrors = {};
     },
     async saveMetadata() {
+      if (!this.metadataHasChanges) return;
       this.savingMetadata = true;
       this.metadataErrors = {};
       try {
         const payload = {
-          pose_number: this.metadataForm.pose_number === '' || this.metadataForm.pose_number === null
+          pose_number: (this.metadataForm.pose_number === '' || this.metadataForm.pose_number === null)
             ? null
             : Number(this.metadataForm.pose_number),
           pose_range: String(this.metadataForm.pose_range || '').trim() || null,

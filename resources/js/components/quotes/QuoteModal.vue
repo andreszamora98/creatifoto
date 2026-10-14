@@ -178,7 +178,8 @@ export default {
   emits: ['close', 'created', 'notify'],
   data() {
     return {
-      validUntil: '',
+      // Se inicializa con hoy + 7 días al crear la instancia del modal
+      validUntil: this.defaultValidUntil(),
       form: { notes: '' }
     };
   },
@@ -216,7 +217,26 @@ export default {
       return this.keysValid(keysByStep[this.currentStep] || []);
     }
   },
+  watch: {
+    // Si el modal se reabre y la fecha está vacía (por ejemplo, tras reset),
+    // se vuelve a proponer hoy + 7 días. Si el usuario ya la había definido,
+    // se respeta su valor.
+    show(val) {
+      if (val && !this.validUntil) {
+        this.validUntil = this.defaultValidUntil();
+      }
+    }
+  },
   methods: {
+    // Calcula la fecha de hoy + 7 días en formato YYYY-MM-DD
+    defaultValidUntil() {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    },
     getCurrentState() {
       return {
         ...this.getSharedState(),
@@ -226,7 +246,7 @@ export default {
     },
     resetForm() {
       this.resetSharedFields();
-      this.validUntil = '';
+      this.validUntil = this.defaultValidUntil();
       this.form = { notes: '' };
     },
     async submit() {

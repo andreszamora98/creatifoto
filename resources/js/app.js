@@ -6,6 +6,7 @@ import QuotesBoard from './components/quotes/QuotesBoard.vue';
 import PackagesBoard from './components/packages/PackagesBoard.vue';
 import CatalogsBoard from './components/catalog/CatalogsBoard.vue';
 import blurOnEnter from './directives/blurOnEnter.js';
+import './plugins/authInterceptor.js';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -56,3 +57,16 @@ app.directive('blur-on-enter', blurOnEnter);
 app.use(router);
 
 app.mount('#app');
+
+function revealApp() {
+    rootEl.classList.add('app-ready');
+    const done = () => rootEl.classList.add('app-done');
+    rootEl.addEventListener('transitionend', (e) => {
+        if (e.target === rootEl && e.propertyName === 'filter') done();
+    });
+    setTimeout(done, 1000); // respaldo
+}
+
+router.isReady().then(() => {
+    requestAnimationFrame(() => requestAnimationFrame(revealApp));
+});

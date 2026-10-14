@@ -5,27 +5,33 @@
       {{ sectionTitle }}
     </h4>
 
-    <div class="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 sm:p-5 short:p-2 border border-gray-200 dark:border-gray-700">
-      <ChargeSummary
-        title="Resumen de la cotización"
-        :lines="summaryLines"
-        :estimated-total="estimatedTotal"
-        total-label="Total"
-        empty-message="Agrega tipos de fotografía o paquetes para ver el resumen."
-      />
-    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 short:gap-3">
+      <!-- Resumen (izquierda) -->
+      <div class="lg:col-span-2 bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 sm:p-5 short:p-2 border border-gray-200 dark:border-gray-700">
+        <ChargeSummary
+          title="Resumen de la cotización"
+          :lines="summaryLines"
+          :estimated-total="estimatedTotal"
+          total-label="Total"
+          empty-message="Agrega tipos de fotografía o paquetes para ver el resumen."
+        />
+      </div>
 
-    <div class="mt-4 sm:mt-6 short:mt-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 sm:p-5 short:p-2 border border-gray-200 dark:border-gray-700">
-      <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-5 short:p-2">
-        <label class="form-label text-sm sm:text-lg short:text-sm font-medium mb-1.5 sm:mb-2 short:mb-1 block text-gray-700 dark:text-gray-300">Vigencia de la cotización</label>
-        <input
-          :value="validUntil"
-          @input="$emit('update:validUntil', $event.target.value)"
-          type="date"
-          :min="minDateStr"
-          class="form-control form-control-sm w-full text-sm sm:text-lg short:text-sm p-2.5 sm:p-4 short:p-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
-        >
-        <p class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 mt-1">Opcional. Después de esta fecha la cotización se puede marcar como vencida.</p>
+      <!-- Vigencia (derecha) -->
+      <div class="lg:col-span-1 bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 sm:p-5 short:p-2 border border-gray-200 dark:border-gray-700">
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-5 short:p-2 h-full">
+          <label class="form-label text-sm sm:text-lg short:text-sm font-medium mb-1.5 sm:mb-2 short:mb-1 block text-gray-700 dark:text-gray-300">Vigencia de la cotización</label>
+          <input
+            :value="validUntil"
+            @input="$emit('update:validUntil', $event.target.value)"
+            type="date"
+            :min="minDateStr"
+            class="form-control form-control-sm w-full text-sm sm:text-lg short:text-sm p-2.5 sm:p-4 short:p-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+          >
+          <p class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Opcional. Después de esta fecha la cotización se puede marcar como vencida.
+          </p>
+        </div>
       </div>
     </div>
   </section>

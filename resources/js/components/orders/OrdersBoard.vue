@@ -446,7 +446,7 @@ export default {
       pendingBlinkOrderId: null,
       activeColumn: 0,
       viewMode: 'cards',
-      loading: false,
+      loading: true,
       orders: [],
       searchQuery: '',
       dateSort: 'desc',
