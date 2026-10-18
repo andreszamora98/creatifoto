@@ -14,7 +14,6 @@
 
       <div class="w-full max-w-sm" :class="{ shake }">
         <transition name="view" mode="out-in">
-          <!-- ============ Iniciar sesión ============ -->
           <section v-if="view === 'login'" key="login">
             <header class="stagger" style="--i: 0">
               <h1 class="text-3xl font-semibold tracking-tight">Bienvenido</h1>
@@ -89,7 +88,6 @@
             </form>
           </section>
 
-          <!-- ============ Olvidé mi contraseña ============ -->
           <section v-else-if="view === 'forgot'" key="forgot">
             <header class="stagger" style="--i: 0">
               <h1 class="text-3xl font-semibold tracking-tight">Recupera tu acceso</h1>
@@ -144,7 +142,6 @@
             </form>
           </section>
 
-          <!-- ============ Nueva contraseña ============ -->
           <section v-else key="reset">
             <header class="stagger" style="--i: 0">
               <h1 class="text-3xl font-semibold tracking-tight">Nueva contraseña</h1>
@@ -213,8 +210,8 @@
       </p>
     </main>
 
-    <!-- Fundido final antes de entrar al panel -->
     <div class="curtain" :class="{ 'curtain-on': success }" aria-hidden="true"></div>
+    <div class="arrival" :class="{ 'arrival-off': !arriving }" aria-hidden="true"></div>
   </div>
 </template>
 
@@ -222,6 +219,16 @@
 import axios from 'axios';
 import BrandPanel from './BrandPanel.vue';
 import AuthField from './AuthField.vue';
+
+function consumeLogoutFlag() {
+  try {
+    if (sessionStorage.getItem('logoutFade')) {
+      sessionStorage.removeItem('logoutFade');
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
 
 export default {
   name: 'AuthApp',
@@ -250,8 +257,14 @@ export default {
       success: false,
       shake: false,
       flash: false,
+      arriving: consumeLogoutFlag(),
       apertureMode: 'idle',
     };
+  },
+  mounted() {
+    if (this.arriving) {
+      window.setTimeout(() => (this.arriving = false), 150);
+    }
   },
   methods: {
     go(view) {
@@ -277,11 +290,15 @@ export default {
       this.notice = '';
 
       try {
-        const { data } = await axios.post('/login', {
-          email: this.login.email.trim(),
-          password: this.login.password,
-          remember: this.login.remember,
-        });
+        const minWait = new Promise((r) => window.setTimeout(r, 900));
+        const [{ data }] = await Promise.all([
+          axios.post('/login', {
+            email: this.login.email.trim(),
+            password: this.login.password,
+            remember: this.login.remember,
+          }),
+          minWait,
+        ]);
 
         this.success = true;
         this.apertureMode = 'open';
@@ -345,7 +362,6 @@ export default {
       }
     },
 
-    /* ---------- Errores ---------- */
     clearErrors() {
       this.errors = {};
       this.formError = '';
@@ -371,7 +387,6 @@ export default {
       this.fail();
     },
 
-    // Parpadeo del diafragma + sacudida de la tarjeta
     fail() {
       this.apertureMode = 'blink';
       this.shake = false;
@@ -389,16 +404,13 @@ export default {
       document.documentElement.classList.toggle('dark', this.dark);
       try {
         localStorage.setItem('darkMode', JSON.stringify(this.dark));
-      } catch (e) {
-        /*sin almacenamiento: el cambio solo dura esta visita */
-      }
+      } catch (e) {}
     },
   },
 };
 </script>
 
 <style scoped>
-/* ---- Entrada escalonada ---- */
 .stagger {
   animation: rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   animation-delay: calc(var(--i, 0) * 70ms + 60ms);
@@ -422,7 +434,6 @@ export default {
   transform: translateY(-8px);
 }
 
-/* ---- Error ---- */
 .shake {
   animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
@@ -549,6 +560,22 @@ export default {
   opacity: 1;
 }
 
+.arrival {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: #ffffff;
+  opacity: 1;
+  transition: opacity 0.9s ease;
+}
+:global(.dark .arrival) {
+  background: #0b0d12;
+}
+.arrival-off {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stagger,
   .shake,
@@ -558,6 +585,9 @@ export default {
   }
   .curtain {
     transition-delay: 0s;
+  }
+  .arrival {
+    transition-duration: 0.2s;
   }
 }
 </style>
