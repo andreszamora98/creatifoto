@@ -3,6 +3,10 @@
     title="Resumen de la orden"
     :lines="summaryLines"
     :estimated-total="estimatedTotal"
+    :discount-type="discountType"
+    :discount-value="discountValue"
+    :discount-amount="discountAmount"
+    :discount-reason="discountReason"
     total-label="Total a cobrar"
     empty-message="Agrega tipos de fotografía o paquetes para ver el resumen."
   />
@@ -20,11 +24,47 @@ export default {
     selectedPackages: { type: Array, required: true },
     selectedServices: { type: Array, default: () => [] },
     additionalServices: { type: Array, default: () => [] },
-    estimatedTotal: { type: Number, default: 0 }
+    estimatedTotal: { type: Number, default: 0 },
+    discountType: { type: String, default: null },
+    discountValue: { type: [Number, String], default: null },
+    discountReason: { type: String, default: null }
   },
   computed: {
+    baseDirect() {
+      const photoSum = (this.activeLines || []).reduce((sum, l) => {
+        const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
+        const unitPrice = Number(pt?.base_price || 0);
+        const quantity = Number(l.quantity || 0);
+        return sum + unitPrice * quantity;
+      }, 0);
+
+      const serviceSum = (this.selectedServices || []).reduce((sum, s) => {
+        const svc = this.additionalServices.find(a => a.id === s.additional_service_id);
+        const quantity = Number(s.quantity) || 1;
+        const unitPrice = Number(s.price ?? svc?.default_price ?? 0);
+        return sum + unitPrice * quantity;
+      }, 0);
+
+      return photoSum + serviceSum;
+    },
+    discountAmount() {
+      if (!this.discountType) return 0;
+      const value = Number(this.discountValue || 0);
+      if (!Number.isFinite(value) || value <= 0) return 0;
+
+      if (this.discountType === 'percent') {
+        const clamped = Math.max(0, Math.min(100, value));
+        return Number((this.baseDirect * clamped / 100).toFixed(2));
+      }
+
+      if (this.discountType === 'fixed') {
+        return Number(Math.min(Math.max(0, value), this.baseDirect).toFixed(2));
+      }
+
+      return 0;
+    },
     summaryLines() {
-      const photoLines = this.activeLines.map((l, idx) => {
+      const photoLines = (this.activeLines || []).map((l, idx) => {
         const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
         const unitPrice = Number(pt?.base_price || 0);
         const quantity = Number(l.quantity || 0);
@@ -38,7 +78,7 @@ export default {
         };
       });
 
-      const packageLines = this.selectedPackages.map(pkg => ({
+      const packageLines = (this.selectedPackages || []).map(pkg => ({
         key: 'pkg-' + pkg.id,
         isPackage: true,
         packageName: pkg.name || ('Paquete ' + pkg.package_number),
@@ -47,7 +87,7 @@ export default {
         children: this.buildPackageChildren(pkg)
       }));
 
-      const serviceLines = this.selectedServices.map(s => {
+      const serviceLines = (this.selectedServices || []).map(s => {
         const svc = this.additionalServices.find(a => a.id === s.additional_service_id);
         const quantity = Number(s.quantity) || 1;
         const unitPrice = Number(s.price ?? svc?.default_price ?? 0);

@@ -135,9 +135,31 @@
         {{ emptyMessage }}
       </div>
 
-      <div v-if="!hideTotal" class="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 short:pt-2 flex justify-between items-center gap-2">
-        <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">{{ totalLabel }}</span>
-        <span class="text-lg sm:text-2xl short:text-lg font-bold text-blue-600 dark:text-blue-400">${{ estimatedTotal.toFixed(2) }}</span>
+      <div v-if="!hideTotal" class="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 short:pt-2 space-y-1">
+        <template v-if="hasDiscount">
+          <div class="flex justify-between items-center gap-2 text-sm sm:text-base short:text-sm text-gray-500 dark:text-gray-400">
+            <span>Subtotal</span>
+            <span>${{ estimatedTotal.toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-between items-center gap-2 text-sm sm:text-base short:text-sm text-red-500 dark:text-red-400">
+            <span class="flex items-baseline gap-1.5 min-w-0">
+              <span>Descuento</span>
+              <span v-if="discountType === 'percent'" class="text-xs">({{ percentLabel }}%)</span>
+              <span v-if="discountReason" class="text-xs italic truncate">· {{ discountReason }}</span>
+            </span>
+            <span class="whitespace-nowrap">-${{ discountAmount.toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-between items-center gap-2 pt-1 border-t border-gray-300 dark:border-gray-600">
+            <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">{{ totalLabel }}</span>
+            <span class="text-lg sm:text-2xl short:text-lg font-bold text-blue-600 dark:text-blue-400">${{ netTotal.toFixed(2) }}</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex justify-between items-center gap-2">
+            <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">{{ totalLabel }}</span>
+            <span class="text-lg sm:text-2xl short:text-lg font-bold text-blue-600 dark:text-blue-400">${{ estimatedTotal.toFixed(2) }}</span>
+          </div>
+        </template>
       </div>
     </div>
   </section>
@@ -150,9 +172,26 @@ export default {
     title: { type: String, default: '' },
     lines: { type: Array, default: () => [] },
     estimatedTotal: { type: Number, default: 0 },
+    discountType: { type: String, default: null },
+    discountValue: { type: [Number, String], default: null },
+    discountAmount: { type: Number, default: 0 },
+    discountReason: { type: String, default: null },
     totalLabel: { type: String, default: 'Total a cobrar' },
     emptyMessage: { type: String, default: 'No hay conceptos registrados.' },
     hideTotal: { type: Boolean, default: false }
+  },
+  computed: {
+    hasDiscount() {
+      return Number(this.discountAmount) > 0;
+    },
+    netTotal() {
+      return Math.max(0, Number(this.estimatedTotal) - Number(this.discountAmount));
+    },
+    percentLabel() {
+      const v = Number(this.discountValue);
+      if (!Number.isFinite(v)) return '';
+      return v % 1 === 0 ? v.toFixed(0) : v.toFixed(2);
+    }
   },
   methods: {
     lineBackgroundClass() {

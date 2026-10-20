@@ -10,7 +10,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\AdditionalServiceController;
-
+use App\Http\Controllers\BackgroundController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -25,20 +25,15 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:5,1');
 });
 
-
 Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    
     Route::view('/', 'layouts.app');
     Route::view('/cotizaciones', 'layouts.app');
     Route::view('/paquetes', 'layouts.app');
     Route::view('/catalogos', 'layouts.app');
 
-    /*
-     * Catálogos
-     */
     Route::get('/photo-types', [PhotoTypeController::class, 'index']);
     Route::post('/photo-types', [PhotoTypeController::class, 'store']);
     Route::put('/photo-types/{id}', [PhotoTypeController::class, 'update']);
@@ -46,22 +41,19 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/paper-types', [PaperTypeController::class, 'index']);
     Route::get('/customers', [CustomerController::class, 'index']);
+    Route::get('/backgrounds', [BackgroundController::class, 'index']);
 
-    /*
-     * Órdenes
-     */
     Route::get('/orders-table', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::post('/orders/{order}/payments', [OrderController::class, 'addPayment']);
     Route::patch('/orders/{order}/deliver', [OrderController::class, 'deliver']);
     Route::patch('/orders/{order}/metadata', [OrderController::class, 'updateMetadata']);
+    Route::patch('/orders/{order}/pickups', [OrderController::class, 'syncPickups']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::put('/orders/{order}', [OrderController::class, 'update']);
 
-    //Clientes
     Route::patch('/customers/{customer}/contact', [CustomerController::class, 'updateContact']);
 
-    //Cotizaciones
     Route::get('/quotes', [QuoteController::class, 'index']);
     Route::post('/quotes', [QuoteController::class, 'store']);
     Route::get('/quotes/{quote}', [QuoteController::class, 'show']);
@@ -72,20 +64,17 @@ Route::middleware('auth')->group(function () {
     Route::put('/quotes/{quote}/customer', [QuoteController::class, 'updateCustomer'])
         ->name('quotes.updateCustomer');
 
-    //Escuelas
     Route::get('/schools', [SchoolController::class, 'index']);
     Route::post('/schools', [SchoolController::class, 'store']);
     Route::put('/schools/{school}', [SchoolController::class, 'update']);
     Route::delete('/schools/{school}', [SchoolController::class, 'destroy']);
 
-    //Paquetes escolares
     Route::get('/packages', [PackageController::class, 'index']);
     Route::get('/packages/{package}', [PackageController::class, 'show']);
     Route::post('/packages', [PackageController::class, 'store']);
     Route::put('/packages/{package}', [PackageController::class, 'update']);
     Route::delete('/packages/{package}', [PackageController::class, 'destroy']);
 
-    //Servicios adicionales
     Route::get('/additional-services', [AdditionalServiceController::class, 'index']);
     Route::post('/additional-services', [AdditionalServiceController::class, 'store']);
     Route::put('/additional-services/{id}', [AdditionalServiceController::class, 'update']);

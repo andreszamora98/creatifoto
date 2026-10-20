@@ -211,39 +211,58 @@
                   <ChargeSummary
                     :lines="summaryLines"
                     :estimated-total="Number(quote.total || 0)"
+                    :discount-type="quote.discount_type || null"
+                    :discount-value="quote.discount_value"
+                    :discount-amount="Number(quote.discount_amount || 0)"
+                    :discount-reason="quote.discount_reason"
                     hide-total
                     empty-message="Sin conceptos registrados."
                   />
                 </template>
 
                 <template v-else>
-                  <PackagesSummaryList v-if="quote.quote_packages?.length" :packages="quote.quote_packages" />
+                  <DiscountPanel
+                    :type="discount_type"
+                    :value="discount_value"
+                    :reason="discount_reason"
+                    :show-errors="conceptsSubmittingAttempted"
+                    :error="fieldErrors.discount_value"
+                    @update:type="discount_type = $event"
+                    @update:value="discount_value = $event"
+                    @update:reason="discount_reason = $event"
+                  />
 
-                  <div class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
-                    <h5 class="font-medium text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Tipos de fotografía</h5>
-                    <PhotoTypeLinesEditor
-                      :lines="photoLines"
-                      :photo-types="photoTypes"
-                      :paper-types="paperTypes"
-                      :loading="loadingCatalogs"
-                      :show-errors="conceptsSubmittingAttempted"
-                      :error="fieldErrors.photo_lines || fieldErrors.order_content"
-                      title=""
-                      empty-hint="Sin tipos de fotografía."
-                    />
+                  <div class="mt-3 sm:mt-4">
+                    <PackagesSummaryList v-if="quote.quote_packages?.length" :packages="quote.quote_packages" />
+
+                    <div class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
+                      <h5 class="font-medium text-sm sm:text-base short:text-sm text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Tipos de fotografía</h5>
+                      <PhotoTypeLinesEditor
+                        :lines="photoLines"
+                        :photo-types="photoTypes"
+                        :paper-types="paperTypes"
+                        :backgrounds="backgrounds"
+                        :loading="loadingCatalogs"
+                        :show-errors="conceptsSubmittingAttempted"
+                        :error="fieldErrors.photo_lines || fieldErrors.order_content"
+                        title=""
+                        empty-hint="Sin tipos de fotografía."
+                      />
+                    </div>
+
+                    <div
+                      v-if="quote.services?.length"
+                      class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+                    >
+                      <AdditionalServicesSummaryList :services="quote.services" nested />
+                    </div>
+
                     <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
                       <button @click="cancelEditingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
                       <button @click="saveConcepts" :disabled="savingConcepts" type="button" class="flex-1 py-2 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-xs rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50">
                         {{ savingConcepts ? 'Guardando...' : 'Guardar' }}
                       </button>
                     </div>
-                  </div>
-
-                  <div
-                    v-if="quote.services?.length"
-                    class="mt-3 sm:mt-4 p-3 sm:p-4 short:p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
-                  >
-                    <AdditionalServicesSummaryList :services="quote.services" nested />
                   </div>
                 </template>
               </div>
@@ -277,6 +296,7 @@ import PackagesSummaryList from '../order-quote-shared/detail-parts/PackagesSumm
 import AdditionalServicesSummaryList from '../order-quote-shared/detail-parts/AdditionalServicesSummaryList.vue';
 import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLinesEditor.vue';
 import ChargeSummary from '../order-quote-shared/ChargeSummary.vue';
+import DiscountPanel from '../order-quote-shared/DiscountPanel.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
@@ -286,7 +306,7 @@ export default {
   mixins: [orderQuoteFormMixin],
   components: {
     CustomerStep, PackagesSummaryList, AdditionalServicesSummaryList,
-    PhotoTypeLinesEditor, ChargeSummary, ConfirmModal, SuccessModal, AlertModal
+    PhotoTypeLinesEditor, ChargeSummary, DiscountPanel, ConfirmModal, SuccessModal, AlertModal
   },
   props: {
     show: { type: Boolean, default: false },
@@ -330,7 +350,8 @@ export default {
       return {
         customer: !hasCustomer,
         order_content: !hasContent,
-        photo_lines: hasEmptyPhotoLine
+        photo_lines: hasEmptyPhotoLine,
+        discount_value: this.discountTypeHasError()
       };
     },
     minDateStr() {
@@ -352,10 +373,12 @@ export default {
 
       const result = [];
 
+      const bgLabel = (bg) => (bg && bg !== 'blanco') ? ` · Fondo: ${bg}` : '';
+
       photos.filter(l => !l.quote_package_id).forEach((l, idx) => {
         result.push({
           key: `pt-${l.id}-${idx}`,
-          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}`,
+          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}${bgLabel(l.background)}`,
           amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
           unitPrice: Number(l.unit_price || 0),
           quantity: Number(l.quantity || 0),
@@ -372,7 +395,7 @@ export default {
           const formatLabel = l.format === 'color' ? 'Color' : 'Blanco/negro';
           children.push({
             key: `pkg-${pkg.id}-pt-${l.id}-${idx}`,
-            label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity} · ${formatLabel}`,
+            label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity} · ${formatLabel}${bgLabel(l.background)}`,
             amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
             unitPrice: Number(l.unit_price || 0),
             quantity: Number(l.quantity || 0),
@@ -416,6 +439,14 @@ export default {
     }
   },
   methods: {
+    discountTypeHasError() {
+      if (!this.discount_type) return false;
+      if (this.discount_value === null || this.discount_value === undefined || this.discount_value === '') return true;
+      const v = Number(this.discount_value);
+      if (!Number.isFinite(v) || v < 0) return true;
+      if (this.discount_type === 'percent' && v > 100) return true;
+      return false;
+    },
     afterCatalogsLoaded() {
       this.populateConceptsFromQuote();
     },
@@ -424,15 +455,34 @@ export default {
     },
     populateConceptsFromQuote() {
       if (!this.quote) return;
+
       this.photoLines = (this.quote.quote_photo_types || []).map(line => ({
         id: line.id,
         photo_type_id: line.photo_type_id,
+        photo_type_name_snapshot: line.photo_type_name_snapshot || null,
         quantity: line.quantity,
         format: line.format,
-        paper_type_id: line.paper_type_id
+        background: line.background || 'blanco',
+        paper_type_id: line.paper_type_id ?? null,
+        paper_type_name_snapshot: line.paper_type_name_snapshot || null,
+        locked_unit_price: Number(line.unit_price ?? 0),
+        quote_package_id: line.quote_package_id ?? null
       }));
 
-      this.packageLines = (this.quote.quote_packages || []).map(p => ({ package_id: p.package_id }));
+      this.packageLines = (this.quote.quote_packages || []).map(p => ({
+        id: p.id,
+        package_id: p.package_id,
+        package_name_snapshot: p.package_name_snapshot || null,
+        school_id: p.school_id ?? null,
+        school_name_snapshot: p.school_name_snapshot || null,
+        price_snapshot: Number(p.price_snapshot ?? 0)
+      }));
+
+      this.discount_type = this.quote.discount_type || null;
+      this.discount_value = (this.quote.discount_value !== null && this.quote.discount_value !== undefined)
+        ? Number(this.quote.discount_value)
+        : null;
+      this.discount_reason = this.quote.discount_reason || '';
     },
     getCurrentState() {
       return {};
@@ -597,6 +647,11 @@ export default {
     async saveConcepts() {
       this.conceptsSubmittingAttempted = true;
 
+      if (this.fieldErrors.discount_value) {
+        this.alertMessage = 'Revisa el valor del descuento antes de guardar.';
+        this.showAlertModal = true;
+        return;
+      }
       if (this.fieldErrors.photo_lines) {
         this.alertMessage = 'Completa o elimina las líneas de fotografía sin tipo seleccionado.';
         this.showAlertModal = true;
@@ -611,6 +666,7 @@ export default {
       this.savingConcepts = true;
       try {
         const res = await axios.put(`/quotes/${this.quote.id}/concepts`, {
+          ...this.resolveDiscountPayload(),
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds
         });
@@ -618,7 +674,7 @@ export default {
         this.editingConcepts = false;
         this.$emit('updated', updatedQuote);
         this.successModalTitle = 'Actualizado';
-        this.successModalMessage = 'Los tipos de fotografía se actualizaron correctamente.';
+        this.successModalMessage = 'Los conceptos se actualizaron correctamente.';
         this.showSuccessModal = true;
       } catch (error) {
         const data = error.response?.data;

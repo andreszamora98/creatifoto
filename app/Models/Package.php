@@ -18,6 +18,8 @@ class Package extends Model
         'sequence',
         'name',
         'total_price',
+        'list_price',
+        'discount_amount',
         'women_features',
         'men_features',
     ];
@@ -25,6 +27,8 @@ class Package extends Model
     protected $casts = [
         'sequence' => 'integer',
         'total_price' => 'decimal:2',
+        'list_price' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'women_features' => 'array',
         'men_features' => 'array',
     ];
@@ -47,7 +51,7 @@ class Package extends Model
     public function photoTypes(): BelongsToMany
     {
         return $this->belongsToMany(PhotoType::class, 'package_photo_types')
-            ->withPivot(['quantity', 'format', 'paper_type_id', 'unit_price'])
+            ->withPivot(['quantity', 'format', 'background', 'paper_type_id', 'unit_price'])
             ->withTimestamps()
             ->using(PackagePhotoType::class)
             ->withTrashed();

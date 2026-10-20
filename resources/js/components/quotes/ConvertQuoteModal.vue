@@ -32,10 +32,24 @@
 
             <ChargePaymentLayout v-else key="step-2">
               <template #summary>
-                <ConvertChargeSummary
-                  :quote="quote"
-                  :estimated-total="estimatedTotal"
-                />
+                <div class="space-y-3">
+                  <DiscountPanel
+                    :type="discount_type"
+                    :value="discount_value"
+                    :reason="discount_reason"
+                    :show-errors="showErrorsStep2"
+                    :error="discountValueError"
+                    @update:type="discount_type = $event"
+                    @update:value="discount_value = $event"
+                    @update:reason="discount_reason = $event"
+                  />
+
+                  <ConvertChargeSummary
+                    :quote="quote"
+                    :estimated-total="estimatedTotal"
+                    :override-discount="overrideDiscount"
+                  />
+                </div>
               </template>
 
               <template #payment>
@@ -43,7 +57,7 @@
                   :section-badge="null"
                   section-title=""
                   :payments="payments"
-                  :estimated-total="estimatedTotal"
+                  :net-total="netTotal"
                   :remaining-balance="remainingBalance"
                   :liquidate-all="liquidateAll"
                   :show-errors="showErrorsStep2"
@@ -100,6 +114,7 @@ import StepIndicator from '../order-quote-shared/StepIndicator.vue';
 import ChargePaymentLayout from '../order-quote-shared/ChargePaymentLayout.vue';
 import ConvertDeliveryStep from './form-steps/ConvertDeliveryStep.vue';
 import ConvertChargeSummary from './form-steps/ConvertChargeSummary.vue';
+import DiscountPanel from '../order-quote-shared/DiscountPanel.vue';
 import PaymentStep from '../orders/form-steps/PaymentStep.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
@@ -110,7 +125,7 @@ export default {
   mixins: [paymentsMixin],
   components: {
     StepIndicator, ChargePaymentLayout, ConvertDeliveryStep, ConvertChargeSummary,
-    PaymentStep, ConfirmModal, SuccessModal, AlertModal
+    DiscountPanel, PaymentStep, ConfirmModal, SuccessModal, AlertModal
   },
   props: {
     show: { type: Boolean, default: false },
@@ -132,7 +147,10 @@ export default {
       showSuccessModal: false,
       successModalTitle: '',
       successModalMessage: '',
-      successNext: null
+      successNext: null,
+      discount_type: null,
+      discount_value: null,
+      discount_reason: ''
     };
   },
   computed: {
@@ -151,6 +169,51 @@ export default {
     estimatedTotal() {
       return Number(this.quote?.total || 0);
     },
+    baseDirect() {
+      if (!this.quote) return 0;
+
+      const photos = (this.quote.quote_photo_types || []).filter(l => !l.quote_package_id);
+      const photoSum = photos.reduce((sum, l) => sum + Number(l.unit_price || 0) * Number(l.quantity || 0), 0);
+
+      const services = (this.quote.services || []).filter(s => !s.quote_package_id);
+      const serviceSum = services.reduce((sum, s) => sum + Number(s.price || 0) * Number(s.quantity || 0), 0);
+
+      return photoSum + serviceSum;
+    },
+    discountAmount() {
+      if (!this.discount_type) return 0;
+      const v = Number(this.discount_value || 0);
+      if (!Number.isFinite(v) || v <= 0) return 0;
+
+      if (this.discount_type === 'percent') {
+        const clamped = Math.max(0, Math.min(100, v));
+        return Number((this.baseDirect * clamped / 100).toFixed(2));
+      }
+      if (this.discount_type === 'fixed') {
+        return Number(Math.min(v, this.baseDirect).toFixed(2));
+      }
+      return 0;
+    },
+    netTotal() {
+      return Math.max(0, Number(this.estimatedTotal) - Number(this.discountAmount));
+    },
+    overrideDiscount() {
+      return {
+        type: this.discount_type || null,
+        value: this.discount_value !== null && this.discount_value !== undefined && this.discount_value !== ''
+          ? Number(this.discount_value)
+          : null,
+        reason: (this.discount_reason || '').trim() || null
+      };
+    },
+    discountValueError() {
+      if (!this.discount_type) return false;
+      if (this.discount_value === null || this.discount_value === undefined || this.discount_value === '') return true;
+      const v = Number(this.discount_value);
+      if (!Number.isFinite(v) || v < 0) return true;
+      if (this.discount_type === 'percent' && v > 100) return true;
+      return false;
+    },
     showErrorsStep1() {
       return this.stepAttempted[1];
     },
@@ -161,7 +224,8 @@ export default {
       return !!this.deliveryDate && !!this.deliveryTime;
     },
     step2Valid() {
-      return this.payments.length > 0 && this.payments.every(p => p.amount > 0 && p.payment_method);
+      if (this.discountValueError) return false;
+      return this.payments.length > 0 && this.payments.every(p => Number(p.amount) > 0 && p.payment_method);
     }
   },
   watch: {
@@ -177,6 +241,12 @@ export default {
         this.stepAttempted = { 1: false, 2: false };
         this.submitting = false;
         this.showCancelConfirm = false;
+
+        this.discount_type = this.quote?.discount_type || null;
+        this.discount_value = (this.quote?.discount_value !== null && this.quote?.discount_value !== undefined)
+          ? Number(this.quote.discount_value)
+          : null;
+        this.discount_reason = this.quote?.discount_reason || '';
       }
     }
   },
@@ -233,6 +303,9 @@ export default {
         const payload = {
           estimated_delivery_date: this.deliveryDate,
           estimated_delivery_time: this.deliveryTime,
+          discount_type: this.overrideDiscount.type,
+          discount_value: this.overrideDiscount.value,
+          discount_reason: this.overrideDiscount.reason,
           payments: this.payments.map(p => ({ amount: p.amount, payment_method: p.payment_method }))
         };
         const res = await axios.post(`/quotes/${this.quote.id}/convert`, payload);
@@ -240,7 +313,9 @@ export default {
           this.$emit('converted', res.data.order);
         });
       } catch (error) {
-        this.alertMessage = error.response?.data?.message || 'No se pudo crear la orden';
+        const data = error.response?.data;
+        const firstValidationError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+        this.alertMessage = firstValidationError || data?.message || 'No se pudo crear la orden';
         this.showAlertModal = true;
       } finally {
         this.submitting = false;

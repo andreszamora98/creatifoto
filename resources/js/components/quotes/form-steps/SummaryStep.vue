@@ -1,23 +1,27 @@
 <template>
-  <section>
-    <h4 v-if="sectionTitle" class="text-sm sm:text-base short:text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3 sm:mb-5 short:mb-2 flex items-center gap-2">
+  <section class="space-y-3 sm:space-y-4 short:space-y-2">
+    <h4 v-if="sectionTitle" class="text-sm sm:text-base short:text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-2">
       <span v-if="sectionBadge !== null" class="w-6 h-6 sm:w-8 sm:h-8 short:w-6 short:h-6 rounded-full bg-blue-500 text-white text-xs sm:text-sm short:text-xs flex items-center justify-center font-bold">{{ sectionBadge }}</span>
       {{ sectionTitle }}
     </h4>
 
+    <slot name="discount" />
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 short:gap-3">
-      <!-- Resumen (izquierda) -->
       <div class="lg:col-span-2 bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 sm:p-5 short:p-2 border border-gray-200 dark:border-gray-700">
         <ChargeSummary
           title="Resumen de la cotización"
           :lines="summaryLines"
           :estimated-total="estimatedTotal"
+          :discount-type="discountType"
+          :discount-value="discountValue"
+          :discount-amount="discountAmount"
+          :discount-reason="discountReason"
           total-label="Total"
           empty-message="Agrega tipos de fotografía o paquetes para ver el resumen."
         />
       </div>
 
-      <!-- Vigencia (derecha) -->
       <div class="lg:col-span-1 bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3 sm:p-5 short:p-2 border border-gray-200 dark:border-gray-700">
         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-5 short:p-2 h-full">
           <label class="form-label text-sm sm:text-lg short:text-sm font-medium mb-1.5 sm:mb-2 short:mb-1 block text-gray-700 dark:text-gray-300">Vigencia de la cotización</label>
@@ -52,6 +56,9 @@ export default {
     selectedServices: { type: Array, default: () => [] },
     additionalServices: { type: Array, default: () => [] },
     estimatedTotal: { type: Number, default: 0 },
+    discountType: { type: String, default: null },
+    discountValue: { type: [Number, String], default: null },
+    discountReason: { type: String, default: null },
     validUntil: { type: String, default: '' }
   },
   emits: ['update:validUntil'],
@@ -63,8 +70,41 @@ export default {
       const d = String(today.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
     },
+    baseDirect() {
+      const photoSum = (this.activeLines || []).reduce((sum, l) => {
+        const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
+        const unitPrice = Number(pt?.base_price || 0);
+        const quantity = Number(l.quantity || 0);
+        return sum + unitPrice * quantity;
+      }, 0);
+
+      const serviceSum = (this.selectedServices || []).reduce((sum, s) => {
+        const svc = this.additionalServices.find(a => a.id === s.additional_service_id);
+        const quantity = Number(s.quantity) || 1;
+        const unitPrice = Number(s.price ?? svc?.default_price ?? 0);
+        return sum + unitPrice * quantity;
+      }, 0);
+
+      return photoSum + serviceSum;
+    },
+    discountAmount() {
+      if (!this.discountType) return 0;
+      const v = Number(this.discountValue || 0);
+      if (!Number.isFinite(v) || v <= 0) return 0;
+
+      if (this.discountType === 'percent') {
+        const clamped = Math.max(0, Math.min(100, v));
+        return Number((this.baseDirect * clamped / 100).toFixed(2));
+      }
+
+      if (this.discountType === 'fixed') {
+        return Number(Math.min(v, this.baseDirect).toFixed(2));
+      }
+
+      return 0;
+    },
     summaryLines() {
-      const photoLines = this.activeLines.map((l, idx) => {
+      const photoLines = (this.activeLines || []).map((l, idx) => {
         const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
         const unitPrice = Number(pt?.base_price || 0);
         const quantity = Number(l.quantity || 0);
@@ -78,7 +118,7 @@ export default {
         };
       });
 
-      const packageLines = this.selectedPackages.map(pkg => ({
+      const packageLines = (this.selectedPackages || []).map(pkg => ({
         key: 'pkg-' + pkg.id,
         isPackage: true,
         packageName: pkg.name || ('Paquete ' + pkg.package_number),
@@ -87,7 +127,7 @@ export default {
         children: this.buildPackageChildren(pkg)
       }));
 
-      const serviceLines = this.selectedServices.map(s => {
+      const serviceLines = (this.selectedServices || []).map(s => {
         const svc = this.additionalServices.find(a => a.id === s.additional_service_id);
         const qty = Number(s.quantity) || 1;
         const unitPrice = Number(s.price ?? svc?.default_price ?? 0);
@@ -130,7 +170,7 @@ export default {
         const quantity = Number(svc.pivot?.quantity || 0);
         const unitPrice = Number(svc.pivot?.unit_price ?? svc.default_price ?? 0);
         children.push({
-          key: `pkg-${pkg.id}-svc-${svc.id}-${idx}`,
+          key: `pkg-${svc.id}-svc-${svc.id}-${idx}`,
           label: `${svc.name || 'Servicio adicional'} x${quantity}`,
           amount: unitPrice * quantity,
           unitPrice,

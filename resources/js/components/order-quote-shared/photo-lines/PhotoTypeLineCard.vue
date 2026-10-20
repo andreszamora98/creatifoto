@@ -86,7 +86,7 @@
       >
     </div>
 
-    <div v-if="showFormatAndPaper" class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 short:gap-2">
+    <div v-if="showFormatAndPaper" class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 short:gap-2">
       <div class="relative min-w-0" :data-format-dropdown="editorId">
         <button
           type="button"
@@ -178,6 +178,44 @@
           </div>
         </transition>
       </div>
+
+      <div class="relative min-w-0" :data-background-dropdown="editorId">
+        <button
+          type="button"
+          @click="toggleBackgroundDropdown"
+          @blur="closeBackgroundDropdown"
+          class="w-full text-sm sm:text-base short:text-sm p-2 sm:p-2.5 short:p-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 flex items-center justify-between"
+        >
+          <span class="truncate text-left">{{ backgroundLabel }}</span>
+          <i class="ti ti-chevron-down text-xs sm:text-sm flex-shrink-0"></i>
+        </button>
+
+        <transition name="dropdown">
+          <div v-if="backgroundDropdownOpen" class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
+            <div class="max-h-48 sm:max-h-56 short:max-h-32 overflow-y-auto">
+              <button
+                v-if="line.background && !backgrounds.some(b => (b.name || '').toLowerCase().trim() === (line.background || '').toLowerCase().trim())"
+                @mousedown.prevent="selectBackground(line.background)"
+                class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm bg-blue-50 dark:bg-blue-900/20 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+              >
+                <i class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                <span class="truncate">{{ line.background }} (actual)</span>
+              </button>
+              <button
+                v-for="bg in backgrounds"
+                :key="bg.id"
+                @mousedown.prevent="selectBackground(bg.name)"
+                class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+                :class="(bg.name || '').toLowerCase().trim() === (line.background || '').toLowerCase().trim() ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+              >
+                <i v-if="(bg.name || '').toLowerCase().trim() === (line.background || '').toLowerCase().trim()" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
+                <span class="truncate">{{ bg.name }}</span>
+              </button>
+            </div>
+          </div>
+        </transition>
+      </div>
     </div>
   </div>
 </template>
@@ -190,6 +228,7 @@ export default {
     index: { type: Number, required: true },
     editorId: { type: String, required: true },
     paperTypes: { type: Array, default: () => [] },
+    backgrounds: { type: Array, default: () => [] },
     showFormatAndPaper: { type: Boolean, default: true },
     canRemove: { type: Boolean, default: true },
     isOpen: { type: Boolean, default: false },
@@ -217,7 +256,8 @@ export default {
   },
   data() {
     return {
-      paperDropdownOpen: false
+      paperDropdownOpen: false,
+      backgroundDropdownOpen: false
     };
   },
   computed: {
@@ -234,6 +274,13 @@ export default {
       const p = this.paperTypes.find(pt => pt.id === this.line.paper_type_id);
       if (p) return p.name;
       return this.line.paper_type_name_snapshot || 'Papel eliminado';
+    },
+    backgroundLabel() {
+      const current = this.line.background || 'blanco';
+      const fromCatalog = this.backgrounds.find(
+        b => (b.name || '').toLowerCase().trim() === current.toLowerCase().trim()
+      );
+      return fromCatalog?.name || current;
     }
   },
   methods: {
@@ -246,6 +293,16 @@ export default {
     selectPaper(id) {
       this.line.paper_type_id = id;
       this.paperDropdownOpen = false;
+    },
+    toggleBackgroundDropdown() {
+      this.backgroundDropdownOpen = !this.backgroundDropdownOpen;
+    },
+    closeBackgroundDropdown() {
+      setTimeout(() => { this.backgroundDropdownOpen = false; }, 200);
+    },
+    selectBackground(name) {
+      this.line.background = name;
+      this.backgroundDropdownOpen = false;
     }
   }
 };

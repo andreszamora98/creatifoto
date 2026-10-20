@@ -44,6 +44,7 @@
                   :lines="photoLines"
                   :photo-types="photoTypes"
                   :paper-types="paperTypes"
+                  :backgrounds="backgrounds"
                   :loading="loadingCatalogs"
                   :show-errors="showErrorsStep2"
                   :error="photoLinesHasError"
@@ -312,11 +313,12 @@ export default {
             ? Math.floor(Number(l.quantity))
             : 1,
           format: l.format === 'color' ? 'color' : 'bn',
+          background: (l.background && String(l.background).trim()) || 'blanco',
           paper_type_id: l.paper_type_id || null
         }));
     },
     hasDuplicatePhotoTypes() {
-      const keys = this.activeLines.map(l => `${l.photo_type_id}|${l.format}|${l.paper_type_id ?? ''}`);
+      const keys = this.activeLines.map(l => `${l.photo_type_id}|${l.format}|${l.background}|${l.paper_type_id ?? ''}`);
       return new Set(keys).size !== keys.length;
     },
     activeServices() {
@@ -353,6 +355,7 @@ export default {
           name: pt?.name || '',
           quantity: l.quantity,
           format: l.format,
+          background: l.background,
           paper_name: paper?.name || '',
           unit_price: unitPrice,
           subtotal: round2(unitPrice * l.quantity)
@@ -441,7 +444,7 @@ export default {
     },
     photoLinesErrorMessage() {
       if (this.fieldErrors.photo_content) return 'Agrega al menos un tipo de fotografía.';
-      if (this.fieldErrors.photo_duplicates) return 'Hay líneas repetidas (mismo tipo, formato y papel). Déjalas en una sola línea.';
+      if (this.fieldErrors.photo_duplicates) return 'Hay líneas repetidas (mismo tipo, formato, fondo y papel). Déjalas en una sola línea.';
       return 'Selecciona un tipo en cada línea o elimina las vacías.';
     }
   },
@@ -464,16 +467,11 @@ export default {
     },
 
     getValidationMessage() {
-      /*
-      if (this.fieldErrors.name) {
-        return 'El nombre del paquete es obligatorio.';
-      }
-      */
       if (this.fieldErrors.name_duplicated) {
         return 'Ya existe un paquete con ese nombre en esta escuela.';
       }
       if (this.fieldErrors.photo_duplicates) {
-        return 'Hay líneas repetidas (mismo tipo, formato y papel). Déjalas en una sola línea.';
+        return 'Hay líneas repetidas (mismo tipo, formato, fondo y papel). Déjalas en una sola línea.';
       }
       if (this.fieldErrors.service_prices) {
         return 'El precio de cada servicio adicional debe ser 0 o mayor.';
@@ -525,10 +523,7 @@ export default {
           men_features_text: this.form.men_features_text,
           photo_types: this.activeLines,
           additional_services: this.activeServices,
-          subtotal: this.subtotal,
-          discount_type: this.pricing.discount_type,
-          discount_value: this.discountValueNumber,
-          discount_amount: this.discountAmount,
+          list_price: this.subtotal,
           total_price: this.total
         };
         const res = await axios.post('/packages', payload);

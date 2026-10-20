@@ -29,6 +29,7 @@ export default {
 
       photoTypes: [],
       paperTypes: [],
+      backgrounds: [],
       packages: [],
       customers: [],
 
@@ -42,11 +43,15 @@ export default {
       photoLines: [],
       serviceLines: [],
 
+      discount_type: null,
+      discount_value: null,
+      discount_reason: '',
+      pickup_persons: [],
+
       initialState: null
     };
   },
   computed: {
-
     selectedPackageIds() {
       return this.packageLines
         .filter(l => l.package_id)
@@ -58,7 +63,6 @@ export default {
         .map(l => {
           const fromCatalog = this.packages.find(p => p.id === l.package_id);
           if (fromCatalog) return fromCatalog;
-          // Paquete eliminado del catálogo: usar snapshot.
           return {
             id: l.package_id,
             name: l.package_name_snapshot || ('Paquete #' + l.package_id),
@@ -88,7 +92,9 @@ export default {
             price: unitPrice,
             quantity,
             subtotal: unitPrice * quantity,
-            notes: l.notes || ''
+            notes: l.notes || '',
+            order_package_id: l.order_package_id ?? null,
+            quote_package_id: l.quote_package_id ?? null
           };
         });
     },
@@ -96,12 +102,14 @@ export default {
       return this.selectedServices.reduce((sum, s) => sum + (Number(s.subtotal) || 0), 0);
     },
     activeServices() {
-      return this.selectedServices.map(s => ({
-        additional_service_id: s.additional_service_id,
-        price: Number(s.price) || 0,
-        quantity: Number(s.quantity) || 1,
-        notes: (s.notes || '').trim() || null
-      }));
+      return this.selectedServices
+        .filter(s => !s.order_package_id && !s.quote_package_id)
+        .map(s => ({
+          additional_service_id: s.additional_service_id,
+          price: Number(s.price) || 0,
+          quantity: Number(s.quantity) || 1,
+          notes: (s.notes || '').trim() || null
+        }));
     },
 
     transitionName() {
@@ -164,28 +172,66 @@ export default {
             photo_type_id: l.photo_type_id,
             quantity: l.quantity,
             format: l.format,
+            background: (l.background && String(l.background).trim()) || 'blanco',
             paper_type_id: l.paper_type_id ?? null
           };
-          // Sólo mandamos `id` si la línea es existente (edición).
-          // El backend usa el id para decidir si respeta el precio histórico.
           if (l.id) out.id = l.id;
           return out;
         });
     },
     estimatedTotal() {
       const linesTotal = this.activeLines.reduce((sum, l) => {
-        // Línea existente: usar el precio guardado (locked_unit_price)
         if (l.id) {
           const source = this.photoLines.find(pl => pl.id === l.id);
           const locked = Number(source?.locked_unit_price ?? source?.unit_price ?? 0);
           return sum + locked * l.quantity;
         }
-        // Línea nueva: usar el catálogo vigente
         const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
         return sum + (Number(pt?.base_price || 0) * l.quantity);
       }, 0);
       const packagesTotal = this.selectedPackagesData.reduce((sum, p) => sum + Number(p.total_price || 0), 0);
       return linesTotal + packagesTotal + this.servicesTotal;
+    },
+    baseDirect() {
+      const photoSum = this.photoLines
+        .filter(l => l.photo_type_id && !l.order_package_id && !l.quote_package_id)
+        .reduce((sum, l) => {
+          const locked = Number(l.locked_unit_price ?? 0);
+          const price = l.id && locked > 0
+            ? locked
+            : Number(this.photoTypes.find(p => p.id === l.photo_type_id)?.base_price || 0);
+          return sum + price * Number(l.quantity || 0);
+        }, 0);
+
+      const serviceSum = this.serviceLines
+        .filter(l => l.service_id && !l.order_package_id && !l.quote_package_id)
+        .reduce((sum, l) => {
+          const price = (l.price !== undefined && l.price !== null)
+            ? Number(l.price)
+            : Number(this.additionalServices.find(s => s.id === l.service_id)?.default_price || 0);
+          return sum + price * Number(l.quantity || 1);
+        }, 0);
+
+      return photoSum + serviceSum;
+    },
+    discountAmount() {
+      if (!this.discount_type) return 0;
+      const v = Number(this.discount_value || 0);
+      if (!Number.isFinite(v) || v <= 0) return 0;
+
+      if (this.discount_type === 'percent') {
+        const clamped = Math.max(0, Math.min(100, v));
+        return Number((this.baseDirect * clamped / 100).toFixed(2));
+      }
+
+      if (this.discount_type === 'fixed') {
+        return Number(Math.min(v, this.baseDirect).toFixed(2));
+      }
+
+      return 0;
+    },
+    netTotal() {
+      return Math.max(0, Number(this.estimatedTotal) - Number(this.discountAmount));
     },
     showErrorsStep1() {
       return this.submittingAttempted || this.stepAttempted[1];
@@ -426,18 +472,20 @@ export default {
     async loadCatalogs() {
       this.loadingCatalogs = true;
       try {
-        const [ptRes, paperRes, pkgRes, custRes, schoolRes] = await Promise.all([
+        const [ptRes, paperRes, pkgRes, custRes, schoolRes, bgRes] = await Promise.all([
           axios.get('/photo-types'),
           axios.get('/paper-types'),
           axios.get('/packages'),
           axios.get('/customers'),
-          axios.get('/schools')
+          axios.get('/schools'),
+          axios.get('/backgrounds').catch(() => ({ data: [] })),
         ]);
         this.photoTypes = ptRes.data;
         this.paperTypes = paperRes.data;
         this.packages = pkgRes.data;
         this.customers = custRes.data;
         this.schools = schoolRes.data;
+        this.backgrounds = bgRes.data;
         this.photoLines = [];
         this.packageLines = [];
         this.serviceLines = [];
@@ -489,6 +537,10 @@ export default {
       this.photoLines = [];
       this.packageLines = [];
       this.serviceLines = [];
+      this.discount_type = null;
+      this.discount_value = null;
+      this.discount_reason = '';
+      this.pickup_persons = [];
       this.isDirty = false;
       this.submittingAttempted = false;
       this.attemptTick = 0;
@@ -503,7 +555,11 @@ export default {
         selectedCustomerId: this.selectedCustomer ? this.selectedCustomer.id : null,
         customerPhone: this.customerPhone,
         customerEmail: this.customerEmail,
-        photoLines: JSON.parse(JSON.stringify(this.photoLines))
+        photoLines: JSON.parse(JSON.stringify(this.photoLines)),
+        discount_type: this.discount_type,
+        discount_value: this.discount_value,
+        discount_reason: this.discount_reason,
+        pickup_persons: JSON.parse(JSON.stringify(this.pickup_persons))
       };
     },
 
@@ -549,6 +605,15 @@ export default {
       return { customer_id: customerId, new_customer: newCustomer };
     },
 
+    resolveDiscountPayload() {
+      const type = this.discount_type || null;
+      return {
+        discount_type: type,
+        discount_value: type ? (this.discount_value !== null && this.discount_value !== undefined && this.discount_value !== '' ? Number(this.discount_value) : null) : null,
+        discount_reason: (this.discount_reason || '').trim() || null
+      };
+    },
+
     handleClose() {
       const currentState = this.getCurrentState();
       const isChanged = JSON.stringify(currentState) !== JSON.stringify(this.initialState);
@@ -573,11 +638,6 @@ export default {
       if (typeof next === 'function') next();
     },
 
-    // --------- Hidratación para edición de órdenes y cotizaciones ---------
-    // Las líneas conservan `id` (fila propia) y `locked_unit_price`
-    // (precio guardado). Los nombres históricos sirven de fallback cuando
-    // el catálogo ya no tiene el ítem.
-
     hydratePhotoLinesFromRows(rows) {
       this.photoLines = (rows || []).map(l => ({
         id: l.id,
@@ -585,6 +645,7 @@ export default {
         photo_type_name_snapshot: l.photo_type_name_snapshot || null,
         quantity: l.quantity,
         format: l.format,
+        background: l.background || 'blanco',
         paper_type_id: l.paper_type_id ?? null,
         paper_type_name_snapshot: l.paper_type_name_snapshot || null,
         locked_unit_price: Number(l.unit_price ?? 0),
@@ -611,7 +672,9 @@ export default {
         additional_service_name_snapshot: r.additional_service_name_snapshot || null,
         price: Number(r.price ?? 0),
         quantity: Number(r.quantity ?? 1),
-        notes: r.notes || ''
+        notes: r.notes || '',
+        order_package_id: r.order_package_id ?? null,
+        quote_package_id: r.quote_package_id ?? null
       }));
     }
   }

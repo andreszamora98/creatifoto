@@ -46,6 +46,7 @@
               <p class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">
                 {{ line.quantity }} × ${{ line.unit_price.toFixed(2) }}
                 <span v-if="line.paper_name"> · {{ line.paper_name }}</span>
+                <span v-if="line.background && line.background !== 'blanco'"> · Fondo: {{ line.background }}</span>
               </p>
             </div>
           </div>

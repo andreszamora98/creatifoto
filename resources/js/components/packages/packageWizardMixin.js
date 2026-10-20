@@ -3,23 +3,12 @@ import axios from 'axios';
 const TOTAL_STEPS = 3;
 const freshStepAttempts = () => ({ 1: false, 2: false, 3: false });
 
-// Catálogos que no deben tumbar el wizard si fallan.
 const optionalGet = (url) =>
   axios.get(url).catch((error) => {
     console.warn(`No se pudo cargar ${url}:`, error);
     return { data: [] };
   });
 
-/**
- * Lógica común del wizard de creación de paquetes (navegación entre pasos,
- * carga de catálogos, cierre con confirmación y modales de feedback).
- *
- * El componente que lo use debe definir:
- *  - prop `show`
- *  - data: `form`, `photoLines`, `serviceLines`, `pricing`
- *  - computed: `fieldErrors`, `stepKeys`, `currentStepValid`
- *  - methods: `getCurrentState()`, `resetForm()` (que llame a `resetWizardState()`)
- */
 export default {
   data() {
     return {
@@ -34,6 +23,7 @@ export default {
       schools: [],
       photoTypes: [],
       paperTypes: [],
+      backgrounds: [],
       additionalServices: [],
       existingPackages: [],
 
@@ -132,18 +122,20 @@ export default {
     async loadCatalogs() {
       this.loadingCatalogs = true;
       try {
-        const [schoolsRes, photoTypesRes, packagesRes, paperTypesRes, servicesRes] = await Promise.all([
+        const [schoolsRes, photoTypesRes, packagesRes, paperTypesRes, servicesRes, backgroundsRes] = await Promise.all([
           axios.get('/schools'),
           axios.get('/photo-types'),
           axios.get('/packages'),
           optionalGet('/paper-types'),
-          optionalGet('/additional-services')
+          optionalGet('/additional-services'),
+          optionalGet('/backgrounds')
         ]);
         this.schools = schoolsRes.data;
         this.photoTypes = photoTypesRes.data;
         this.existingPackages = packagesRes.data;
         this.paperTypes = paperTypesRes.data;
         this.additionalServices = servicesRes.data;
+        this.backgrounds = backgroundsRes.data;
       } catch (error) {
         console.error('Error cargando catálogos:', error);
         this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los catálogos', type: 'error' });

@@ -18,6 +18,10 @@ class Order extends Model
         'quote_id',
         'total',
         'initial_total',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
+        'discount_reason',
         'pose_number',
         'archive_name',
         'pose_range',
@@ -33,6 +37,8 @@ class Order extends Model
         'total' => 'decimal:2',
         'initial_total' => 'decimal:2',
         'balance_due' => 'decimal:2',
+        'discount_value' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'estimated_delivery_date' => 'date',
         'actual_delivery_date' => 'date',
         'estimated_delivery_time' => 'datetime:H:i',
@@ -68,13 +74,13 @@ class Order extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function pickups(): HasMany
+    {
+        return $this->hasMany(OrderCustomerPickup::class);
+    }
+
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);
-    }
-
-    public function balance(): float
-    {
-        return (float) $this->total - (float) $this->payments()->sum('amount');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesDomainErrors;
 use App\Models\Quote;
 use App\Services\QuoteService;
 use Illuminate\Http\Request;
@@ -9,20 +10,26 @@ use Illuminate\Validation\Rule;
 
 class QuoteController extends Controller
 {
-    protected QuoteService $quoteService;
+    use HandlesDomainErrors;
 
-    public function __construct(QuoteService $quoteService)
+    public function __construct(protected QuoteService $quoteService)
     {
-        $this->quoteService = $quoteService;
     }
 
     public function index(Request $request)
     {
         $query = Quote::with(array_merge(QuoteService::RELATIONS, ['order:id,quote_id,status']))
-            ->orderBy('created_at', 'desc');
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc');
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('page') || $request->filled('per_page')) {
+            $perPage = (int) min(max($request->integer('per_page', 25), 1), 100);
+
+            return $query->paginate($perPage);
         }
 
         return $query->get();
@@ -30,39 +37,20 @@ class QuoteController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate(array_merge([
-            'customer_id' => 'nullable|exists:customers,id',
-            'new_customer' => 'nullable|array',
-            'new_customer.name' => 'required_with:new_customer|string|max:255',
-            'new_customer.phone' => 'nullable|digits:10',
-            'new_customer.email' => 'nullable|email|max:255|unique:customers,email',
-
+        $validated = $request->validate($this->contentRules($request) + [
             'valid_until' => 'nullable|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
+            'discount_type' => 'nullable|required_with:discount_value|in:fixed,percent',
+            'discount_value' => $this->discountValueRules($request),
+            'discount_reason' => 'nullable|string|max:255',
+        ], $this->contentMessages());
 
-            'photo_types' => 'nullable|array|required_without:package_ids',
-            'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
-            'photo_types.*.quantity' => 'required|integer|min:1',
-            'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
-            'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
-            'package_ids' => 'nullable|array|required_without:photo_types',
-            'package_ids.*' => 'exists:packages,id',
-        ], $this->serviceRules()), $this->contentMessages());
-
-        try {
-            $quote = $this->quoteService->createQuote($validated);
-            return response()->json([
-                'message' => 'Cotización creada exitosamente',
-                'quote' => $quote,
-            ], 201);
-        } catch (\DomainException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'message' => 'Error al crear la cotización. Inténtalo de nuevo.',
-            ], 500);
-        }
+        return $this->respondDomain(
+            fn () => ['quote' => $this->quoteService->createQuote($validated)],
+            'Cotización creada exitosamente',
+            201,
+            'Error al crear la cotización. Inténtalo de nuevo.'
+        );
     }
 
     public function show(Quote $quote)
@@ -72,33 +60,32 @@ class QuoteController extends Controller
         return response()->json($quote);
     }
 
-    /** El contenido NO se edita al convertir: la orden nace idéntica a la cotización. */
     public function convert(Request $request, Quote $quote)
     {
         $validated = $request->validate([
             'estimated_delivery_date' => 'required|date|after_or_equal:today',
             'estimated_delivery_time' => 'required|date_format:H:i',
-            'pose_number' => 'nullable|integer|min:1',
+            'pose_number' => [
+                'nullable', 'integer', 'min:1',
+                Rule::unique('orders', 'pose_number')->whereNull('deleted_at'),
+            ],
             'notes' => 'nullable|string|max:1000',
-            'payments' => 'required|array|min:1',
-            'payments.*.amount' => 'required|numeric|min:0.01',
+            'discount_type' => 'nullable|in:fixed,percent',
+            'discount_value' => $this->discountValueRules($request),
+            'discount_reason' => 'nullable|string|max:255',
+            'payments' => 'required|array|min:1|max:20',
+            'payments.*.amount' => 'required|numeric|min:0.01|max:9999999.99',
             'payments.*.payment_method' => 'nullable|string|max:50',
+        ], [
+            'pose_number.unique' => 'Ya existe una orden activa con ese número de toma.',
         ]);
 
-        try {
-            $order = $this->quoteService->convertToOrder($quote, $validated);
-            return response()->json([
-                'message' => 'Orden creada a partir de la cotización',
-                'order' => $order,
-            ], 201);
-        } catch (\DomainException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'message' => 'Error al convertir la cotización. Inténtalo de nuevo.',
-            ], 500);
-        }
+        return $this->respondDomain(
+            fn () => ['order' => $this->quoteService->convertToOrder($quote, $validated)],
+            'Orden creada a partir de la cotización',
+            201,
+            'Error al convertir la cotización. Inténtalo de nuevo.'
+        );
     }
 
     public function updateStatus(Request $request, Quote $quote)
@@ -107,12 +94,12 @@ class QuoteController extends Controller
             'status' => ['required', Rule::in(['accepted', 'rejected', 'expired'])],
         ]);
 
-        try {
-            $quote = $this->quoteService->updateStatus($quote, $validated['status']);
-            return response()->json(['message' => 'Estado actualizado', 'quote' => $quote]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return $this->respondDomain(
+            fn () => ['quote' => $this->quoteService->updateStatus($quote, $validated['status'])],
+            'Estado actualizado',
+            200,
+            'Error al actualizar el estado. Inténtalo de nuevo.'
+        );
     }
 
     public function patch(Request $request, Quote $quote)
@@ -122,38 +109,28 @@ class QuoteController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        try {
-            $quote = $this->quoteService->patchQuote($quote, $validated);
-            return response()->json(['message' => 'Cotización actualizada', 'quote' => $quote]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return $this->respondDomain(
+            fn () => ['quote' => $this->quoteService->patchQuote($quote, $validated)],
+            'Cotización actualizada',
+            200,
+            'Error al actualizar la cotización. Inténtalo de nuevo.'
+        );
     }
 
     public function updateConcepts(Request $request, Quote $quote)
     {
-        $validated = $request->validate(array_merge([
-            'photo_types' => 'nullable|array|required_without:package_ids',
-            'photo_types.*.id' => 'nullable|integer',
-            'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
-            'photo_types.*.quantity' => 'required|integer|min:1',
-            'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
-            'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
-            'package_ids' => 'nullable|array|required_without:photo_types',
-            'package_ids.*' => 'exists:packages,id',
-        ], $this->serviceRules()), $this->contentMessages());
+        $validated = $request->validate($this->contentRules($request) + [
+            'discount_type' => 'nullable|required_with:discount_value|in:fixed,percent',
+            'discount_value' => $this->discountValueRules($request),
+            'discount_reason' => 'nullable|string|max:255',
+        ], $this->contentMessages());
 
-        try {
-            $quote = $this->quoteService->updateConcepts($quote, $validated);
-            return response()->json(['message' => 'Conceptos actualizados', 'quote' => $quote]);
-        } catch (\DomainException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'message' => 'Error al actualizar los conceptos. Inténtalo de nuevo.',
-            ], 500);
-        }
+        return $this->respondDomain(
+            fn () => ['quote' => $this->quoteService->updateConcepts($quote, $validated)],
+            'Conceptos actualizados',
+            200,
+            'Error al actualizar los conceptos. Inténtalo de nuevo.'
+        );
     }
 
     public function updateCustomer(Request $request, Quote $quote)
@@ -166,15 +143,40 @@ class QuoteController extends Controller
             'new_customer.email' => 'nullable|email|max:255|unique:customers,email',
         ]);
 
-        try {
-            $quote = $this->quoteService->updateCustomer($quote, $validated);
-            return response()->json([
-                'message' => 'Cliente actualizado',
-                'quote' => $quote,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return $this->respondDomain(
+            fn () => ['quote' => $this->quoteService->updateCustomer($quote, $validated)],
+            'Cliente actualizado',
+            200,
+            'Error al actualizar el cliente. Inténtalo de nuevo.'
+        );
+    }
+
+    private function contentRules(Request $request): array
+    {
+        return [
+            'customer_id' => 'nullable|exists:customers,id',
+            'new_customer' => 'nullable|array',
+            'new_customer.name' => 'required_with:new_customer|string|max:255',
+            'new_customer.phone' => 'nullable|digits:10',
+            'new_customer.email' => 'nullable|email|max:255|unique:customers,email',
+
+            'photo_types' => 'nullable|array|required_without:package_ids|max:50',
+            'photo_types.*.id' => 'nullable|integer',
+            'photo_types.*.photo_type_id' => 'required|exists:photo_types,id',
+            'photo_types.*.quantity' => 'required|integer|min:1|max:1000',
+            'photo_types.*.format' => ['required', Rule::in(['color', 'bn'])],
+            'photo_types.*.background' => 'nullable|string|max:100',
+            'photo_types.*.paper_type_id' => 'nullable|exists:paper_types,id',
+
+            'package_ids' => 'nullable|array|required_without:photo_types|max:20',
+            'package_ids.*' => 'exists:packages,id',
+
+            'additional_services' => 'nullable|array|max:50',
+            'additional_services.*.additional_service_id' => 'required|exists:additional_services,id|distinct',
+            'additional_services.*.price' => 'required|numeric|min:0|max:9999999.99',
+            'additional_services.*.quantity' => 'required|integer|min:1|max:1000',
+            'additional_services.*.notes' => 'nullable|string|max:255',
+        ];
     }
 
     private function contentMessages(): array
@@ -187,14 +189,14 @@ class QuoteController extends Controller
         ];
     }
 
-    private function serviceRules(): array
+    private function discountValueRules(Request $request): array
     {
         return [
-            'additional_services' => 'nullable|array',
-            'additional_services.*.additional_service_id' => 'required|exists:additional_services,id|distinct',
-            'additional_services.*.price' => 'required|numeric|min:0',
-            'additional_services.*.quantity' => 'required|integer|min:1',
-            'additional_services.*.notes' => 'nullable|string|max:255',
+            'nullable', 'numeric', 'min:0', 'required_with:discount_type',
+            Rule::when(
+                fn () => $request->input('discount_type') === 'percent',
+                ['max:100']
+            ),
         ];
     }
 }

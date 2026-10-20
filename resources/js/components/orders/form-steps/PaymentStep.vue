@@ -121,7 +121,7 @@
         <i class="ti ti-plus text-lg"></i> Agregar otro pago
       </button>
 
-      <p v-if="remainingBalance <= 0 && estimatedTotal > 0" class="text-sm text-gray-400 dark:text-gray-500 mt-2">
+      <p v-if="remainingBalance <= 0 && netTotal > 0" class="text-sm text-gray-400 dark:text-gray-500 mt-2">
         El pago cubre el total de la orden. No se pueden agregar más pagos.
       </p>
     </div>
@@ -135,7 +135,7 @@ export default {
     sectionBadge: { type: [Number, String], default: 3 },
     sectionTitle: { type: String, default: 'Pago' },
     payments: { type: Array, required: true },
-    estimatedTotal: { type: Number, default: 0 },
+    netTotal: { type: Number, default: 0 },
     remainingBalance: { type: Number, default: 0 },
     liquidateAll: { type: Boolean, default: false },
     showErrors: { type: Boolean, default: false },

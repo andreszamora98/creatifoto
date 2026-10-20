@@ -60,6 +60,7 @@
               :lines="photoLines"
               :photo-types="photoTypes"
               :paper-types="paperTypes"
+              :backgrounds="backgrounds"
               :loading="loadingCatalogs"
               :show-errors="showErrors"
               :error="linesError || contentError"
@@ -169,6 +170,7 @@ export default {
     photoTypes: { type: Array, default: () => [] },
     photoLines: { type: Array, required: true },
     paperTypes: { type: Array, default: () => [] },
+    backgrounds: { type: Array, default: () => [] },
     packages: { type: Array, default: () => [] },
     packageLines: { type: Array, required: true },
     schools: { type: Array, default: () => [] },

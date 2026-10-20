@@ -40,6 +40,7 @@
             :photo-types="photoTypes"
             :photo-lines="photoLines"
             :paper-types="paperTypes"
+            :backgrounds="backgrounds"
             :packages="packages"
             :package-lines="packageLines"
             :schools="schools"
@@ -55,17 +56,33 @@
             <h5 class="text-xs sm:text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">
               Resumen de la orden
             </h5>
-            <OrderEditChargeSummary
-              :photo-lines="photoLines"
-              :photo-types="photoTypes"
-              :package-lines="packageLines"
-              :packages="packages"
-              :service-lines="serviceLines"
-              :additional-services="additionalServices"
-              :estimated-total="estimatedTotal"
-              :initial-total="initialTotal"
-              :paid-total="paidTotal"
+            <DiscountPanel
+              :type="discount_type"
+              :value="discount_value"
+              :reason="discount_reason"
+              :show-errors="submittingAttempted"
+              :error="fieldErrors.discount_value"
+              @update:type="discount_type = $event"
+              @update:value="discount_value = $event"
+              @update:reason="discount_reason = $event"
             />
+
+            <div class="mt-3">
+              <OrderEditChargeSummary
+                :photo-lines="photoLines"
+                :photo-types="photoTypes"
+                :package-lines="packageLines"
+                :packages="packages"
+                :service-lines="serviceLines"
+                :additional-services="additionalServices"
+                :estimated-total="estimatedTotal"
+                :initial-total="initialTotal"
+                :paid-total="paidTotal"
+                :discount-type="discount_type"
+                :discount-value="discount_value"
+                :discount-reason="discount_reason"
+              />
+            </div>
           </div>
         </div>
 
@@ -121,6 +138,7 @@ import axios from 'axios';
 import orderQuoteFormMixin from '../order-quote-shared/orderQuoteFormMixin.js';
 import OrderDetailsStep from '../order-quote-shared/form-steps/OrderDetailsStep.vue';
 import OrderEditChargeSummary from './form-steps/OrderEditChargeSummary.vue';
+import DiscountPanel from '../order-quote-shared/DiscountPanel.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
@@ -131,6 +149,7 @@ export default {
   components: {
     OrderDetailsStep,
     OrderEditChargeSummary,
+    DiscountPanel,
     ConfirmModal,
     SuccessModal,
     AlertModal
@@ -176,16 +195,31 @@ export default {
         service_lines: hasEmptyServiceLine,
         service_prices: this.selectedServices.some(s =>
           s.price === '' || s.price === null || Number.isNaN(Number(s.price)) || Number(s.price) < 0
-        )
+        ),
+        discount_value: this.discountTypeHasError()
       };
     }
   },
   methods: {
+    discountTypeHasError() {
+      if (!this.discount_type) return false;
+      if (this.discount_value === null || this.discount_value === undefined || this.discount_value === '') return true;
+      const v = Number(this.discount_value);
+      if (!Number.isFinite(v) || v < 0) return true;
+      if (this.discount_type === 'percent' && v > 100) return true;
+      return false;
+    },
     async afterCatalogsLoaded() {
       if (!this.order) return;
       this.hydratePhotoLinesFromRows(this.order.order_photo_types || []);
       this.hydratePackageLinesFromRows(this.order.order_packages || []);
       this.hydrateServiceLinesFromRows(this.order.services || []);
+
+      this.discount_type = this.order.discount_type || null;
+      this.discount_value = (this.order.discount_value !== null && this.order.discount_value !== undefined)
+        ? Number(this.order.discount_value)
+        : null;
+      this.discount_reason = this.order.discount_reason || '';
 
       this.form = {
         estimated_delivery_date: this.order.estimated_delivery_date
@@ -218,7 +252,8 @@ export default {
 
       const errs = this.fieldErrors;
       const hasBlockingError = errs.delivery_date || errs.delivery_time || errs.order_content
-        || errs.photo_lines || errs.package_lines || errs.service_lines || errs.service_prices;
+        || errs.photo_lines || errs.package_lines || errs.service_lines || errs.service_prices
+        || errs.discount_value;
 
       if (hasBlockingError) {
         this.alertMessage = 'Por favor, completa todos los campos marcados con * antes de guardar.';
@@ -231,6 +266,7 @@ export default {
 
       try {
         const payload = {
+          ...this.resolveDiscountPayload(),
           estimated_delivery_date: this.form.estimated_delivery_date,
           estimated_delivery_time: this.form.estimated_delivery_time,
           notes: this.form.notes || null,

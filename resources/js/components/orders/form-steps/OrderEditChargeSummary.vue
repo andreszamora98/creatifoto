@@ -39,6 +39,10 @@
       title="Conceptos"
       :lines="summaryLines"
       :estimated-total="estimatedTotal"
+      :discount-type="discountType"
+      :discount-value="discountValue"
+      :discount-amount="discountAmount"
+      :discount-reason="discountReason"
       total-label="Total"
       empty-message="Sin conceptos registrados."
     />
@@ -60,14 +64,58 @@ export default {
     additionalServices: { type: Array, default: () => [] },
     estimatedTotal: { type: Number, default: 0 },
     initialTotal: { type: Number, default: 0 },
-    paidTotal: { type: Number, default: 0 }
+    paidTotal: { type: Number, default: 0 },
+    discountType: { type: String, default: null },
+    discountValue: { type: [Number, String], default: null },
+    discountReason: { type: String, default: null }
   },
   computed: {
     totalChanged() {
       return Math.abs(Number(this.estimatedTotal) - Number(this.initialTotal)) >= 0.01;
     },
+    netTotal() {
+      return Math.max(0, Number(this.estimatedTotal) - Number(this.discountAmount));
+    },
     balanceResult() {
-      return Number(this.estimatedTotal) - Number(this.paidTotal);
+      return Number(this.netTotal) - Number(this.paidTotal);
+    },
+    baseDirect() {
+      const photoSum = this.photoLines
+        .filter(l => l.photo_type_id && !l.order_package_id && !l.quote_package_id)
+        .reduce((sum, l) => {
+          const locked = Number(l.locked_unit_price ?? 0);
+          const price = l.id && locked > 0
+            ? locked
+            : Number(this.photoTypes.find(p => p.id === l.photo_type_id)?.base_price || 0);
+          return sum + price * Number(l.quantity || 0);
+        }, 0);
+
+      const serviceSum = this.serviceLines
+        .filter(l => l.service_id && !l.order_package_id && !l.quote_package_id)
+        .reduce((sum, l) => {
+          const price = (l.price !== undefined && l.price !== null)
+            ? Number(l.price)
+            : Number(this.additionalServices.find(s => s.id === l.service_id)?.default_price || 0);
+          return sum + price * Number(l.quantity || 1);
+        }, 0);
+
+      return photoSum + serviceSum;
+    },
+    discountAmount() {
+      if (!this.discountType) return 0;
+      const v = Number(this.discountValue || 0);
+      if (!Number.isFinite(v) || v <= 0) return 0;
+
+      if (this.discountType === 'percent') {
+        const clamped = Math.max(0, Math.min(100, v));
+        return Number((this.baseDirect * clamped / 100).toFixed(2));
+      }
+
+      if (this.discountType === 'fixed') {
+        return Number(Math.min(v, this.baseDirect).toFixed(2));
+      }
+
+      return 0;
     },
     summaryLines() {
       const photoLines = this.photoLines
@@ -85,9 +133,10 @@ export default {
             unitPrice = 0;
           }
           const qty = Number(l.quantity || 0);
+          const bgLabel = l.background && l.background !== 'blanco' ? ` · Fondo: ${l.background}` : '';
           return {
             key: `pt-${l.id ?? 'new'}-${idx}`,
-            label: `${name} x${qty}${included ? ' (incluido)' : ''}`,
+            label: `${name} x${qty}${bgLabel}${included ? ' (incluido)' : ''}`,
             amount: included ? 0 : unitPrice * qty,
             unitPrice,
             quantity: qty,
@@ -122,6 +171,7 @@ export default {
           const fromCatalog = this.additionalServices.find(s => s.id === l.service_id);
           const name = fromCatalog?.name || l.additional_service_name_snapshot || 'Servicio adicional';
           const qty = Number(l.quantity || 1);
+          const included = Boolean(l.order_package_id || l.quote_package_id);
           let unitPrice;
           if (l.id && l.price !== undefined && l.price !== null) {
             unitPrice = Number(l.price);
@@ -132,8 +182,8 @@ export default {
           }
           return {
             key: `svc-${l.id ?? 'new'}-${idx}`,
-            label: `${name} x${qty}`,
-            amount: unitPrice * qty,
+            label: `${name} x${qty}${included ? ' (incluido)' : ''}`,
+            amount: included ? 0 : unitPrice * qty,
             unitPrice,
             quantity: qty,
             icon: 'ti ti-tool'

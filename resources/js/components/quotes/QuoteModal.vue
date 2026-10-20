@@ -74,6 +74,7 @@
               :photo-types="photoTypes"
               :photo-lines="photoLines"
               :paper-types="paperTypes"
+              :backgrounds="backgrounds"
               :packages="packages"
               :package-lines="packageLines"
               :schools="schools"
@@ -95,9 +96,25 @@
               :selected-services="selectedServices"
               :additional-services="additionalServices"
               :estimated-total="estimatedTotal"
+              :discount-type="discount_type"
+              :discount-value="discount_value"
+              :discount-reason="discount_reason"
               :valid-until="validUntil"
               @update:validUntil="validUntil = $event"
-            />
+            >
+              <template #discount>
+                <DiscountPanel
+                  :type="discount_type"
+                  :value="discount_value"
+                  :reason="discount_reason"
+                  :show-errors="showErrorsStep3"
+                  :error="fieldErrors.discount_value"
+                  @update:type="discount_type = $event"
+                  @update:value="discount_value = $event"
+                  @update:reason="discount_reason = $event"
+                />
+              </template>
+            </SummaryStep>
           </transition>
         </div>
 
@@ -166,19 +183,19 @@ import CustomerStep from '../order-quote-shared/form-steps/CustomerStep.vue';
 import OrderDetailsStep from '../order-quote-shared/form-steps/OrderDetailsStep.vue';
 import StepIndicator from '../order-quote-shared/StepIndicator.vue';
 import SummaryStep from './form-steps/SummaryStep.vue';
+import DiscountPanel from '../order-quote-shared/DiscountPanel.vue';
 import orderQuoteFormMixin from '../order-quote-shared/orderQuoteFormMixin.js';
 
 export default {
   name: 'QuoteModal',
   mixins: [orderQuoteFormMixin],
-  components: { ConfirmModal, SuccessModal, AlertModal, CustomerStep, OrderDetailsStep, StepIndicator, SummaryStep },
+  components: { ConfirmModal, SuccessModal, AlertModal, CustomerStep, OrderDetailsStep, StepIndicator, SummaryStep, DiscountPanel },
   props: {
     show: { type: Boolean, default: false }
   },
   emits: ['close', 'created', 'notify'],
   data() {
     return {
-      // Se inicializa con hoy + 7 días al crear la instancia del modal
       validUntil: this.defaultValidUntil(),
       form: { notes: '' }
     };
@@ -190,6 +207,9 @@ export default {
         { label: 'Detalles' },
         { label: 'Resumen' }
       ];
+    },
+    showErrorsStep3() {
+      return this.submittingAttempted || this.stepAttempted[3];
     },
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
@@ -205,22 +225,20 @@ export default {
         service_lines: hasEmptyServiceLine,
         service_prices: this.selectedServices.some(s =>
           s.price === '' || s.price === null || Number.isNaN(Number(s.price)) || Number(s.price) < 0
-        )
+        ),
+        discount_value: this.discountTypeHasError()
       };
     },
     currentStepValid() {
       const keysByStep = {
         1: ['customer'],
         2: ['order_content', 'photo_lines', 'package_lines', 'service_lines', 'service_prices'],
-        3: []
+        3: ['discount_value']
       };
       return this.keysValid(keysByStep[this.currentStep] || []);
     }
   },
   watch: {
-    // Si el modal se reabre y la fecha está vacía (por ejemplo, tras reset),
-    // se vuelve a proponer hoy + 7 días. Si el usuario ya la había definido,
-    // se respeta su valor.
     show(val) {
       if (val && !this.validUntil) {
         this.validUntil = this.defaultValidUntil();
@@ -228,7 +246,14 @@ export default {
     }
   },
   methods: {
-    // Calcula la fecha de hoy + 7 días en formato YYYY-MM-DD
+    discountTypeHasError() {
+      if (!this.discount_type) return false;
+      if (this.discount_value === null || this.discount_value === undefined || this.discount_value === '') return true;
+      const v = Number(this.discount_value);
+      if (!Number.isFinite(v) || v < 0) return true;
+      if (this.discount_type === 'percent' && v > 100) return true;
+      return false;
+    },
     defaultValidUntil() {
       const d = new Date();
       d.setDate(d.getDate() + 7);
@@ -256,6 +281,7 @@ export default {
       try {
         const payload = {
           ...this.resolveCustomerPayload(),
+          ...this.resolveDiscountPayload(),
           valid_until: this.validUntil || null,
           notes: this.form.notes,
           photo_types: this.activeLines,

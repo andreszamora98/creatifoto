@@ -174,6 +174,8 @@
         </div>
       </div>
     </div>
+
+    <slot name="pickups" />
   </section>
 </template>
 

@@ -24,44 +24,53 @@
 
         <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-3 sm:px-6 short:px-3 py-3 sm:py-6 short:py-1.5" @input="markDirty" @change="markDirty" @click="markDirty">
           <transition :name="transitionName" mode="out-in">
-            <CustomerStep
-              v-if="currentStep === 1"
-              key="step-1"
-              section-title=""
-              :on-phone-blur="onPhoneBlur"
-              :clear-phone="clearPhone"
-              :clear-email="clearEmail"
-              :customer-search="customerSearch"
-              :customer-phone="customerPhone"
-              :customer-email="customerEmail"
-              :selected-customer="selectedCustomer"
-              :filtered-customers="filteredCustomers"
-              :exact-customer-match="exactCustomerMatch"
-              :show-customer-dropdown="showCustomerDropdown"
-              :show-errors="showErrorsStep1"
-              :field-errors="fieldErrors"
-              :editing-phone="editingPhone"
-              :editing-email="editingEmail"
-              :can-confirm-phone="canConfirmPhone"
-              :phone-error="phoneError"
-              :phone-exists="phoneExists"
-              :email-changed="emailChanged"
-              :email-error="emailError"
-              :email-exists="emailExists"
-              :open-customer-dropdown="openCustomerDropdown"
-              :hide-customer-dropdown="hideCustomerDropdown"
-              :clear-customer-search="clearCustomerSearch"
-              :select-customer="selectCustomer"
-              :toggle-edit-phone="toggleEditPhone"
-              :confirm-phone-change="confirmPhoneChange"
-              :cancel-phone-edit="cancelPhoneEdit"
-              :toggle-edit-email="toggleEditEmail"
-              :confirm-email-change="confirmEmailChange"
-              :cancel-email-edit="cancelEmailEdit"
-              @update:customerSearch="customerSearch = $event"
-              @update:customerPhone="customerPhone = $event"
-              @update:customerEmail="customerEmail = $event"
-            />
+            <div v-if="currentStep === 1" key="step-1" class="space-y-4 sm:space-y-6">
+              <CustomerStep
+                section-title=""
+                :on-phone-blur="onPhoneBlur"
+                :clear-phone="clearPhone"
+                :clear-email="clearEmail"
+                :customer-search="customerSearch"
+                :customer-phone="customerPhone"
+                :customer-email="customerEmail"
+                :selected-customer="selectedCustomer"
+                :filtered-customers="filteredCustomers"
+                :exact-customer-match="exactCustomerMatch"
+                :show-customer-dropdown="showCustomerDropdown"
+                :show-errors="showErrorsStep1"
+                :field-errors="fieldErrors"
+                :editing-phone="editingPhone"
+                :editing-email="editingEmail"
+                :can-confirm-phone="canConfirmPhone"
+                :phone-error="phoneError"
+                :phone-exists="phoneExists"
+                :email-changed="emailChanged"
+                :email-error="emailError"
+                :email-exists="emailExists"
+                :open-customer-dropdown="openCustomerDropdown"
+                :hide-customer-dropdown="hideCustomerDropdown"
+                :clear-customer-search="clearCustomerSearch"
+                :select-customer="selectCustomer"
+                :toggle-edit-phone="toggleEditPhone"
+                :confirm-phone-change="confirmPhoneChange"
+                :cancel-phone-edit="cancelPhoneEdit"
+                :toggle-edit-email="toggleEditEmail"
+                :confirm-email-change="confirmEmailChange"
+                :cancel-email-edit="cancelEmailEdit"
+                @update:customerSearch="customerSearch = $event"
+                @update:customerPhone="customerPhone = $event"
+                @update:customerEmail="customerEmail = $event"
+              >
+                <template #pickups>
+                  <PickupPersonsManager
+                    v-model="pickup_persons"
+                    :customers="customers"
+                    :primary-customer-id="selectedCustomer?.id ?? null"
+                    :primary-customer-name="selectedCustomer?.name ?? customerSearch"
+                  />
+                </template>
+              </CustomerStep>
+            </div>
 
             <OrderDetailsStep
               v-else-if="currentStep === 2"
@@ -74,6 +83,7 @@
               :photo-types="photoTypes"
               :photo-lines="photoLines"
               :paper-types="paperTypes"
+              :backgrounds="backgrounds"
               :packages="packages"
               :package-lines="packageLines"
               :schools="schools"
@@ -87,21 +97,37 @@
 
             <ChargePaymentLayout v-else key="step-3">
               <template #summary>
-                <OrderChargeSummary
-                  :active-lines="activeLines"
-                  :photo-types="photoTypes"
-                  :selected-packages="selectedPackagesData"
-                  :selected-services="selectedServices"
-                  :additional-services="additionalServices"
-                  :estimated-total="estimatedTotal"
-                />
+                <div class="space-y-3">
+                  <DiscountPanel
+                    :type="discount_type"
+                    :value="discount_value"
+                    :reason="discount_reason"
+                    :show-errors="showErrorsStep3"
+                    :error="fieldErrors.discount_value"
+                    @update:type="discount_type = $event"
+                    @update:value="discount_value = $event"
+                    @update:reason="discount_reason = $event"
+                  />
+
+                  <OrderChargeSummary
+                    :active-lines="activeLines"
+                    :photo-types="photoTypes"
+                    :selected-packages="selectedPackagesData"
+                    :selected-services="selectedServices"
+                    :additional-services="additionalServices"
+                    :estimated-total="estimatedTotal"
+                    :discount-type="discount_type"
+                    :discount-value="discount_value"
+                    :discount-reason="discount_reason"
+                  />
+                </div>
               </template>
 
               <template #payment>
                 <PaymentStep
                   section-title=""
                   :payments="payments"
-                  :estimated-total="estimatedTotal"
+                  :net-total="netTotal"
                   :remaining-balance="remainingBalance"
                   :liquidate-all="liquidateAll"
                   :show-errors="showErrorsStep3"
@@ -188,6 +214,8 @@ import StepIndicator from '../order-quote-shared/StepIndicator.vue';
 import ChargePaymentLayout from '../order-quote-shared/ChargePaymentLayout.vue';
 import OrderChargeSummary from './form-steps/OrderChargeSummary.vue';
 import PaymentStep from './form-steps/PaymentStep.vue';
+import DiscountPanel from '../order-quote-shared/DiscountPanel.vue';
+import PickupPersonsManager from '../order-quote-shared/PickupPersonsManager.vue';
 import orderQuoteFormMixin from '../order-quote-shared/orderQuoteFormMixin.js';
 import paymentsMixin from '../order-quote-shared/paymentsMixin.js';
 
@@ -196,7 +224,8 @@ export default {
   mixins: [orderQuoteFormMixin, paymentsMixin],
   components: {
     ConfirmModal, SuccessModal, AlertModal, CustomerStep, OrderDetailsStep,
-    StepIndicator, ChargePaymentLayout, OrderChargeSummary, PaymentStep
+    StepIndicator, ChargePaymentLayout, OrderChargeSummary, PaymentStep,
+    DiscountPanel, PickupPersonsManager
   },
   props: {
     show: { type: Boolean, default: false }
@@ -223,7 +252,6 @@ export default {
     showErrorsStep3() {
       return this.submittingAttempted || this.stepAttempted[3];
     },
-
     fieldErrors() {
       const hasCustomer = !!this.selectedCustomer || this.customerSearch.trim().length > 0;
       const hasEmptyPhotoLine = this.photoLines.some(l => !l.photo_type_id);
@@ -241,6 +269,7 @@ export default {
         service_prices: this.selectedServices.some(s =>
           s.price === '' || s.price === null || Number.isNaN(Number(s.price)) || Number(s.price) < 0
         ),
+        discount_value: this.discountTypeHasError(),
         initial_payment_amount: this.payments.length === 0 || this.payments.some(p => !p.amount || p.amount <= 0),
         initial_payment_method: this.payments.some(p => !p.payment_method)
       };
@@ -249,17 +278,16 @@ export default {
       const keysByStep = {
         1: ['customer'],
         2: ['delivery_date', 'delivery_time', 'order_content', 'photo_lines', 'package_lines', 'service_lines', 'service_prices'],
-        3: ['initial_payment_amount', 'initial_payment_method']
+        3: ['discount_value', 'initial_payment_amount', 'initial_payment_method']
       };
       return this.keysValid(keysByStep[this.currentStep] || []);
     }
-
   },
   watch: {
-    estimatedTotal(newVal, oldVal) {
+    netTotal(newVal, oldVal) {
       if (newVal === oldVal) return;
       if (this.liquidateAll && this.payments.length) {
-        this.payments[0].amount = this.estimatedTotal;
+        this.payments[0].amount = this.netTotal;
         return;
       }
       if (this.currentStep !== 3) {
@@ -270,6 +298,14 @@ export default {
     }
   },
   methods: {
+    discountTypeHasError() {
+      if (!this.discount_type) return false;
+      if (this.discount_value === null || this.discount_value === undefined || this.discount_value === '') return true;
+      const v = Number(this.discount_value);
+      if (!Number.isFinite(v) || v < 0) return true;
+      if (this.discount_type === 'percent' && v > 100) return true;
+      return false;
+    },
     afterCatalogsLoaded() {
       this.setDefaultDeliveryDate();
     },
@@ -316,16 +352,17 @@ export default {
       try {
         const payload = {
           ...this.resolveCustomerPayload(),
+          ...this.resolveDiscountPayload(),
           estimated_delivery_date: this.form.estimated_delivery_date,
           estimated_delivery_time: this.form.estimated_delivery_time,
           notes: this.form.notes,
           photo_types: this.activeLines,
           package_ids: this.selectedPackageIds,
           additional_services: this.activeServices,
+          pickup_persons: this.pickup_persons,
           payments: this.payments.map(p => ({
             amount: p.amount,
-            payment_method: p.payment_method,
-            type: 'advance'
+            payment_method: p.payment_method
           }))
         };
         const res = await axios.post('/orders', payload);
@@ -335,9 +372,11 @@ export default {
           this.close();
         });
       } catch (error) {
+        const data = error.response?.data;
+        const firstValidationError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
         this.$emit('notify', {
           title: 'Error',
-          message: error.response?.data?.message || 'No se pudo crear la orden',
+          message: firstValidationError || data?.message || 'No se pudo crear la orden',
           type: 'error'
         });
         this.submitting = false;

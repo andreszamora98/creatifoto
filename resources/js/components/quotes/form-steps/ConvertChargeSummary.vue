@@ -3,6 +3,10 @@
     title="Resumen de la cotización"
     :lines="summaryLines"
     :estimated-total="estimatedTotal"
+    :discount-type="effectiveDiscountType"
+    :discount-value="effectiveDiscountValue"
+    :discount-amount="discountAmount"
+    :discount-reason="effectiveDiscountReason"
     total-label="Total a cobrar"
     empty-message="Esta cotización no tiene conceptos registrados."
   />
@@ -16,9 +20,55 @@ export default {
   components: { ChargeSummary },
   props: {
     quote: { type: Object, default: null },
-    estimatedTotal: { type: Number, default: 0 }
+    estimatedTotal: { type: Number, default: 0 },
+    overrideDiscount: { type: Object, default: null }
   },
   computed: {
+    effectiveDiscountType() {
+      if (this.overrideDiscount !== null) {
+        return this.overrideDiscount.type ?? null;
+      }
+      return this.quote?.discount_type ?? null;
+    },
+    effectiveDiscountValue() {
+      if (this.overrideDiscount !== null) {
+        return this.overrideDiscount.value ?? null;
+      }
+      return this.quote?.discount_value ?? null;
+    },
+    effectiveDiscountReason() {
+      if (this.overrideDiscount !== null) {
+        return this.overrideDiscount.reason ?? null;
+      }
+      return this.quote?.discount_reason ?? null;
+    },
+    baseDirect() {
+      if (!this.quote) return 0;
+
+      const photos = (this.quote.quote_photo_types || []).filter(l => !l.quote_package_id);
+      const photoSum = photos.reduce((sum, l) => sum + Number(l.unit_price || 0) * Number(l.quantity || 0), 0);
+
+      const services = (this.quote.services || []).filter(s => !s.quote_package_id);
+      const serviceSum = services.reduce((sum, s) => sum + Number(s.price || 0) * Number(s.quantity || 0), 0);
+
+      return photoSum + serviceSum;
+    },
+    discountAmount() {
+      if (!this.effectiveDiscountType) return 0;
+      const value = Number(this.effectiveDiscountValue || 0);
+      if (!Number.isFinite(value) || value <= 0) return 0;
+
+      if (this.effectiveDiscountType === 'percent') {
+        const clamped = Math.max(0, Math.min(100, value));
+        return Number((this.baseDirect * clamped / 100).toFixed(2));
+      }
+
+      if (this.effectiveDiscountType === 'fixed') {
+        return Number(Math.min(Math.max(0, value), this.baseDirect).toFixed(2));
+      }
+
+      return 0;
+    },
     summaryLines() {
       if (!this.quote) return [];
 

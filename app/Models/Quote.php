@@ -17,6 +17,10 @@ class Quote extends Model
     protected $fillable = [
         'customer_id',
         'total',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
+        'discount_reason',
         'notes',
         'valid_until',
         'status',
@@ -24,6 +28,8 @@ class Quote extends Model
 
     protected $casts = [
         'total' => 'decimal:2',
+        'discount_value' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'valid_until' => 'date',
     ];
 

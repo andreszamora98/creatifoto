@@ -2,7 +2,9 @@
 
 namespace App\Observers;
 
+use App\Models\Order;
 use App\Models\Payment;
+use Illuminate\Support\Facades\DB;
 
 class PaymentObserver
 {
@@ -23,10 +25,24 @@ class PaymentObserver
 
     private function recalculate(Payment $payment): void
     {
-        $order = $payment->order;
-        $totalPaid = $order->payments()->sum('amount');
+        $orderId = $payment->order_id;
 
-        $order->balance_due = round($order->total - $totalPaid, 2);
-        $order->save();
+        if (!$orderId) {
+            return;
+        }
+
+        DB::transaction(function () use ($orderId) {
+            $order = Order::lockForUpdate()->find($orderId);
+
+            if (!$order) {
+                return;
+            }
+
+            $totalPaid = (float) $order->payments()->sum('amount');
+            $netTotal = (float) $order->total - (float) $order->discount_amount;
+
+            $order->balance_due = round($netTotal - $totalPaid, 2);
+            $order->save();
+        });
     }
 }

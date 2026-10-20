@@ -127,6 +127,54 @@
                 </div>
               </div>
 
+              <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center">
+                    <i class="ti ti-users mr-2 text-lg sm:text-xl"></i>Personas autorizadas a recoger
+                    <span class="ml-2 text-sm sm:text-base px-2.5 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300 rounded">{{ localOrder.pickups?.length || 0 }}</span>
+                  </h4>
+                  <button
+                    v-if="canEdit && !editingPickups"
+                    @click="startEditingPickups"
+                    type="button"
+                    class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"
+                    title="Gestionar personas autorizadas"
+                  >
+                    <i class="ti ti-pencil"></i>
+                  </button>
+                </div>
+
+                <template v-if="!editingPickups">
+                  <ul v-if="localOrder.pickups?.length" class="space-y-1.5">
+                    <li v-for="p in localOrder.pickups" :key="p.id" class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-600">
+                      <i class="ti ti-user text-gray-400 dark:text-gray-500"></i>
+                      <span class="text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200 truncate">{{ p.name_snapshot }}</span>
+                      <span v-if="p.relationship" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic ml-auto flex-shrink-0">· {{ p.relationship }}</span>
+                    </li>
+                  </ul>
+                  <p v-else class="text-sm text-gray-400 dark:text-gray-500 italic">
+                    Sin personas adicionales. Solo el cliente principal puede recoger esta orden.
+                  </p>
+                </template>
+
+                <template v-else>
+                  <PickupPersonsManager
+                    v-model="pickupForm"
+                    :customers="customers"
+                    :primary-customer-id="localOrder.customer_id"
+                    :primary-customer-name="localOrder.customer?.name || ''"
+                  />
+                  <div class="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
+                    <button @click="cancelEditingPickups" type="button" class="flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
+                      Cancelar
+                    </button>
+                    <button @click="savePickups" :disabled="savingPickups" type="button" class="flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                      {{ savingPickups ? 'Guardando...' : 'Guardar' }}
+                    </button>
+                  </div>
+                </template>
+              </div>
+
               <div v-if="localOrder.notes" class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
                 <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center mb-2 sm:mb-3">
                   <i class="ti ti-notes mr-2 text-lg sm:text-xl"></i>Observaciones
@@ -236,6 +284,10 @@
                   title="Conceptos"
                   :lines="summaryLines"
                   :estimated-total="Number(localOrder.total || 0)"
+                  :discount-type="localOrder.discount_type || null"
+                  :discount-value="localOrder.discount_value"
+                  :discount-amount="Number(localOrder.discount_amount || 0)"
+                  :discount-reason="localOrder.discount_reason"
                   hide-total
                   empty-message="Sin conceptos registrados."
                 />
@@ -255,10 +307,25 @@
                   <p class="text-base sm:text-lg lg:text-xl font-bold text-gray-700 dark:text-gray-300">{{ formatCurrency(localOrder.initial_total) }}</p>
                 </div>
 
+                <div v-if="hasDiscount" class="mb-3 sm:mb-4 bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 space-y-1">
+                  <div class="flex justify-between text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                    <span>Subtotal</span>
+                    <span>{{ formatCurrency(localOrder.total) }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm sm:text-base text-red-600 dark:text-red-400">
+                    <span>Descuento{{ discountTypeLabel }}</span>
+                    <span>-{{ formatCurrency(localOrder.discount_amount) }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm sm:text-base font-semibold pt-1 border-t border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200">
+                    <span>Total neto</span>
+                    <span>{{ formatCurrency(netTotal) }}</span>
+                  </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <div class="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-600 shadow-sm flex items-center justify-between sm:block sm:text-center">
                     <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400">Total</p>
-                    <p class="text-base sm:text-lg lg:text-xl font-bold text-gray-800 dark:text-gray-200">{{ formatCurrency(localOrder.total) }}</p>
+                    <p class="text-base sm:text-lg lg:text-xl font-bold text-gray-800 dark:text-gray-200">{{ formatCurrency(netTotal) }}</p>
                   </div>
                   <div class="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-600 shadow-sm flex items-center justify-between sm:block sm:text-center">
                     <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400">Pagado</p>
@@ -397,10 +464,11 @@ import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
 import ChargeSummary from '../order-quote-shared/ChargeSummary.vue';
+import PickupPersonsManager from '../order-quote-shared/PickupPersonsManager.vue';
 
 export default {
   name: 'OrderDetailModal',
-  components: { ConfirmModal, SuccessModal, AlertModal, ChargeSummary },
+  components: { ConfirmModal, SuccessModal, AlertModal, ChargeSummary, PickupPersonsManager },
   props: {
     show: { type: Boolean, default: false },
     order: { type: Object, default: null },
@@ -430,7 +498,11 @@ export default {
         pose_range: '',
         archive_name: ''
       },
-      metadataErrors: {}
+      metadataErrors: {},
+      editingPickups: false,
+      pickupForm: [],
+      savingPickups: false,
+      customers: []
     };
   },
   computed: {
@@ -459,6 +531,19 @@ export default {
     },
     totalPaid() {
       return this.payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    },
+    netTotal() {
+      return Number(this.localOrder?.total || 0) - Number(this.localOrder?.discount_amount || 0);
+    },
+    hasDiscount() {
+      return Number(this.localOrder?.discount_amount || 0) > 0;
+    },
+    discountTypeLabel() {
+      if (!this.localOrder?.discount_type) return '';
+      if (this.localOrder.discount_type === 'percent') {
+        return ` (${this.localOrder.discount_value}%)`;
+      }
+      return '';
     },
     hasInitialTotalDiff() {
       if (!this.localOrder) return false;
@@ -513,10 +598,15 @@ export default {
 
       const result = [];
 
+      const bgLabel = (bg) => {
+        if (!bg || bg === 'blanco') return '';
+        return ` · Fondo: ${bg}`;
+      };
+
       photos.filter(l => !l.order_package_id).forEach((l, idx) => {
         result.push({
           key: `pt-${l.id}-${idx}`,
-          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}`,
+          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}${bgLabel(l.background)}`,
           amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
           unitPrice: Number(l.unit_price || 0),
           quantity: Number(l.quantity || 0),
@@ -533,7 +623,7 @@ export default {
           const formatLabel = l.format === 'color' ? 'Color' : 'Blanco/negro';
           children.push({
             key: `pkg-${pkg.id}-pt-${l.id}-${idx}`,
-            label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity} · ${formatLabel}`,
+            label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity} · ${formatLabel}${bgLabel(l.background)}`,
             amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
             unitPrice: Number(l.unit_price || 0),
             quantity: Number(l.quantity || 0),
@@ -581,6 +671,7 @@ export default {
       if (val && this.order) {
         this.localOrder = this.order;
         this.editingMetadata = false;
+        this.editingPickups = false;
         this.metadataErrors = {};
         this.silentRefresh();
       } else if (!val) {
@@ -646,6 +737,54 @@ export default {
         this.savingMetadata = false;
       }
     },
+    async startEditingPickups() {
+      this.editingPickups = true;
+      this.pickupForm = (this.localOrder.pickups || []).map(p => ({
+        customer_id: p.customer_id,
+        relationship: p.relationship || null,
+        displayName: p.name_snapshot
+      }));
+      if (this.customers.length === 0) {
+        try {
+          const res = await axios.get('/customers');
+          this.customers = res.data;
+        } catch (e) {
+          console.error('Error cargando clientes:', e);
+        }
+      }
+    },
+    cancelEditingPickups() {
+      this.editingPickups = false;
+      this.pickupForm = [];
+    },
+    async savePickups() {
+      if (this.savingPickups) return;
+      this.savingPickups = true;
+      try {
+        const payload = {
+          pickup_persons: this.pickupForm.map(p => ({
+            customer_id: p.customer_id || null,
+            new_customer: p.new_customer || null,
+            relationship: p.relationship || null
+          }))
+        };
+        const res = await axios.patch(`/orders/${this.localOrder.id}/pickups`, payload);
+        this.localOrder = res.data.order;
+        this.editingPickups = false;
+        this.pickupForm = [];
+        this.successTitle = 'Personas actualizadas';
+        this.successMessage = 'Las personas autorizadas se actualizaron correctamente.';
+        this.showSuccess = true;
+        this.$emit('updated', this.localOrder);
+      } catch (error) {
+        const data = error.response?.data;
+        const firstValidationError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+        this.alertMessage = firstValidationError || data?.message || 'No se pudieron actualizar las personas autorizadas';
+        this.showAlert = true;
+      } finally {
+        this.savingPickups = false;
+      }
+    },
     async loadOrderDetail() {
       this.loading = true;
       try {
@@ -676,14 +815,9 @@ export default {
       if (!this.canAddPayment || this.addingPayment) return;
       this.addingPayment = true;
       try {
-        const amount = Number(this.newPayment.amount);
-        const balance = Number(this.localOrder.balance_due);
-        const type = amount >= balance ? 'settlement' : 'advance';
-
         await axios.post(`/orders/${this.localOrder.id}/payments`, {
-          amount,
+          amount: Number(this.newPayment.amount),
           payment_method: this.newPayment.payment_method || null,
-          type,
           notes: null
         });
 
@@ -739,6 +873,9 @@ export default {
       this.savingMetadata = false;
       this.metadataForm = { pose_number: null, pose_range: '', archive_name: '' };
       this.metadataErrors = {};
+      this.editingPickups = false;
+      this.pickupForm = [];
+      this.savingPickups = false;
     },
     handleClose() {
       this.$emit('close');

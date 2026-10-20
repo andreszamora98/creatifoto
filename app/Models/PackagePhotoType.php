@@ -14,6 +14,7 @@ class PackagePhotoType extends Pivot
         'photo_type_id',
         'quantity',
         'format',
+        'background',
         'paper_type_id',
         'unit_price',
     ];

@@ -1,61 +1,3 @@
-<template>
-  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2.5 sm:p-5 short:p-2 border-2"
-       :class="showErrors && error ? 'border-red-500' : 'border-transparent'">
-    <h4 v-if="title" class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
-      <i :class="icon" class="mr-2 text-lg sm:text-xl"></i>{{ title }}
-    </h4>
-    <p v-if="showErrors && error" class="text-sm sm:text-lg short:text-sm text-red-600 dark:text-red-400 mb-2 sm:mb-3 short:mb-1.5 font-medium">{{ errorMessage }}</p>
-
-    <div v-if="loading" class="text-center py-3 sm:py-4 short:py-2 text-base sm:text-lg short:text-base text-gray-500 dark:text-gray-400 mt-2 sm:mt-3 short:mt-1">
-      <i class="ti ti-refresh animate-spin"></i> Cargando catálogo...
-    </div>
-
-    <div v-else class="mt-2 sm:mt-3 short:mt-1">
-      <p v-if="lines.length === 0 && emptyHint" class="text-sm sm:text-lg short:text-sm text-gray-400 dark:text-gray-500 italic">{{ emptyHint }}</p>
-
-      <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 short:gap-2">
-        <PhotoTypeLineCard
-          v-for="(line, idx) in lines"
-          :key="lineKey(line)"
-          :line="line"
-          :index="idx"
-          :editor-id="editorId"
-          :paper-types="paperTypes"
-          :show-format-and-paper="showFormatAndPaper"
-          :can-remove="canRemove"
-          :is-open="openDropdownKey === lineKey(line)"
-          :format-open="openFormatKey === lineKey(line)"
-          :input-value="inputValueFor(line)"
-          :highlighted-idx="highlightedIdx"
-          :filtered-photo-types="filteredPhotoTypes"
-          :photo-type-price="photoTypePrice"
-          :show-error="showErrors && error"
-          :included-in-package="lineIsIncludedInPackage(line)"
-          :on-open="() => openDropdown(line)"
-          :on-input="(v) => onInput(line, v)"
-          :on-esc="() => closeDropdown()"
-          :on-move-highlight="moveHighlight"
-          :on-select-highlighted="() => selectHighlighted(idx, line)"
-          :on-select="(id) => selectAndReset(idx, line, id)"
-          :on-clear="() => clearLine(idx)"
-          :on-focus-out="(e) => onFocusOut(line, e)"
-          :on-highlight="(i) => (highlightedIdx = i)"
-          :on-quantity-blur="() => sanitizeQuantity(line)"
-          :on-remove="() => removeLine(idx)"
-          :on-toggle-format="() => toggleFormat(line)"
-          :on-close-format="() => closeFormat(line)"
-          :on-select-format="(v) => selectFormat(line, v)"
-        />
-      </div>
-
-      <button type="button" @click="addLine"
-              class="mt-2 sm:mt-3 short:mt-1 py-1 sm:py-0 text-sm sm:text-lg short:text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
-        <i class="ti ti-plus text-base sm:text-xl short:text-base"></i> {{ lines.length === 0 ? addLabelFirst : addLabel }}
-      </button>
-    </div>
-  </div>
-</template>
-
 <script>
 import PhotoTypeLineCard from './PhotoTypeLineCard.vue';
 
@@ -66,6 +8,7 @@ export default {
     lines: { type: Array, required: true },
     photoTypes: { type: Array, default: () => [] },
     paperTypes: { type: Array, default: () => [] },
+    backgrounds: { type: Array, default: () => [] },
     showFormatAndPaper: { type: Boolean, default: true },
     canRemove: { type: Boolean, default: true },
     loading: { type: Boolean, default: false },
@@ -205,7 +148,7 @@ export default {
       this.openFormatKey = null;
     },
     addLine() {
-      this.lines.push({ photo_type_id: null, quantity: 1, format: 'bn', paper_type_id: null });
+      this.lines.push({ photo_type_id: null, quantity: 1, format: 'bn', background: 'blanco', paper_type_id: null });
     },
     removeLine(idx) {
       this.lines.splice(idx, 1);
@@ -213,3 +156,62 @@ export default {
   }
 };
 </script>
+
+<template>
+  <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-2.5 sm:p-5 short:p-2 border-2"
+       :class="showErrors && error ? 'border-red-500' : 'border-transparent'">
+    <h4 v-if="title" class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
+      <i :class="icon" class="mr-2 text-lg sm:text-xl"></i>{{ title }}
+    </h4>
+    <p v-if="showErrors && error" class="text-sm sm:text-lg short:text-sm text-red-600 dark:text-red-400 mb-2 sm:mb-3 short:mb-1.5 font-medium">{{ errorMessage }}</p>
+
+    <div v-if="loading" class="text-center py-3 sm:py-4 short:py-2 text-base sm:text-lg short:text-base text-gray-500 dark:text-gray-400 mt-2 sm:mt-3 short:mt-1">
+      <i class="ti ti-refresh animate-spin"></i> Cargando catálogo...
+    </div>
+
+    <div v-else class="mt-2 sm:mt-3 short:mt-1">
+      <p v-if="lines.length === 0 && emptyHint" class="text-sm sm:text-lg short:text-sm text-gray-400 dark:text-gray-500 italic">{{ emptyHint }}</p>
+
+      <div v-if="lines.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 short:gap-2">
+        <PhotoTypeLineCard
+          v-for="(line, idx) in lines"
+          :key="lineKey(line)"
+          :line="line"
+          :index="idx"
+          :editor-id="editorId"
+          :paper-types="paperTypes"
+          :backgrounds="backgrounds"
+          :show-format-and-paper="showFormatAndPaper"
+          :can-remove="canRemove"
+          :is-open="openDropdownKey === lineKey(line)"
+          :format-open="openFormatKey === lineKey(line)"
+          :input-value="inputValueFor(line)"
+          :highlighted-idx="highlightedIdx"
+          :filtered-photo-types="filteredPhotoTypes"
+          :photo-type-price="photoTypePrice"
+          :show-error="showErrors && error"
+          :included-in-package="lineIsIncludedInPackage(line)"
+          :on-open="() => openDropdown(line)"
+          :on-input="(v) => onInput(line, v)"
+          :on-esc="() => closeDropdown()"
+          :on-move-highlight="moveHighlight"
+          :on-select-highlighted="() => selectHighlighted(idx, line)"
+          :on-select="(id) => selectAndReset(idx, line, id)"
+          :on-clear="() => clearLine(idx)"
+          :on-focus-out="(e) => onFocusOut(line, e)"
+          :on-highlight="(i) => (highlightedIdx = i)"
+          :on-quantity-blur="() => sanitizeQuantity(line)"
+          :on-remove="() => removeLine(idx)"
+          :on-toggle-format="() => toggleFormat(line)"
+          :on-close-format="() => closeFormat(line)"
+          :on-select-format="(v) => selectFormat(line, v)"
+        />
+      </div>
+
+      <button type="button" @click="addLine"
+              class="mt-2 sm:mt-3 short:mt-1 py-1 sm:py-0 text-sm sm:text-lg short:text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
+        <i class="ti ti-plus text-base sm:text-xl short:text-base"></i> {{ lines.length === 0 ? addLabelFirst : addLabel }}
+      </button>
+    </div>
+  </div>
+</template>

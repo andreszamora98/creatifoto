@@ -38,7 +38,7 @@
 
         <div class="flex-shrink-0 p-2 sm:p-3 short:p-1.5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2 flex-wrap">
           <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <span>{{ filteredQuotes.length }} {{ filteredQuotes.length === 1 ? 'cotización' : 'cotizaciones' }}</span>
+            <span>{{ totalCount }} {{ totalCount === 1 ? 'cotización' : 'cotizaciones' }}</span>
             <span v-if="searchQuery" class="text-gray-400 ml-2 short:hidden">(filtrado)</span>
           </div>
         </div>
@@ -51,7 +51,7 @@
             </div>
           </div>
 
-          <div v-else-if="filteredQuotes.length === 0" class="absolute inset-0 flex items-center justify-center p-4">
+          <div v-else-if="paginatedQuotes.length === 0" class="absolute inset-0 flex items-center justify-center p-4">
             <div class="text-center max-w-xs">
               <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
                 <i class="ti ti-file-off text-lg text-gray-400 dark:text-gray-500"></i>
@@ -109,11 +109,11 @@
         </div>
 
         <div class="flex-shrink-0 mt-2 sm:mt-3 short:mt-1 pb-2 sm:pb-3 short:pb-1 pt-2 sm:pt-3 short:pt-1 border-t border-gray-200 dark:border-gray-700 px-3">
-          <ResponsivePagination v-model:current="currentPage" :total="totalPages" />
+          <ResponsivePagination :current="currentPage" :total="totalPages" @update:current="onPageChange" />
         </div>
 
         <div class="flex-shrink-0 hidden sm:flex short:hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 pb-2">
-          <span>Mostrando {{ paginatedQuotes.length }}/{{ filteredQuotes.length }} {{ filteredQuotes.length === 1 ? 'cotización' : 'cotizaciones' }}</span>
+          <span>Mostrando {{ paginatedQuotes.length }} de {{ totalCount }} {{ totalCount === 1 ? 'cotización' : 'cotizaciones' }}</span>
           <span v-if="totalPages > 0">Página {{ currentPage }} de {{ totalPages }}</span>
           <span v-else>Página —</span>
         </div>
@@ -179,6 +179,9 @@ export default {
   data() {
     return {
       quotes: [],
+      totalQuotes: 0,
+      loadedInSearchMode: false,
+      searchDebounceId: null,
       loading: false,
       showQuoteModal: false,
       showDetailModal: false,
@@ -199,7 +202,14 @@ export default {
     };
   },
   computed: {
+    isSearching() {
+      return !!this.searchQuery.trim();
+    },
+    totalCount() {
+      return this.loadedInSearchMode ? this.filteredQuotes.length : this.totalQuotes;
+    },
     filteredQuotes() {
+      if (!this.loadedInSearchMode) return this.quotes;
       const q = this.searchQuery.toLowerCase().trim();
       if (!q) return this.quotes;
 
@@ -228,11 +238,14 @@ export default {
       });
     },
     paginatedQuotes() {
+      if (!this.loadedInSearchMode) return this.quotes;
       const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.filteredQuotes.slice(start, end);
+      return this.filteredQuotes.slice(start, start + this.itemsPerPage);
     },
     totalPages() {
+      if (!this.loadedInSearchMode) {
+        return Math.ceil(this.totalQuotes / this.itemsPerPage);
+      }
       return Math.ceil(this.filteredQuotes.length / this.itemsPerPage);
     }
   },
@@ -244,6 +257,8 @@ export default {
     },
     searchQuery() {
       this.currentPage = 1;
+      if (this.searchDebounceId) clearTimeout(this.searchDebounceId);
+      this.searchDebounceId = setTimeout(() => this.loadQuotes(), 300);
     }
   },
   async mounted() {
@@ -278,8 +293,16 @@ export default {
       this.blinkInterval = null;
     }
     if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+    if (this.searchDebounceId) clearTimeout(this.searchDebounceId);
   },
   methods: {
+    onPageChange(page) {
+      if (page === this.currentPage) return;
+      this.currentPage = page;
+      if (!this.loadedInSearchMode) {
+        this.loadQuotes();
+      }
+    },
     handleConvertRequest(quote) {
       this.showDetailModal = false;
       this.selectedQuote = quote;
@@ -298,18 +321,33 @@ export default {
         type: 'success'
       });
     },
-    async handleQuoteUpdated() {
+    async handleQuoteUpdated(updatedQuote) {
       await this.loadQuotes();
-      if (this.selectedQuote) {
+      if (updatedQuote && updatedQuote.id) {
+        const idx = this.quotes.findIndex(q => q.id === updatedQuote.id);
+        if (idx !== -1) this.quotes.splice(idx, 1, updatedQuote);
+        this.selectedQuote = updatedQuote;
+      } else if (this.selectedQuote) {
         const fresh = this.quotes.find(q => q.id === this.selectedQuote.id);
         if (fresh) this.selectedQuote = fresh;
       }
     },
     async loadQuotes() {
       this.loading = true;
+      const targetMode = this.isSearching;
       try {
-        const res = await axios.get('/quotes');
-        this.quotes = res.data;
+        if (targetMode) {
+          const res = await axios.get('/quotes');
+          this.quotes = res.data;
+          this.totalQuotes = res.data.length;
+        } else {
+          const res = await axios.get('/quotes', {
+            params: { page: this.currentPage, per_page: this.itemsPerPage }
+          });
+          this.quotes = res.data.data;
+          this.totalQuotes = res.data.total;
+        }
+        this.loadedInSearchMode = targetMode;
       } catch (error) {
         this.handleNotify({ title: 'Error', message: 'No se pudieron cargar las cotizaciones', type: 'error' });
       } finally {
@@ -324,6 +362,7 @@ export default {
       if (quote && quote.id) {
         this.pendingBlinkQuoteId = quote.id;
       }
+      this.currentPage = 1;
       await this.loadQuotes();
       this.handleNotify({
         title: 'Cotización creada',
@@ -372,21 +411,6 @@ export default {
     },
     isBlinking(quoteId) {
       return this.newQuoteId === quoteId && this.blinkInterval !== null;
-    },
-    goToPage(page) {
-      if (this.totalPages > 0 && page >= 1 && page <= this.totalPages) {
-        this.currentPage = page;
-      }
-    },
-    nextPage() {
-      if (this.totalPages > 0 && this.currentPage < this.totalPages) {
-        this.currentPage++;
-      }
-    },
-    prevPage() {
-      if (this.totalPages > 0 && this.currentPage > 1) {
-        this.currentPage--;
-      }
     },
     statusLabel(status) {
       const labels = { pending: 'Pendiente', accepted: 'Aceptada', rejected: 'Rechazada', expired: 'Vencida', converted: 'Convertida' };

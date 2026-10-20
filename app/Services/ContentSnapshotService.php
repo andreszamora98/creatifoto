@@ -28,6 +28,7 @@ class ContentSnapshotService
         foreach ($data['photo_types'] ?? [] as $line) {
             $this->addLine($doc, $line);
         }
+
         foreach ($data['additional_services'] ?? [] as $svc) {
             $this->addService($doc, $svc);
         }
@@ -61,6 +62,7 @@ class ContentSnapshotService
         if (!array_key_exists('additional_services', $data)) {
             return;
         }
+
         $currentSvc = $doc->services()
             ->whereNull('order_package_id')
             ->whereNull('quote_package_id')
@@ -104,12 +106,45 @@ class ContentSnapshotService
         return round($packages + $lines + $services, 2);
     }
 
+    public function recalculateWithDiscount(Model $doc, ?string $type, ?float $value): array
+    {
+        $total = $this->recalculate($doc);
+        $r = $this->r($doc);
+
+        $directLines = (float) $doc->{$r['lines']}()
+            ->whereNull($r['fk'])
+            ->selectRaw('COALESCE(SUM(unit_price * quantity), 0) AS t')->value('t');
+
+        $directServices = (float) $doc->services()
+            ->whereNull('order_package_id')
+            ->whereNull('quote_package_id')
+            ->selectRaw('COALESCE(SUM(price * quantity), 0) AS t')->value('t');
+
+        $baseDirect = round($directLines + $directServices, 2);
+        $discountAmount = 0.0;
+
+        if ($type === 'percent' && $value !== null) {
+            $clamped = max(0.0, min(100.0, $value));
+            $discountAmount = round($baseDirect * $clamped / 100, 2);
+        } elseif ($type === 'fixed' && $value !== null) {
+            $discountAmount = round(min(max(0.0, $value), $baseDirect), 2);
+        }
+
+        return [
+            'total' => $total,
+            'base_direct' => $baseDirect,
+            'discount_amount' => $discountAmount,
+            'net_total' => round($total - $discountAmount, 2),
+        ];
+    }
+
     public function copyQuoteToOrder(Quote $quote, Order $order): void
     {
         $map = [];
         foreach ($quote->quotePackages as $qp) {
             $map[$qp->id] = $order->orderPackages()->create($qp->only([
-                'package_id', 'school_id', 'package_name_snapshot', 'school_name_snapshot', 'price_snapshot',
+                'package_id', 'school_id', 'package_name_snapshot', 'school_name_snapshot',
+                'price_snapshot', 'list_price_snapshot', 'discount_amount_snapshot',
             ]))->id;
         }
 
@@ -117,7 +152,7 @@ class ContentSnapshotService
             $order->orderPhotoTypes()->create([
                 ...$ql->only([
                     'photo_type_id', 'photo_type_name_snapshot', 'quantity', 'unit_price',
-                    'format', 'paper_type_id', 'paper_type_name_snapshot',
+                    'format', 'background', 'paper_type_id', 'paper_type_name_snapshot',
                 ]),
                 'order_package_id' => $ql->quote_package_id ? $map[$ql->quote_package_id] : null,
             ]);
@@ -136,15 +171,19 @@ class ContentSnapshotService
     public function loadPackages(array $ids): Collection
     {
         $ids = array_values(array_unique($ids));
+
         if (!$ids) {
             return collect();
         }
+
         $packages = Package::with(['school', 'photoTypes', 'additionalServices'])
             ->whereIn('id', $ids)
             ->get();
+
         if ($packages->count() !== count($ids)) {
             throw new DomainException('Uno de los paquetes seleccionados ya no está disponible. Actualiza e inténtalo de nuevo.');
         }
+
         return $packages;
     }
 
@@ -155,9 +194,11 @@ class ContentSnapshotService
         $row = $doc->{$r['packages']}()->create([
             'package_id' => $pkg->id,
             'school_id' => $pkg->school_id,
-            'package_name_snapshot' => $pkg->name ?: 'Paquete ' . $pkg->package_number,
+            'package_name_snapshot' => $pkg->name ?: ('Paquete #' . $pkg->id),
             'school_name_snapshot' => $pkg->school->name,
             'price_snapshot' => $pkg->total_price,
+            'list_price_snapshot' => $pkg->list_price,
+            'discount_amount_snapshot' => $pkg->discount_amount ?? 0,
         ]);
 
         foreach ($pkg->photoTypes as $pt) {
@@ -172,6 +213,7 @@ class ContentSnapshotService
                 'quantity' => $pt->pivot->quantity,
                 'unit_price' => (float) ($pt->pivot->unit_price ?? 0),
                 'format' => $pt->pivot->format ?? 'color',
+                'background' => $this->normalizeBackground($pt->pivot->background ?? null),
                 'paper_type_id' => $paperId,
                 'paper_type_name_snapshot' => $paperName,
                 $r['fk'] => $row->id,
@@ -202,6 +244,7 @@ class ContentSnapshotService
             'quantity' => $in['quantity'],
             'unit_price' => $pt->base_price,
             'format' => $in['format'],
+            'background' => $this->normalizeBackground($in['background'] ?? null),
             'paper_type_id' => $paper?->id,
             'paper_type_name_snapshot' => $paper?->name,
         ]);
@@ -209,7 +252,15 @@ class ContentSnapshotService
 
     private function updateLine(Model $line, array $in): void
     {
-        $attrs = ['quantity' => $in['quantity'], 'format' => $in['format']];
+        $attrs = [
+            'quantity' => $in['quantity'],
+            'format' => $in['format'],
+        ];
+
+        if (array_key_exists('background', $in)) {
+            $attrs['background'] = $this->normalizeBackground($in['background']);
+        }
+
         $inPackage = ($line->order_package_id ?? $line->quote_package_id) !== null;
 
         if ((int) $in['photo_type_id'] !== (int) $line->photo_type_id) {
@@ -217,6 +268,7 @@ class ContentSnapshotService
                 ?? throw new DomainException('Un tipo de fotografía ya no está disponible.');
             $attrs['photo_type_id'] = $pt->id;
             $attrs['photo_type_name_snapshot'] = $pt->name;
+
             if (!$inPackage) {
                 $attrs['unit_price'] = $pt->base_price;
             }
@@ -251,6 +303,14 @@ class ContentSnapshotService
         if (!$id) {
             return null;
         }
+
         return PaperType::find($id) ?? throw new DomainException('Un tipo de papel ya no está disponible.');
+    }
+
+    private function normalizeBackground(?string $value): string
+    {
+        $trimmed = $value !== null ? trim($value) : '';
+
+        return $trimmed === '' ? 'blanco' : $trimmed;
     }
 }

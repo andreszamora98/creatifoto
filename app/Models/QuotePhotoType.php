@@ -15,6 +15,7 @@ class QuotePhotoType extends Model
         'quantity',
         'unit_price',
         'format',
+        'background',
         'paper_type_id',
         'paper_type_name_snapshot',
     ];
