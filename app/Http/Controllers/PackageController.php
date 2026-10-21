@@ -31,7 +31,7 @@ class PackageController extends Controller
             ->get([
                 'id', 'school_id', 'sequence', 'name',
                 'total_price', 'list_price', 'discount_amount',
-                'women_features', 'men_features',
+                'women_features', 'men_features', 'package_notes',
             ]);
     }
 
@@ -114,6 +114,7 @@ class PackageController extends Controller
             'name' => ['required', 'string', 'max:255', $nameUnique],
             'total_price' => 'required|numeric|min:0|max:9999999.99',
             'list_price' => 'nullable|numeric|min:0|max:9999999.99|gte:total_price',
+            'package_notes' => 'nullable|string|max:2000',
             'women_features_text' => ['nullable', 'string', function ($attribute, $value, $fail) {
                 if ($value !== null && str_word_count(trim($value)) > 1000) {
                     $fail('Las características de mujeres no pueden superar 1000 palabras.');

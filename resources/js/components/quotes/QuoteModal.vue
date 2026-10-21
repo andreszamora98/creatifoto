@@ -92,6 +92,7 @@
               section-title=""
               :active-lines="activeLines"
               :photo-types="photoTypes"
+              :paper-types="paperTypes"
               :selected-packages="selectedPackagesData"
               :selected-services="selectedServices"
               :additional-services="additionalServices"

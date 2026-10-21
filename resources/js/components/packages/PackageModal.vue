@@ -8,7 +8,6 @@
         <div class="modal-zoom w-full h-full sm:h-auto sm:max-w-4xl">
           <div class="bg-white dark:bg-gray-800 sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-h-[85vh] overflow-y-auto isolate">
 
-            <!-- Header -->
             <div class="relative sm:flex sm:items-center sm:justify-between sm:gap-3 p-3 sm:p-5 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-30">
               <div class="min-w-0 flex-1 pr-10 sm:pr-0">
                 <h3 class="text-lg sm:text-2xl font-semibold text-gray-800 dark:text-gray-200 truncate">
@@ -61,14 +60,12 @@
               </button>
             </div>
 
-            <!-- Cargando -->
             <div v-if="loading" class="text-center py-10 sm:py-14">
               <i class="ti ti-refresh animate-spin text-2xl text-blue-500"></i>
             </div>
 
             <div v-else class="p-3 sm:p-5 space-y-4 sm:space-y-5">
 
-              <!-- ============ MODO VISTA ============ -->
               <template v-if="!editing">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                   <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border-2 border-gray-300 dark:border-gray-600 shadow-sm" style="border-left-width: 4px;">
@@ -96,7 +93,6 @@
                   </div>
                 </div>
 
-                <!-- Características -->
                 <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
                   <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center mb-2 sm:mb-3">
                     <i class="ti ti-list-details mr-2 text-lg sm:text-xl"></i>Características
@@ -112,7 +108,15 @@
                   </div>
                 </div>
 
-                <!-- Tipos de fotografía -->
+                <div v-if="hasPackageNotes" class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center mb-2 sm:mb-3">
+                    <i class="ti ti-notes mr-2 text-lg sm:text-xl"></i>Observaciones adicionales del paquete
+                  </h4>
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                    <p class="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-wrap break-words">{{ form.package_notes }}</p>
+                  </div>
+                </div>
+
                 <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
                   <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg flex items-center mb-2 sm:mb-3">
                     <i class="ti ti-camera mr-2 text-lg sm:text-xl"></i>Tipos de fotografía
@@ -131,7 +135,7 @@
                         <div class="truncate">
                           <p class="font-medium text-gray-800 dark:text-gray-300 text-sm sm:text-base truncate">{{ line.name }}</p>
                           <p class="text-xs sm:text-base text-gray-500 dark:text-gray-400 truncate">
-                            {{ line.format }}<span v-if="line.paper"> • {{ line.paper }}</span>
+                            {{ line.format }}<span v-if="line.paper"> • {{ line.paper }}</span><span v-if="line.background && line.background !== 'blanco' && line.background !== 'Blanco'"> • Fondo: {{ line.background }}</span>
                           </p>
                         </div>
                       </div>
@@ -144,7 +148,6 @@
                   </div>
                 </div>
 
-                <!-- Servicios adicionales -->
                 <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
                   <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg flex items-center mb-2 sm:mb-3">
                     <i class="ti ti-tool mr-2 text-lg sm:text-xl"></i>Servicios adicionales
@@ -171,7 +174,6 @@
                 </div>
               </template>
 
-              <!-- ============ MODO EDICIÓN ============ -->
               <template v-else>
                 <div class="rounded-lg p-3 sm:p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm space-y-3 sm:space-y-6">
                   <PackageInfoStep
@@ -220,6 +222,7 @@
                   :lines="photoLines"
                   :photo-types="photoTypes"
                   :paper-types="paperTypes"
+                  :backgrounds="backgrounds"
                   :loading="loading"
                   :show-errors="showErrors"
                   :error="photoLines.length === 0"
@@ -290,6 +293,24 @@
                     </div>
                   </div>
                 </div>
+
+                <div class="space-y-2 sm:space-y-3">
+                  <h5 class="text-xs sm:text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Observaciones adicionales del paquete
+                  </h5>
+                  <textarea
+                    v-model="form.package_notes"
+                    v-blur-on-enter
+                    enterkeyhint="done"
+                    rows="3"
+                    maxlength="2000"
+                    placeholder="Ej. Incluye sesión extra, retoque digital, entrega en USB..."
+                    class="w-full text-sm sm:text-base p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-y min-h-[5rem] sm:min-h-[6rem]"
+                  ></textarea>
+                  <p class="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
+                    Opcional. Solo se edita aquí; viaja como snapshot a las órdenes y cotizaciones donde se use este paquete.
+                  </p>
+                </div>
               </template>
 
             </div>
@@ -331,7 +352,6 @@ export default {
   props: {
     show: { type: Boolean, default: false },
     packageId: { type: Number, default: null },
-    // Solo lectura: nunca muestra el botón "Editar".
     readonly: { type: Boolean, default: false }
   },
   emits: ['close', 'saved', 'notify'],
@@ -351,6 +371,7 @@ export default {
       schools: [],
       photoTypes: [],
       paperTypes: [],
+      backgrounds: [],
       additionalServices: [],
       existingPackages: [],
       photoLines: [],
@@ -360,7 +381,8 @@ export default {
         name: '',
         total_price: null,
         women_features_text: '',
-        men_features_text: ''
+        men_features_text: '',
+        package_notes: ''
       }
     };
   },
@@ -389,6 +411,9 @@ export default {
       if (this.editing) return 'Editando paquete';
       return this.createdAt ? `Creado el ${this.formatDate(this.createdAt)}` : this.schoolName;
     },
+    hasPackageNotes() {
+      return String(this.form.package_notes || '').trim() !== '';
+    },
     infoRows() {
       const rows = [
         { label: 'Folio', value: this.packageCode },
@@ -414,6 +439,7 @@ export default {
             name: pt?.name || 'Tipo de foto',
             quantity: l.quantity,
             format: l.format === 'color' ? 'Color' : 'Blanco/negro',
+            background: l.background || 'blanco',
             paper: paper?.name || ''
           };
         });
@@ -521,23 +547,25 @@ export default {
       this.editing = false;
       this.showErrors = false;
       this.backendNameError = '';
-      await this.loadPackage(); // descarta los cambios y recupera lo guardado
+      await this.loadPackage();
     },
     async loadCatalogs() {
       this.loading = true;
       try {
-        const [schoolsRes, photoTypesRes, paperTypesRes, packagesRes, servicesRes] = await Promise.all([
+        const [schoolsRes, photoTypesRes, paperTypesRes, packagesRes, servicesRes, backgroundsRes] = await Promise.all([
           axios.get('/schools'),
           axios.get('/photo-types'),
           axios.get('/paper-types'),
           axios.get('/packages'),
-          axios.get('/additional-services')
+          axios.get('/additional-services'),
+          axios.get('/backgrounds').catch(() => ({ data: [] }))
         ]);
         this.schools = schoolsRes.data;
         this.photoTypes = photoTypesRes.data;
         this.paperTypes = paperTypesRes.data;
         this.existingPackages = packagesRes.data;
         this.additionalServices = servicesRes.data;
+        this.backgrounds = backgroundsRes.data;
       } catch (error) {
         this.$emit('notify', { title: 'Error', message: 'No se pudieron cargar los catálogos', type: 'error' });
       } finally {
@@ -556,12 +584,14 @@ export default {
           name: pkg.name || '',
           total_price: Number(pkg.total_price),
           women_features_text: pkg.women_features_text || '',
-          men_features_text: pkg.men_features_text || ''
+          men_features_text: pkg.men_features_text || '',
+          package_notes: pkg.package_notes || ''
         };
         this.photoLines = (pkg.photo_types || []).map(pt => ({
           photo_type_id: pt.id,
           quantity: pt.pivot?.quantity || 1,
           format: pt.pivot?.format || 'bn',
+          background: pt.pivot?.background || 'blanco',
           paper_type_id: pt.pivot?.paper_type_id || null
         }));
         this.serviceLines = (pkg.additional_services || []).map(svc => ({
@@ -575,7 +605,14 @@ export default {
       }
     },
     resetForm() {
-      this.form = { school_id: null, name: '', total_price: null, women_features_text: '', men_features_text: '' };
+      this.form = {
+        school_id: null,
+        name: '',
+        total_price: null,
+        women_features_text: '',
+        men_features_text: '',
+        package_notes: ''
+      };
       this.photoLines = [];
       this.serviceLines = [];
       this.packageNumber = null;
@@ -608,10 +645,12 @@ export default {
         const payload = {
           ...this.form,
           name: String(this.form.name || '').trim(),
+          package_notes: String(this.form.package_notes || '').trim() || null,
           photo_types: validLines.map(l => ({
             photo_type_id: l.photo_type_id,
             quantity: l.quantity,
             format: l.format,
+            background: (l.background && String(l.background).trim()) || 'blanco',
             paper_type_id: l.paper_type_id
           })),
           additional_services: validServices.map(l => {

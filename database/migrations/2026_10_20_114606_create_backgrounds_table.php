@@ -21,8 +21,8 @@ return new class extends Migration
 
         $now = now();
         DB::table('backgrounds')->insert([
-            ['name' => 'blanco',   'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'gris',     'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Blanco',   'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Gris',     'created_at' => $now, 'updated_at' => $now],
         ]);
     }
 

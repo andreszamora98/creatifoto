@@ -58,6 +58,7 @@ export default {
   props: {
     photoLines: { type: Array, default: () => [] },
     photoTypes: { type: Array, default: () => [] },
+    paperTypes: { type: Array, default: () => [] },
     packageLines: { type: Array, default: () => [] },
     packages: { type: Array, default: () => [] },
     serviceLines: { type: Array, default: () => [] },
@@ -133,14 +134,19 @@ export default {
             unitPrice = 0;
           }
           const qty = Number(l.quantity || 0);
-          const bgLabel = l.background && l.background !== 'blanco' ? ` · Fondo: ${l.background}` : '';
+          const paper = l.paper_type_name_snapshot
+            || (l.paper_type_id ? this.paperTypes.find(p => Number(p.id) === Number(l.paper_type_id))?.name : null);
           return {
             key: `pt-${l.id ?? 'new'}-${idx}`,
-            label: `${name} x${qty}${bgLabel}${included ? ' (incluido)' : ''}`,
+            name,
+            quantity: qty,
+            included,
+            label: `${name} x${qty}${included ? ' (incluido)' : ''}`,
             amount: included ? 0 : unitPrice * qty,
             unitPrice,
-            quantity: qty,
-            format: l.format
+            format: l.format,
+            background: l.background || null,
+            paper: paper || null
           };
         });
 
@@ -182,10 +188,12 @@ export default {
           }
           return {
             key: `svc-${l.id ?? 'new'}-${idx}`,
+            name,
+            quantity: qty,
+            included,
             label: `${name} x${qty}${included ? ' (incluido)' : ''}`,
             amount: included ? 0 : unitPrice * qty,
             unitPrice,
-            quantity: qty,
             icon: 'ti ti-tool'
           };
         });

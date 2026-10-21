@@ -8,6 +8,6 @@ class BackgroundController extends Controller
 {
     public function index()
     {
-        return Background::orderBy('id')->get(['id', 'name']);
+        return Background::orderBy('name')->get(['id', 'name']);
     }
 }

@@ -7,41 +7,52 @@
 
     <div>
       <label class="form-label text-sm sm:text-lg short:text-sm font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">Cliente <span class="text-red-500">*</span></label>
-      <div class="relative">
-        <i class="ti ti-user absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base sm:text-xl short:text-sm"></i>
-        <input
-          type="text"
-          :value="customerSearch"
-          @input="$emit('update:customerSearch', $event.target.value)"
-          @focus="openCustomerDropdown"
-          @blur="hideCustomerDropdown"
-          v-blur-on-enter
-          enterkeyhint="next"
-          placeholder="Escribe el nombre completo del cliente..."
-          class="form-control form-control-sm w-full text-sm sm:text-lg short:text-sm p-2.5 sm:p-4 short:p-2 pl-9 sm:pl-11 short:pl-9 pr-9 sm:pr-10 short:pr-8 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          :class="showErrors && fieldErrors.customer
-            ? 'border-red-500 dark:border-red-500'
-            : 'border-gray-300 dark:border-gray-600'"
-        />
-        <button v-if="customerSearch" @click="clearCustomerSearch" type="button" aria-label="Limpiar búsqueda"
-                class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1 sm:p-1.5 short:p-1 rounded-lg transition-colors">
-          <i class="ti ti-x text-base sm:text-xl short:text-base"></i>
-        </button>
-        <div v-if="showCustomerDropdown && filteredCustomers.length"
-            class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-40 sm:max-h-52 short:max-h-32 overflow-y-auto">
-          <div v-for="c in filteredCustomers" :key="c.id"
-              @mousedown.prevent="selectCustomer(c)"
-              class="px-2.5 sm:px-4 short:px-2.5 py-2 sm:py-3 short:py-1.5 text-sm sm:text-lg short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-2 sm:gap-3 short:gap-2 text-gray-800 dark:text-gray-200">
-            <i class="ti ti-user text-gray-400 dark:text-gray-500 flex-shrink-0 text-sm sm:text-lg short:text-sm"></i>
-            <span class="truncate">{{ c.name }}</span>
-            <span class="text-gray-400 dark:text-gray-500 text-xs sm:text-base short:text-xs flex items-center gap-1 flex-shrink-0" v-if="c.phone">
-              <i class="ti ti-phone text-xs sm:text-sm"></i>{{ c.phone }}
-            </span>
-            <span class="text-gray-400 dark:text-gray-500 text-xs sm:text-base short:text-xs flex items-center gap-1 flex-shrink-0 hidden sm:inline-flex" v-if="c.email">
-              <i class="ti ti-mail text-xs sm:text-sm"></i>{{ c.email }}
-            </span>
+      <div class="flex flex-col sm:flex-row sm:items-stretch gap-2 sm:gap-3 short:gap-2">
+        <div class="relative flex-1 min-w-0">
+          <i class="ti ti-user absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base sm:text-xl short:text-sm"></i>
+          <input
+            type="text"
+            :value="customerSearch"
+            @input="$emit('update:customerSearch', $event.target.value)"
+            @focus="openCustomerDropdown"
+            @blur="hideCustomerDropdown"
+            v-blur-on-enter
+            enterkeyhint="next"
+            placeholder="Escribe el nombre completo del cliente..."
+            class="form-control form-control-sm w-full text-sm sm:text-lg short:text-sm p-2.5 sm:p-4 short:p-2 pl-9 sm:pl-11 short:pl-9 pr-9 sm:pr-10 short:pr-8 rounded-lg border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            :class="showErrors && fieldErrors.customer
+              ? 'border-red-500 dark:border-red-500'
+              : 'border-gray-300 dark:border-gray-600'"
+          />
+          <button v-if="customerSearch" @click="clearCustomerSearch" type="button" aria-label="Limpiar búsqueda"
+                  class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 p-1 sm:p-1.5 short:p-1 rounded-lg transition-colors">
+            <i class="ti ti-x text-base sm:text-xl short:text-base"></i>
+          </button>
+          <div v-if="showCustomerDropdown && filteredCustomers.length"
+              class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-40 sm:max-h-52 short:max-h-32 overflow-y-auto">
+            <div v-for="c in filteredCustomers" :key="c.id"
+                @mousedown.prevent="selectCustomer(c)"
+                class="px-2.5 sm:px-4 short:px-2.5 py-2 sm:py-3 short:py-1.5 text-sm sm:text-lg short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-2 sm:gap-3 short:gap-2 text-gray-800 dark:text-gray-200">
+              <i class="ti ti-user text-gray-400 dark:text-gray-500 flex-shrink-0 text-sm sm:text-lg short:text-sm"></i>
+              <span class="truncate">{{ c.name }}</span>
+              <span class="text-gray-400 dark:text-gray-500 text-xs sm:text-base short:text-xs flex items-center gap-1 flex-shrink-0" v-if="c.phone">
+                <i class="ti ti-phone text-xs sm:text-sm"></i>{{ c.phone }}
+              </span>
+              <span class="text-gray-400 dark:text-gray-500 text-xs sm:text-base short:text-xs flex items-center gap-1 flex-shrink-0 hidden sm:inline-flex" v-if="c.email">
+                <i class="ti ti-mail text-xs sm:text-sm"></i>{{ c.email }}
+              </span>
+            </div>
           </div>
         </div>
+
+        <button
+          v-if="showAddPerson"
+          type="button"
+          @click="$emit('add-person')"
+          class="flex-shrink-0 flex items-center justify-center gap-1.5 whitespace-nowrap px-3 sm:px-4 py-2.5 short:py-2 text-sm sm:text-lg short:text-sm font-medium rounded-lg border border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+        >
+          <i class="ti ti-plus"></i><span>Añadir persona</span>
+        </button>
       </div>
       <p v-if="selectedCustomer" class="text-xs sm:text-lg short:text-xs text-green-600 dark:text-green-400 mt-1 sm:mt-2 short:mt-1">
         <i class="ti ti-check"></i> Cliente ya existe en el registro: {{ selectedCustomer.name }}
@@ -185,6 +196,7 @@ export default {
   props: {
     sectionBadge: { type: [Number, String], default: 1 },
     sectionTitle: { type: String, default: 'Datos del cliente' },
+    showAddPerson: { type: Boolean, default: false },
     onPhoneBlur: { type: Function, required: true },
     clearPhone: { type: Function, required: true },
     clearEmail: { type: Function, required: true },
@@ -216,7 +228,7 @@ export default {
     confirmEmailChange: { type: Function, required: true },
     cancelEmailEdit: { type: Function, required: true }
   },
-  emits: ['update:customerSearch', 'update:customerPhone', 'update:customerEmail'],
+  emits: ['update:customerSearch', 'update:customerPhone', 'update:customerEmail', 'add-person'],
   methods: {
     onPhoneInput(event) {
       const filtered = event.target.value.replace(/\D/g, '');

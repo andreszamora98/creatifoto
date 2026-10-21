@@ -145,6 +145,7 @@ class ContentSnapshotService
             $map[$qp->id] = $order->orderPackages()->create($qp->only([
                 'package_id', 'school_id', 'package_name_snapshot', 'school_name_snapshot',
                 'price_snapshot', 'list_price_snapshot', 'discount_amount_snapshot',
+                'package_notes_snapshot',
             ]))->id;
         }
 
@@ -199,6 +200,7 @@ class ContentSnapshotService
             'price_snapshot' => $pkg->total_price,
             'list_price_snapshot' => $pkg->list_price,
             'discount_amount_snapshot' => $pkg->discount_amount ?? 0,
+            'package_notes_snapshot' => $pkg->package_notes,
         ]);
 
         foreach ($pkg->photoTypes as $pt) {

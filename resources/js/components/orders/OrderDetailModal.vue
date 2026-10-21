@@ -598,19 +598,19 @@ export default {
 
       const result = [];
 
-      const bgLabel = (bg) => {
-        if (!bg || bg === 'blanco') return '';
-        return ` · Fondo: ${bg}`;
-      };
-
       photos.filter(l => !l.order_package_id).forEach((l, idx) => {
+        const name = l.photo_type_name_snapshot || 'Tipo de foto';
+        const quantity = Number(l.quantity || 0);
         result.push({
           key: `pt-${l.id}-${idx}`,
-          label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity}${bgLabel(l.background)}`,
-          amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
+          name,
+          quantity,
+          label: `${name} x${quantity}`,
+          amount: Number(l.unit_price || 0) * quantity,
           unitPrice: Number(l.unit_price || 0),
-          quantity: Number(l.quantity || 0),
-          format: l.format
+          format: l.format,
+          background: l.background || null,
+          paper: l.paper_type_name_snapshot || null
         });
       });
 
@@ -620,24 +620,31 @@ export default {
         const children = [];
 
         childPhotos.forEach((l, idx) => {
-          const formatLabel = l.format === 'color' ? 'Color' : 'Blanco/negro';
+          const name = l.photo_type_name_snapshot || 'Tipo de foto';
+          const quantity = Number(l.quantity || 0);
           children.push({
             key: `pkg-${pkg.id}-pt-${l.id}-${idx}`,
-            label: `${l.photo_type_name_snapshot || 'Tipo de foto'} x${l.quantity} · ${formatLabel}${bgLabel(l.background)}`,
-            amount: Number(l.unit_price || 0) * Number(l.quantity || 0),
+            name,
+            quantity,
+            label: `${name} x${quantity}`,
+            amount: Number(l.unit_price || 0) * quantity,
             unitPrice: Number(l.unit_price || 0),
-            quantity: Number(l.quantity || 0),
-            format: l.format
+            format: l.format,
+            background: l.background || null,
+            paper: l.paper_type_name_snapshot || null
           });
         });
 
         childServices.forEach((s, idx) => {
+          const name = s.additional_service_name_snapshot || 'Servicio adicional';
+          const quantity = Number(s.quantity || 0);
           children.push({
             key: `pkg-${pkg.id}-svc-${s.id}-${idx}`,
-            label: `${s.additional_service_name_snapshot || 'Servicio adicional'} x${s.quantity}`,
-            amount: Number(s.price || 0) * Number(s.quantity || 0),
+            name,
+            quantity,
+            label: `${name} x${quantity}`,
+            amount: Number(s.price || 0) * quantity,
             unitPrice: Number(s.price || 0),
-            quantity: Number(s.quantity || 0),
             icon: 'ti ti-tool'
           });
         });
@@ -653,12 +660,15 @@ export default {
       });
 
       services.filter(s => !s.order_package_id).forEach((s, idx) => {
+        const name = s.additional_service_name_snapshot || 'Servicio adicional';
+        const quantity = Number(s.quantity || 0);
         result.push({
           key: `svc-${s.id}-${idx}`,
-          label: `${s.additional_service_name_snapshot || 'Servicio adicional'} x${s.quantity}`,
-          amount: Number(s.price || 0) * Number(s.quantity || 0),
+          name,
+          quantity,
+          label: `${name} x${quantity}`,
+          amount: Number(s.price || 0) * quantity,
           unitPrice: Number(s.price || 0),
-          quantity: Number(s.quantity || 0),
           icon: 'ti ti-tool'
         });
       });

@@ -14,43 +14,52 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-[1fr_auto] gap-x-1.5 sm:gap-x-3 short:gap-x-1.5 gap-y-1 items-end">
+    <div class="grid grid-cols-[1fr_auto] gap-x-1.5 sm:gap-x-3 short:gap-x-1.5 gap-y-1 items-start">
       <span></span>
       <span class="text-[10px] sm:text-sm short:text-[10px] font-medium text-gray-500 dark:text-gray-400 text-center whitespace-nowrap">Cantidad</span>
 
       <div class="relative min-w-0 sm:min-w-[10rem]" :data-photo-type-dropdown="editorId" @focusout="onFocusOut">
         <div
-          class="w-full text-sm sm:text-lg short:text-sm p-2 sm:p-3 short:p-1.5 rounded-lg border text-gray-800 dark:text-gray-200 flex items-center gap-1.5 sm:gap-2"
+          class="w-full text-sm sm:text-lg short:text-sm p-2 sm:p-3 short:p-1.5 rounded-lg border text-gray-800 dark:text-gray-200"
           :class="showError && !line.photo_type_id
             ? 'border-red-500 dark:border-red-500'
             : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'"
         >
-          <i class="ti ti-photo text-base sm:text-xl short:text-base text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
-          <input
-            :value="inputValue"
-            @focus="onOpen"
-            @input="onInput($event.target.value)"
-            @keydown.esc="onEsc"
-            @keydown.down.prevent="onMoveHighlight(1)"
-            @keydown.up.prevent="onMoveHighlight(-1)"
-            @keydown.enter.prevent="onSelectHighlighted"
-            type="text"
-            :placeholder="line.photo_type_id ? 'Buscar otro tipo...' : 'Buscar o seleccionar tipo...'"
-            class="flex-1 min-w-0 bg-transparent border-0 outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 truncate"
-            autocomplete="off"
-          >
-          <span v-if="line.photo_type_id && !isOpen" class="text-xs sm:text-sm short:text-xs font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
-            {{ displayPrice }}
-          </span>
-          <button
-            v-if="line.photo_type_id && !isOpen"
-            type="button"
-            @mousedown.prevent="onClear"
-            class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 flex-shrink-0 p-1 short:p-0.5 rounded-lg transition-colors"
-            title="Limpiar selección"
-          >
-            <i class="ti ti-x text-base sm:text-2xl short:text-base"></i>
-          </button>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            <div class="flex items-start gap-1.5 sm:gap-2 flex-1 min-w-0">
+              <i class="ti ti-photo text-base sm:text-xl short:text-base text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5"></i>
+              <textarea
+                ref="photoTypeInput"
+                :value="inputValue"
+                @focus="onOpen"
+                @input="onTextareaInput($event.target.value)"
+                @keydown.esc="onEsc"
+                @keydown.down.prevent="onMoveHighlight(1)"
+                @keydown.up.prevent="onMoveHighlight(-1)"
+                @keydown.enter.prevent="onSelectHighlighted"
+                rows="1"
+                :placeholder="line.photo_type_id ? 'Buscar otro tipo...' : 'Buscar o seleccionar tipo...'"
+                class="flex-1 min-w-0 bg-transparent border-0 outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 resize-none overflow-hidden break-words"
+                autocomplete="off"
+              ></textarea>
+            </div>
+            <div
+              v-if="line.photo_type_id && !isOpen"
+              class="flex items-center gap-1.5 justify-end sm:flex-shrink-0"
+            >
+              <span class="text-xs sm:text-sm short:text-xs font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                {{ displayPrice }}
+              </span>
+              <button
+                type="button"
+                @mousedown.prevent="onClear"
+                class="text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 flex-shrink-0 p-1 short:p-0.5 rounded-lg transition-colors"
+                title="Limpiar selección"
+              >
+                <i class="ti ti-x text-base sm:text-2xl short:text-base"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
         <transition name="dropdown">
@@ -283,7 +292,25 @@ export default {
       return fromCatalog?.name || current;
     }
   },
+  watch: {
+    inputValue() {
+      this.$nextTick(this.resizeTextarea);
+    }
+  },
+  mounted() {
+    this.$nextTick(this.resizeTextarea);
+  },
   methods: {
+    resizeTextarea() {
+      const el = this.$refs.photoTypeInput;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    },
+    onTextareaInput(value) {
+      this.onInput(value);
+      this.$nextTick(this.resizeTextarea);
+    },
     togglePaperDropdown() {
       this.paperDropdownOpen = !this.paperDropdownOpen;
     },

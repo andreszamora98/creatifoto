@@ -79,11 +79,13 @@
               :lines="packageLines"
               :packages="packages"
               :schools="schools"
+              :paper-types="paperTypes"
               :loading="loadingCatalogs"
               :show-errors="showErrors"
               :error="contentError || packageLinesError"
               title=""
               empty-hint="Sin paquetes escolares. Puedes dejarlo vacío si la orden lleva tipos de fotografía."
+              @view-package-details="openPackageDetails"
             />
           </div>
 
@@ -143,6 +145,12 @@
       <span class="text-sm sm:text-lg short:text-sm font-semibold text-blue-800 dark:text-blue-300">Total estimado</span>
       <span class="text-lg sm:text-2xl short:text-base font-bold text-blue-800 dark:text-blue-300">${{ estimatedTotal.toFixed(2) }}</span>
     </div>
+
+    <PackageDetailsModal
+      :show="showPackageDetailsModal"
+      :package="packageForDetails"
+      @close="closePackageDetails"
+    />
   </section>
 </template>
 
@@ -152,12 +160,13 @@ import PhotoTypeLinesEditor from '../photo-lines/PhotoTypeLinesEditor.vue';
 import PackageLinesEditor from '../PackageLinesEditor.vue';
 import AdditionalServiceLinesEditor from '../AdditionalServiceLinesEditor.vue';
 import NotesField from '../NotesField.vue';
+import PackageDetailsModal from '../../packages/PackageDetailsModal.vue';
 
 export default {
   name: 'OrderDetailsStep',
   components: {
     DeliveryDateTimeFields, PhotoTypeLinesEditor, PackageLinesEditor,
-    AdditionalServiceLinesEditor, NotesField
+    AdditionalServiceLinesEditor, NotesField, PackageDetailsModal
   },
   props: {
     sectionBadge: { type: [Number, String], default: 2 },
@@ -182,7 +191,11 @@ export default {
     validationTick: { type: Number, default: 0 }
   },
   data() {
-    return { activeTab: 'photos' };
+    return {
+      activeTab: 'photos',
+      showPackageDetailsModal: false,
+      packageForDetails: null
+    };
   },
   computed: {
     photoCount() {
@@ -288,6 +301,14 @@ export default {
       const el = root.querySelector('[data-error-anchor]');
       if (!el) return;
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+    openPackageDetails(pkg) {
+      this.packageForDetails = pkg;
+      this.showPackageDetailsModal = true;
+    },
+    closePackageDetails() {
+      this.showPackageDetailsModal = false;
+      this.packageForDetails = null;
     }
   }
 };

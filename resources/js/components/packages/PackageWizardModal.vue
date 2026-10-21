@@ -40,19 +40,19 @@
 
             <section v-else-if="currentStep === 2" key="step-2" class="space-y-3 sm:space-y-6 short:space-y-2">
               <div>
-                <PhotoTypeLinesEditor
-                  :lines="photoLines"
-                  :photo-types="photoTypes"
-                  :paper-types="paperTypes"
-                  :backgrounds="backgrounds"
-                  :loading="loadingCatalogs"
-                  :show-errors="showErrorsStep2"
-                  :error="photoLinesHasError"
-                  :error-message="photoLinesErrorMessage"
-                  title="Tipos de fotografía incluidos"
-                  icon="ti ti-camera"
-                  empty-hint="Agrega al menos un tipo de fotografía."
-                />
+                  <PhotoTypeLinesEditor
+                    :lines="photoLines"
+                    :photo-types="photoTypes"
+                    :paper-types="paperTypes"
+                    :backgrounds="backgrounds"
+                    :loading="loadingCatalogs"
+                    :show-errors="showErrorsStep2"
+                    :error="photoLinesHasError"
+                    :error-message="photoLinesErrorMessage"
+                    title="Tipos de fotografía incluidos"
+                    icon="ti ti-camera"
+                    empty-hint="Agrega al menos un tipo de fotografía."
+                  />
               </div>
 
               <div>
@@ -123,6 +123,26 @@
                   </div>
                 </div>
               </div>
+
+              <div class="space-y-2 sm:space-y-3 short:space-y-2">
+                <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Observaciones adicionales del paquete
+                </h5>
+
+                <textarea
+                  :value="form.package_notes || ''"
+                  @input="updateFeature('package_notes', $event.target.value)"
+                  v-blur-on-enter
+                  enterkeyhint="done"
+                  rows="3"
+                  maxlength="2000"
+                  placeholder="Ej. Incluye sesión extra, retoque digital, entrega en USB..."
+                  class="w-full text-sm sm:text-base short:text-sm p-2.5 sm:p-3 short:p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-y min-h-[5rem] sm:min-h-[6rem] short:min-h-[4rem]"
+                ></textarea>
+                <p class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500">
+                  Opcional. Solo se edita aquí; viaja como snapshot a las órdenes y cotizaciones donde se use este paquete.
+                </p>
+              </div>
             </section>
 
             <ChargePaymentLayout v-else key="step-3">
@@ -135,6 +155,7 @@
                   :services="summaryServices"
                   :women-text="form.women_features_text"
                   :men-text="form.men_features_text"
+                  :package-notes="form.package_notes"
                 />
               </template>
 
@@ -232,7 +253,8 @@ const emptyForm = () => ({
   school_id: null,
   name: '',
   women_features_text: '',
-  men_features_text: ''
+  men_features_text: '',
+  package_notes: ''
 });
 
 const emptyPricing = () => ({
@@ -521,6 +543,7 @@ export default {
           name: String(this.form.name || '').trim(),
           women_features_text: this.form.women_features_text,
           men_features_text: this.form.men_features_text,
+          package_notes: (this.form.package_notes || '').trim() || null,
           photo_types: this.activeLines,
           additional_services: this.activeServices,
           list_price: this.subtotal,

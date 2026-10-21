@@ -9,6 +9,15 @@
       <p class="text-sm sm:text-base short:text-xs text-gray-500 dark:text-gray-400 break-words">{{ title }}</p>
     </div>
 
+    <div v-if="hasNotes">
+      <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 sm:mb-2 short:mb-1">
+        Observaciones del paquete
+      </h5>
+      <div class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 sm:px-4 short:px-2.5 py-2 sm:py-3 short:py-2">
+        <p class="text-xs sm:text-sm short:text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line max-h-32 overflow-y-auto">{{ packageNotes }}</p>
+      </div>
+    </div>
+
     <div>
       <h5 class="text-xs sm:text-sm short:text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5 sm:mb-2 short:mb-1">
         Tipos de fotografía
@@ -110,12 +119,16 @@ export default {
     lines: { type: Array, default: () => [] },
     services: { type: Array, default: () => [] },
     womenText: { type: String, default: '' },
-    menText: { type: String, default: '' }
+    menText: { type: String, default: '' },
+    packageNotes: { type: String, default: '' }
   },
   computed: {
     title() {
       const num = this.packageNumber ? 'Paquete ' + String(this.packageNumber).padStart(2, '0') : '';
       return [num, (this.name || '').trim()].filter(Boolean).join(' · ');
+    },
+    hasNotes() {
+      return (this.packageNotes || '').trim() !== '';
     }
   }
 };

@@ -24,6 +24,7 @@ class PackageService
                 'discount_amount' => $this->resolveDiscountAmount($listPrice, $totalPrice),
                 'women_features' => $this->buildFeatures($data['women_features_text'] ?? null),
                 'men_features' => $this->buildFeatures($data['men_features_text'] ?? null),
+                'package_notes' => $this->normalizeNotes($data['package_notes'] ?? null),
             ]);
 
             $this->syncPhotoTypes($package, $data['photo_types'] ?? []);
@@ -46,6 +47,7 @@ class PackageService
                 'discount_amount' => $this->resolveDiscountAmount($listPrice, $totalPrice),
                 'women_features' => $this->buildFeatures($data['women_features_text'] ?? null),
                 'men_features' => $this->buildFeatures($data['men_features_text'] ?? null),
+                'package_notes' => $this->normalizeNotes($data['package_notes'] ?? null),
             ]);
 
             $this->syncPhotoTypes($package, $data['photo_types'] ?? []);
@@ -85,6 +87,13 @@ class PackageService
         $trimmed = trim((string) $text);
 
         return $trimmed === '' ? null : ['text' => $trimmed];
+    }
+
+    protected function normalizeNotes(?string $value): ?string
+    {
+        $trimmed = $value !== null ? trim($value) : '';
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     protected function syncPhotoTypes(Package $package, array $photoTypes): void

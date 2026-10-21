@@ -22,6 +22,7 @@ class Package extends Model
         'discount_amount',
         'women_features',
         'men_features',
+        'package_notes',
     ];
 
     protected $casts = [

@@ -17,6 +17,7 @@ class QuotePackage extends Model
         'price_snapshot',
         'list_price_snapshot',
         'discount_amount_snapshot',
+        'package_notes_snapshot',
     ];
 
     protected $casts = [

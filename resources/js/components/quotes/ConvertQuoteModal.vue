@@ -33,6 +33,12 @@
             <ChargePaymentLayout v-else key="step-2">
               <template #summary>
                 <div class="space-y-3">
+                  <ConvertChargeSummary
+                    :quote="quote"
+                    :estimated-total="estimatedTotal"
+                    :override-discount="overrideDiscount"
+                  />
+
                   <DiscountPanel
                     :type="discount_type"
                     :value="discount_value"
@@ -42,12 +48,6 @@
                     @update:type="discount_type = $event"
                     @update:value="discount_value = $event"
                     @update:reason="discount_reason = $event"
-                  />
-
-                  <ConvertChargeSummary
-                    :quote="quote"
-                    :estimated-total="estimatedTotal"
-                    :override-discount="overrideDiscount"
                   />
                 </div>
               </template>

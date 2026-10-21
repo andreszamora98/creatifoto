@@ -56,31 +56,32 @@
             <h5 class="text-xs sm:text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 sm:mb-3">
               Resumen de la orden
             </h5>
-            <DiscountPanel
-              :type="discount_type"
-              :value="discount_value"
-              :reason="discount_reason"
-              :show-errors="submittingAttempted"
-              :error="fieldErrors.discount_value"
-              @update:type="discount_type = $event"
-              @update:value="discount_value = $event"
-              @update:reason="discount_reason = $event"
+            <OrderEditChargeSummary
+              :photo-lines="photoLines"
+              :photo-types="photoTypes"
+              :paper-types="paperTypes"
+              :package-lines="packageLines"
+              :packages="packages"
+              :service-lines="serviceLines"
+              :additional-services="additionalServices"
+              :estimated-total="estimatedTotal"
+              :initial-total="initialTotal"
+              :paid-total="paidTotal"
+              :discount-type="discount_type"
+              :discount-value="discount_value"
+              :discount-reason="discount_reason"
             />
 
             <div class="mt-3">
-              <OrderEditChargeSummary
-                :photo-lines="photoLines"
-                :photo-types="photoTypes"
-                :package-lines="packageLines"
-                :packages="packages"
-                :service-lines="serviceLines"
-                :additional-services="additionalServices"
-                :estimated-total="estimatedTotal"
-                :initial-total="initialTotal"
-                :paid-total="paidTotal"
-                :discount-type="discount_type"
-                :discount-value="discount_value"
-                :discount-reason="discount_reason"
+              <DiscountPanel
+                :type="discount_type"
+                :value="discount_value"
+                :reason="discount_reason"
+                :show-errors="submittingAttempted"
+                :error="fieldErrors.discount_value"
+                @update:type="discount_type = $event"
+                @update:value="discount_value = $event"
+                @update:reason="discount_reason = $event"
               />
             </div>
           </div>

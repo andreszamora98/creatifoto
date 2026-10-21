@@ -27,14 +27,22 @@
             </button>
           </div>
 
-          <div
-            class="grid gap-3 sm:gap-5 short:gap-3"
-            :class="hasContentColumn(line) ? 'grid-cols-1 md:grid-cols-2 short:grid-cols-2' : 'grid-cols-1'"
-          >
+          <div class="grid grid-cols-1 md:grid-cols-2 short:grid-cols-2 gap-3 sm:gap-5 short:gap-3">
             <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-2.5 sm:p-5 short:p-2 space-y-2 sm:space-y-3 short:space-y-2">
-              <p class="text-xs sm:text-base short:text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200 mb-1 sm:mb-2 short:mb-1">
-                Información del paquete
-              </p>
+              <div class="flex items-center justify-between gap-2 mb-1 sm:mb-2 short:mb-1">
+                <p class="text-xs sm:text-base short:text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200 truncate">
+                  Información del paquete
+                </p>
+                <button
+                  v-if="line.package_id"
+                  type="button"
+                  @click="emitViewDetails(line)"
+                  class="flex-shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-lg text-xs sm:text-sm flex items-center gap-1 transition-colors"
+                >
+                  <i class="ti ti-info-circle text-sm sm:text-base"></i>
+                  <span class="whitespace-nowrap">Ver características</span>
+                </button>
+              </div>
 
               <div>
                 <label class="text-sm sm:text-base short:text-sm font-medium block mb-1 short:mb-0.5 text-gray-500 dark:text-gray-400">Escuela</label>
@@ -160,21 +168,28 @@
               </div>
             </div>
 
-            <div v-if="hasContentColumn(line)">
-              <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-2.5 sm:p-5 short:p-2 space-y-1.5 sm:space-y-2 short:space-y-1.5">
-                <p class="text-xs sm:text-base short:text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200 mb-1 sm:mb-2 short:mb-1">
-                  Contenido del paquete
-                </p>
+            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-2.5 sm:p-5 short:p-2 space-y-1.5 sm:space-y-2 short:space-y-1.5">
+              <p class="text-xs sm:text-base short:text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-200 mb-1 sm:mb-2 short:mb-1">
+                Contenido del paquete
+              </p>
 
+              <p v-if="!line.package_id" class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 italic">
+                Selecciona un paquete para ver su contenido.
+              </p>
+              <p v-else-if="packageContentFor(line).length === 0" class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 italic">
+                Este paquete no tiene conceptos registrados.
+              </p>
+
+              <template v-else>
                 <div
                   v-for="cl in packageContentLines(line)"
                   :key="cl.key"
-                  class="flex justify-between items-center text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
+                  class="flex justify-between items-start text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
                 >
-                  <span class="flex items-center gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
+                  <span class="flex items-start gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
                     <span
                       v-if="cl.format"
-                      class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
+                      class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center mt-0.5"
                       :class="cl.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : ''"
                     >
                       <template v-if="cl.format === 'color'">
@@ -194,26 +209,31 @@
                     </span>
                     <span
                       v-else
-                      class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700"
+                      class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 mt-0.5"
                     >
                       <i :class="[cl.icon, 'text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400']"></i>
                     </span>
 
-                    <span class="flex flex-col min-w-0">
-                      <span class="truncate">{{ cl.label }}</span>
-                      <span class="text-xs sm:text-sm short:text-[11px] text-gray-400 dark:text-gray-500 truncate">
-                        {{ formatCurrency(cl.unitPrice) }} c/u
+                    <span class="flex flex-col min-w-0 flex-1">
+                      <span class="break-words">
+                        {{ cl.name }}<span v-if="cl.quantity" class="text-blue-600 dark:text-blue-400 font-semibold ml-1">x{{ cl.quantity }}</span>
+                      </span>
+                      <span
+                        v-if="cl.features.length"
+                        class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] sm:text-xs short:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5"
+                      >
+                        <span v-for="(f, i) in cl.features" :key="i">{{ f }}</span>
                       </span>
                     </span>
                   </span>
-                  <span class="font-medium whitespace-nowrap ml-2">${{ cl.amount.toFixed(2) }}</span>
+                  <span class="font-medium whitespace-nowrap ml-2 flex-shrink-0">${{ cl.amount.toFixed(2) }}</span>
                 </div>
 
                 <div class="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 short:pt-2 flex justify-between items-center gap-2">
                   <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">Suma de referencia</span>
                   <span class="text-lg sm:text-2xl short:text-lg font-bold text-blue-600 dark:text-blue-400">${{ packageReferenceTotal(line).toFixed(2) }}</span>
                 </div>
-              </div>
+              </template>
             </div>
           </div>
         </div>
@@ -234,6 +254,7 @@ export default {
     lines: { type: Array, required: true },
     packages: { type: Array, default: () => [] },
     schools: { type: Array, default: () => [] },
+    paperTypes: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
     showErrors: { type: Boolean, default: false },
     error: { type: Boolean, default: false },
@@ -245,6 +266,7 @@ export default {
     addLabel: { type: String, default: 'Agregar otro paquete' },
     addLabelFirst: { type: String, default: 'Agregar paquete' }
   },
+  emits: ['view-package-details'],
   data() {
     return {
       editorId: 'pke-' + Math.random().toString(36).slice(2),
@@ -304,9 +326,6 @@ export default {
       }
       return name || 'Paquete';
     },
-    packagePrice(id) {
-      return Number(this.packageById(id)?.total_price || 0);
-    },
     packagePriceForLine(line) {
       const pkg = this.packageById(line.package_id);
       if (pkg) return Number(pkg.total_price || 0);
@@ -328,9 +347,6 @@ export default {
       return line.package_id ? 'Buscar otro paquete...' : 'Buscar o seleccionar paquete...';
     },
 
-    hasContentColumn(line) {
-      return !!line.package_id && this.packageContentFor(line).length > 0;
-    },
     packageContentFor(line) {
       const pkg = this.packageById(line.package_id);
       if (!pkg) return [];
@@ -339,12 +355,16 @@ export default {
         ? pkg.photo_types.map(pt => {
             const quantity = Number(pt.pivot?.quantity || 0);
             const unitPrice = Number(pt.pivot?.unit_price ?? pt.base_price ?? 0);
+            const paperId = pt.pivot?.paper_type_id;
+            const paper = paperId ? this.paperTypes.find(p => Number(p.id) === Number(paperId)) : null;
             return {
               type: 'photo',
               id: pt.id,
               name: pt.name || 'Tipo de foto',
               quantity,
               format: pt.pivot?.format || 'color',
+              background: pt.pivot?.background || null,
+              paper_name: paper?.name || null,
               unit_price: unitPrice,
               subtotal: unitPrice * quantity
             };
@@ -370,14 +390,30 @@ export default {
       return [...photos, ...services];
     },
     packageContentLines(line) {
-      return this.packageContentFor(line).map((item, idx) => ({
-        key: `pkg-${line.package_id}-${item.type}-${item.id}-${idx}`,
-        label: `${item.name} x${item.quantity}`,
-        format: item.format,
-        icon: item.icon,
-        unitPrice: item.unit_price,
-        amount: item.subtotal
-      }));
+      return this.packageContentFor(line).map((item, idx) => {
+        const features = [];
+        features.push('• ' + this.formatCurrency(item.unit_price) + ' c/u');
+        if (item.type === 'photo') {
+          features.push('• ' + (item.format === 'color' ? 'Color' : 'B/N'));
+          const rawBg = item.background;
+          const bg = (rawBg !== undefined && rawBg !== null && String(rawBg).trim() !== '')
+            ? String(rawBg).trim().toLowerCase()
+            : 'blanco';
+          features.push('• Fondo ' + bg);
+          if (item.paper_name) features.push('• Papel: ' + item.paper_name);
+        }
+
+        return {
+          key: `pkg-${line.package_id}-${item.type}-${item.id}-${idx}`,
+          name: item.name,
+          quantity: item.quantity,
+          format: item.format,
+          icon: item.icon,
+          unitPrice: item.unit_price,
+          amount: item.subtotal,
+          features
+        };
+      });
     },
     packageReferenceTotal(line) {
       return this.packageContentFor(line).reduce((sum, l) => sum + l.subtotal, 0);
@@ -385,6 +421,12 @@ export default {
     formatCurrency(value) {
       const num = Number(value || 0);
       return '$' + num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    },
+
+    emitViewDetails(line) {
+      const pkg = this.packageById(line.package_id);
+      if (!pkg) return;
+      this.$emit('view-package-details', pkg);
     },
 
     isSchoolOpen(line) {

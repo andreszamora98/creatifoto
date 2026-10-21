@@ -27,6 +27,7 @@
             <div v-if="currentStep === 1" key="step-1" class="space-y-4 sm:space-y-6">
               <CustomerStep
                 section-title=""
+                show-add-person
                 :on-phone-blur="onPhoneBlur"
                 :clear-phone="clearPhone"
                 :clear-email="clearEmail"
@@ -60,10 +61,13 @@
                 @update:customerSearch="customerSearch = $event"
                 @update:customerPhone="customerPhone = $event"
                 @update:customerEmail="customerEmail = $event"
+                @add-person="pickupAddTick++"
               >
                 <template #pickups>
                   <PickupPersonsManager
                     v-model="pickup_persons"
+                    hide-add-button
+                    :add-tick="pickupAddTick"
                     :customers="customers"
                     :primary-customer-id="selectedCustomer?.id ?? null"
                     :primary-customer-name="selectedCustomer?.name ?? customerSearch"
@@ -98,6 +102,19 @@
             <ChargePaymentLayout v-else key="step-3">
               <template #summary>
                 <div class="space-y-3">
+                  <OrderChargeSummary
+                    :active-lines="activeLines"
+                    :photo-types="photoTypes"
+                    :paper-types="paperTypes"
+                    :selected-packages="selectedPackagesData"
+                    :selected-services="selectedServices"
+                    :additional-services="additionalServices"
+                    :estimated-total="estimatedTotal"
+                    :discount-type="discount_type"
+                    :discount-value="discount_value"
+                    :discount-reason="discount_reason"
+                  />
+
                   <DiscountPanel
                     :type="discount_type"
                     :value="discount_value"
@@ -107,18 +124,6 @@
                     @update:type="discount_type = $event"
                     @update:value="discount_value = $event"
                     @update:reason="discount_reason = $event"
-                  />
-
-                  <OrderChargeSummary
-                    :active-lines="activeLines"
-                    :photo-types="photoTypes"
-                    :selected-packages="selectedPackagesData"
-                    :selected-services="selectedServices"
-                    :additional-services="additionalServices"
-                    :estimated-total="estimatedTotal"
-                    :discount-type="discount_type"
-                    :discount-value="discount_value"
-                    :discount-reason="discount_reason"
                   />
                 </div>
               </template>
@@ -233,6 +238,7 @@ export default {
   emits: ['close', 'created', 'notify'],
   data() {
     return {
+      pickupAddTick: 0,
       payments: [{ amount: null, payment_method: 'tarjeta' }],
       form: {
         estimated_delivery_date: '',
@@ -245,7 +251,7 @@ export default {
     stepLabels() {
       return [
         { label: 'Datos del cliente' },
-        { label: 'Detalles de la orden' },
+        { label: 'Armado de la orden' },
         { label: 'Cobro y pago' }
       ];
     },
