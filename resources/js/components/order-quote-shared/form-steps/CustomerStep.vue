@@ -6,7 +6,7 @@
     </h4>
 
     <div>
-      <label class="form-label text-sm sm:text-lg short:text-sm font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">Cliente <span class="text-red-500">*</span></label>
+      <label class="form-label text-sm sm:text-lg short:text-sm font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">Nombre del cliente <span class="text-red-500">*</span></label>
       <div class="flex flex-col sm:flex-row sm:items-stretch gap-2 sm:gap-3 short:gap-2">
         <div class="relative flex-1 min-w-0">
           <i class="ti ti-user absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-base sm:text-xl short:text-sm"></i>

@@ -80,14 +80,14 @@
                     </div>
                   </div>
 
-                  <div class="rounded-lg p-3 sm:p-5 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600" style="border-left-width: 4px;">
-                    <h4 class="font-semibold mb-2 sm:mb-3 text-base sm:text-lg flex items-center text-blue-800 dark:text-blue-300">
+                  <div class="rounded-lg p-3 sm:p-5 bg-emerald-50/60 dark:bg-emerald-900/10 border border-l-4 border-emerald-200 dark:border-emerald-900/40 border-l-emerald-300 dark:border-l-emerald-500/60 shadow-sm">
+                    <h4 class="font-semibold mb-2 sm:mb-3 text-base sm:text-lg flex items-center text-emerald-700 dark:text-emerald-300">
                       <i class="ti ti-school mr-2 text-lg sm:text-xl"></i>Escuela
                     </h4>
                     <div class="space-y-1 sm:space-y-2 text-sm sm:text-base">
                       <div v-for="row in schoolRows" :key="row.label" class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
-                        <span class="font-medium text-blue-800 dark:text-blue-300 flex-shrink-0">{{ row.label }}:</span>
-                        <span class="font-bold text-blue-800 dark:text-blue-300 text-right ml-2 min-w-0 break-words">{{ row.value }}</span>
+                        <span class="font-medium text-emerald-700 dark:text-emerald-300 flex-shrink-0">{{ row.label }}:</span>
+                        <span class="font-bold text-emerald-700 dark:text-emerald-300 text-right ml-2 min-w-0 break-words">{{ row.value }}</span>
                       </div>
                     </div>
                   </div>
@@ -98,8 +98,12 @@
                     <i class="ti ti-list-details mr-2 text-lg sm:text-xl"></i>Características
                   </h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                    <div v-for="tab in featureTabs" :key="tab.key" class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-                      <p class="text-sm sm:text-base font-semibold text-gray-600 dark:text-gray-400 mb-1.5 flex items-center">
+                    <div
+                      v-for="tab in featureTabs"
+                      :key="tab.key"
+                      :class="['rounded-lg p-3 border border-l-4 shadow-sm', featureTheme(tab.key).card]"
+                    >
+                      <p :class="['text-sm sm:text-base font-semibold mb-1.5 flex items-center', featureTheme(tab.key).title]">
                         <i :class="['ti', tab.icon, 'mr-1.5 text-lg']"></i>{{ tab.label }}
                       </p>
                       <p v-if="featureText(tab.key)" class="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-wrap break-words">{{ featureText(tab.key) }}</p>
@@ -263,13 +267,13 @@
                       </button>
                     </div>
 
-                    <div class="relative bg-gray-50 dark:bg-gray-700 rounded-b-lg lg:rounded-tr-lg p-2 sm:p-3 transition-none">
+                    <div :class="['relative rounded-b-lg lg:rounded-tr-lg p-2 sm:p-3 transition-none', featureTheme(featureTab).panel]">
                       <div
                         v-show="featureTab === 'men'"
                         class="absolute top-0 left-0 w-2 h-2 bg-gray-200 dark:bg-gray-800 pointer-events-none"
                         aria-hidden="true"
                       >
-                        <div class="w-full h-full rounded-tl-lg bg-gray-50 dark:bg-gray-700"></div>
+                        <div :class="['w-full h-full rounded-tl-lg', featureTheme('men').panel]"></div>
                       </div>
 
                       <div v-show="featureTab === 'women'" role="tabpanel">
@@ -278,7 +282,7 @@
                           @input="updateFeature('women_features_text', $event.target.value)"
                           rows="4"
                           placeholder="Describe las características incluidas para este grupo..."
-                          class="w-full text-sm sm:text-base p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-y min-h-[5rem] sm:min-h-[7rem]"
+                          :class="['w-full text-sm sm:text-base p-2.5 sm:p-3 rounded-lg border bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 resize-y min-h-[5rem] sm:min-h-[7rem]', featureTheme('women').textarea]"
                         ></textarea>
                       </div>
                       <div v-show="featureTab === 'men'" role="tabpanel">
@@ -287,7 +291,7 @@
                           @input="updateFeature('men_features_text', $event.target.value)"
                           rows="4"
                           placeholder="Describe las características incluidas para este grupo..."
-                          class="w-full text-sm sm:text-base p-2.5 sm:p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-y min-h-[5rem] sm:min-h-[7rem]"
+                          :class="['w-full text-sm sm:text-base p-2.5 sm:p-3 rounded-lg border bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 resize-y min-h-[5rem] sm:min-h-[7rem]', featureTheme('men').textarea]"
                         ></textarea>
                       </div>
                     </div>
@@ -341,6 +345,23 @@ import AdditionalServiceLinesEditor from '../order-quote-shared/AdditionalServic
 const FIELD_BASE =
   'form-control form-control-sm w-full text-sm sm:text-lg p-2.5 sm:p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 ' +
   'text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+
+const FEATURE_THEMES = {
+  women: {
+    card: 'bg-pink-50/60 dark:bg-pink-900/10 border-pink-200 dark:border-pink-900/40 border-l-pink-300 dark:border-l-pink-500/60',
+    title: 'text-pink-700 dark:text-pink-300',
+    panel: 'bg-pink-50 dark:bg-pink-900/20',
+    tabActive: 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-300 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-pink-50 dark:after:bg-pink-900/20',
+    textarea: 'border-pink-200 dark:border-pink-900/40 focus:ring-pink-300 dark:focus:ring-pink-500/60'
+  },
+  men: {
+    card: 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900/40 border-l-blue-300 dark:border-l-blue-500/60',
+    title: 'text-blue-700 dark:text-blue-300',
+    panel: 'bg-blue-50 dark:bg-blue-900/20',
+    tabActive: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-blue-50 dark:after:bg-blue-900/20',
+    textarea: 'border-blue-200 dark:border-blue-900/40 focus:ring-blue-300 dark:focus:ring-blue-500/60'
+  }
+};
 
 const pad = (n, len = 2) => String(n ?? '').padStart(len, '0');
 
@@ -521,13 +542,16 @@ export default {
       const text = key === 'women' ? this.form.women_features_text : this.form.men_features_text;
       return String(text || '').trim();
     },
+    featureTheme(key) {
+      return FEATURE_THEMES[key] || FEATURE_THEMES.women;
+    },
     featureTabClasses(tab, index) {
       const isActive = this.featureTab === tab.key;
       const divider = index > 0
         ? 'before:absolute before:left-0 before:top-3 before:bottom-3 before:w-px before:bg-gray-300 dark:before:bg-gray-600'
         : '';
       const stateClasses = isActive
-        ? 'bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gray-50 dark:after:bg-gray-700'
+        ? this.featureTheme(tab.key).tabActive
         : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300';
       return [divider, stateClasses];
     },
