@@ -39,6 +39,7 @@
       name-label="Nombre del servicio"
       name-placeholder="Ej. Retoque digital"
       price-label="Precio por defecto"
+      price-optional
       show-base-quantity
       base-quantity-label="Cantidad por defecto"
       :submitting="submitting"

@@ -18,7 +18,9 @@
 
         <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3 sm:space-y-4 short:space-y-2">
           <div>
-            <label class="text-sm sm:text-base short:text-xs font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">{{ nameLabel }} <span class="text-red-500">*</span></label>
+            <label class="text-sm sm:text-base short:text-xs font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">
+              {{ nameLabel }} <span class="text-red-500">*</span>
+            </label>
             <input
               ref="nameInput"
               :value="name"
@@ -38,12 +40,18 @@
               class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 short:p-2 rounded-lg border w-full bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
               :class="showErrors && !name.trim() ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
             >
-            <p v-if="showErrors && !name.trim()" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">Campo obligatorio*</p>
+            <p v-if="showErrors && !name.trim()" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
+              Campo obligatorio*
+            </p>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 short:gap-2">
             <div>
-              <label class="text-sm sm:text-base short:text-xs font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">{{ priceLabel }} <span class="text-red-500">*</span></label>
+              <label class="text-sm sm:text-base short:text-xs font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">
+                {{ priceLabel }}
+                <span v-if="!priceOptional" class="text-red-500">*</span>
+                <span v-else class="text-xs font-normal text-gray-400 dark:text-gray-500">(opcional)</span>
+              </label>
               <div class="relative">
                 <span class="absolute left-2.5 sm:left-3 short:left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm short:text-xs pointer-events-none">$</span>
                 <input
@@ -58,16 +66,20 @@
                   inputmode="decimal"
                   v-blur-on-enter
                   enterkeyhint="next"
-                  placeholder="0.00"
+                  :placeholder="priceOptional ? '0.00' : '0.00'"
                   class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 short:p-2 pl-7 sm:pl-8 short:pl-6 rounded-lg border w-full bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                  :class="showErrors && (price === null || price < 0) ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
+                  :class="showErrors && !isPriceValid ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
                 >
               </div>
-              <p v-if="showErrors && (price === null || price < 0)" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">Campo obligatorio*</p>
+              <p v-if="showErrors && !isPriceValid" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
+                {{ priceErrorMessage }}
+              </p>
             </div>
 
             <div v-if="showBaseQuantity">
-              <label class="text-sm sm:text-base short:text-xs font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">{{ baseQuantityLabel }} <span class="text-red-500">*</span></label>
+              <label class="text-sm sm:text-base short:text-xs font-medium block mb-1.5 sm:mb-2 short:mb-1 text-gray-700 dark:text-gray-300">
+                {{ baseQuantityLabel }} <span class="text-red-500">*</span>
+              </label>
               <input
                 ref="quantityInput"
                 :value="quantityText"
@@ -84,7 +96,9 @@
                 class="form-control text-sm sm:text-base short:text-sm p-2.5 sm:p-3 short:p-2 rounded-lg border w-full bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                 :class="showErrors && (baseQuantity === null || baseQuantity < 1) ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'"
               >
-              <p v-if="showErrors && (baseQuantity === null || baseQuantity < 1)" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">Campo obligatorio*</p>
+              <p v-if="showErrors && (baseQuantity === null || baseQuantity < 1)" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
+                Campo obligatorio*
+              </p>
             </div>
           </div>
         </div>
@@ -130,6 +144,7 @@ export default {
     nameLabel: { type: String, default: 'Nombre' },
     namePlaceholder: { type: String, default: '' },
     priceLabel: { type: String, default: 'Precio' },
+    priceOptional: { type: Boolean, default: false },
     submitting: { type: Boolean, default: false },
     initialName: { type: String, default: '' },
     initialPrice: { type: [Number, null], default: null },
@@ -153,9 +168,21 @@ export default {
     baseQuantity() {
       return parseNumber(this.quantityText);
     },
+    isPriceValid() {
+      const p = this.price;
+      if (p !== null && p < 0) return false;
+      if (!this.priceOptional && p === null) return false;
+      return true;
+    },
+    priceErrorMessage() {
+      const p = this.price;
+      if (p !== null && p < 0) return 'Debe ser 0 o mayor';
+      if (!this.priceOptional && p === null) return 'Campo obligatorio*';
+      return '';
+    },
     isValid() {
       if (!this.name.trim()) return false;
-      if (this.price === null || this.price < 0) return false;
+      if (!this.isPriceValid) return false;
       if (this.showBaseQuantity && (this.baseQuantity === null || this.baseQuantity < 1)) return false;
       return true;
     },
@@ -202,6 +229,7 @@ export default {
       if (this.submitting || !this.canSubmit) return;
       const payload = { name: this.name.trim(), price: this.price };
       if (this.showBaseQuantity) payload.baseQuantity = this.baseQuantity;
+      if (this.priceOptional && payload.price === null) payload.price = 0;
       this.$emit('save', payload);
     }
   }

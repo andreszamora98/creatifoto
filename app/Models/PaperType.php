@@ -14,13 +14,14 @@ class PaperType extends Model
     protected $fillable = [
         'name',
         'extra_price',
+        'is_active',
     ];
 
     protected $casts = [
         'extra_price' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
-    /** Líneas históricas que usan este papel (paper_type_id es restrictOnDelete). */
     public function orderPhotoTypes(): HasMany
     {
         return $this->hasMany(OrderPhotoType::class);

@@ -11,7 +11,7 @@
           <!-- Encabezado -->
           <div class="relative p-4 sm:p-5 short:p-3 pr-14 sm:pr-16 short:pr-12 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
             <h3 class="text-lg sm:text-2xl short:text-base font-semibold text-gray-800 dark:text-gray-200 break-words">
-              <i class="ti ti-info-circle mr-2"></i>Detalles del paquete:<span v-if="packageName"> <span class="ml-1 text-blue-600 dark:text-blue-400 italic">{{ packageName }}</span></span>
+              <i class="ti ti-info-circle mr-2"></i>Detalles del paquete:<span v-if="packageName"> <span class="ml-1 text-amber-600 dark:text-amber-400 italic">{{ packageName }}</span></span>
             </h3>
             <p v-if="schoolName" class="text-sm sm:text-base short:text-xs text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 break-words">
               {{ schoolName }}

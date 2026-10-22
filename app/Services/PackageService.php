@@ -131,10 +131,10 @@ class PackageService
         $package->additionalServices()->sync($syncData);
     }
 
-    protected function normalizeBackground(?string $value): string
+    protected function normalizeBackground(?string $value): ?string
     {
         $trimmed = $value !== null ? trim($value) : '';
 
-        return $trimmed === '' ? 'blanco' : $trimmed;
+        return $trimmed === '' ? null : $trimmed;
     }
 }

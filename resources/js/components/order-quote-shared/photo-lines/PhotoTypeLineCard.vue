@@ -155,34 +155,41 @@
         <transition name="dropdown">
           <div v-if="paperDropdownOpen" class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
             <div class="max-h-48 sm:max-h-56 short:max-h-32 overflow-y-auto">
-              <button
-                @mousedown.prevent="selectPaper(null)"
-                class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
-                :class="!line.paper_type_id ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
-              >
-                <i v-if="!line.paper_type_id" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
-                <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
-                <span class="truncate">Papel (opcional)</span>
-              </button>
-              <button
-                v-if="line.paper_type_id && !paperTypes.some(p => p.id === line.paper_type_id)"
-                @mousedown.prevent="selectPaper(line.paper_type_id)"
-                class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm bg-blue-50 dark:bg-blue-900/20 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
-              >
-                <i class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
-                <span class="truncate">{{ line.paper_type_name_snapshot || 'Papel eliminado' }}</span>
-              </button>
-              <button
-                v-for="p in paperTypes"
-                :key="p.id"
-                @mousedown.prevent="selectPaper(p.id)"
-                class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
-                :class="p.id === line.paper_type_id ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
-              >
-                <i v-if="p.id === line.paper_type_id" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
-                <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
-                <span class="truncate">{{ p.name }}</span>
-              </button>
+              <template v-if="paperTypes.length === 0">
+                <p class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 text-center py-2 sm:py-3 px-2">
+                  Sin selección
+                </p>
+              </template>
+              <template v-else>
+                <button
+                  @mousedown.prevent="selectPaper(null)"
+                  class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+                  :class="!line.paper_type_id ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+                >
+                  <i v-if="!line.paper_type_id" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                  <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
+                  <span class="truncate">Sin papel</span>
+                </button>
+                <button
+                  v-if="line.paper_type_id && !paperTypes.some(p => p.id === line.paper_type_id)"
+                  @mousedown.prevent="selectPaper(line.paper_type_id)"
+                  class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm bg-blue-50 dark:bg-blue-900/20 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+                >
+                  <i class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                  <span class="truncate">{{ line.paper_type_name_snapshot || 'Papel eliminado' }}</span>
+                </button>
+                <button
+                  v-for="p in paperTypes"
+                  :key="p.id"
+                  @mousedown.prevent="selectPaper(p.id)"
+                  class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+                  :class="p.id === line.paper_type_id ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+                >
+                  <i v-if="p.id === line.paper_type_id" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                  <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
+                  <span class="truncate">{{ p.name }}</span>
+                </button>
+              </template>
             </div>
           </div>
         </transition>
@@ -202,25 +209,41 @@
         <transition name="dropdown">
           <div v-if="backgroundDropdownOpen" class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
             <div class="max-h-48 sm:max-h-56 short:max-h-32 overflow-y-auto">
-              <button
-                v-if="line.background && !backgrounds.some(b => (b.name || '').toLowerCase().trim() === (line.background || '').toLowerCase().trim())"
-                @mousedown.prevent="selectBackground(line.background)"
-                class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm bg-blue-50 dark:bg-blue-900/20 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
-              >
-                <i class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
-                <span class="truncate">{{ line.background }} (actual)</span>
-              </button>
-              <button
-                v-for="bg in backgrounds"
-                :key="bg.id"
-                @mousedown.prevent="selectBackground(bg.name)"
-                class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
-                :class="(bg.name || '').toLowerCase().trim() === (line.background || '').toLowerCase().trim() ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
-              >
-                <i v-if="(bg.name || '').toLowerCase().trim() === (line.background || '').toLowerCase().trim()" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
-                <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
-                <span class="truncate">{{ bg.name }}</span>
-              </button>
+              <template v-if="backgrounds.length === 0">
+                <p class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 text-center py-2 sm:py-3 px-2">
+                  Sin selección
+                </p>
+              </template>
+              <template v-else>
+                <button
+                  @mousedown.prevent="selectBackground(null)"
+                  class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+                  :class="!hasBackgroundSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+                >
+                  <i v-if="!hasBackgroundSelected" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                  <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
+                  <span class="truncate">Sin fondo</span>
+                </button>
+                <button
+                  v-if="orphanBackground"
+                  @mousedown.prevent="selectBackground(line.background)"
+                  class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm bg-blue-50 dark:bg-blue-900/20 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+                >
+                  <i class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                  <span class="truncate">{{ line.background }} (actual)</span>
+                </button>
+                <button
+                  v-for="bg in backgrounds"
+                  :key="bg.id"
+                  @mousedown.prevent="selectBackground(bg.name)"
+                  class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
+                  :class="bgMatchesCurrent(bg) ? 'bg-blue-50 dark:bg-blue-900/20' : ''"
+                >
+                  <i v-if="bgMatchesCurrent(bg)" class="ti ti-check text-blue-600 dark:text-blue-400 text-sm flex-shrink-0"></i>
+                  <span v-else class="w-3 sm:w-4 flex-shrink-0"></span>
+                  <span class="truncate">{{ bg.name }}</span>
+                </button>
+              </template>
             </div>
           </div>
         </transition>
@@ -279,17 +302,26 @@ export default {
       return '$' + Number(this.photoTypePrice(this.line.photo_type_id)).toFixed(2) + ' c/u';
     },
     paperLabel() {
-      if (!this.line.paper_type_id) return 'Papel (opcional)';
+      if (!this.line.paper_type_id) return 'Sin papel';
       const p = this.paperTypes.find(pt => pt.id === this.line.paper_type_id);
       if (p) return p.name;
       return this.line.paper_type_name_snapshot || 'Papel eliminado';
     },
+    hasBackgroundSelected() {
+      return String(this.line.background || '').trim() !== '';
+    },
     backgroundLabel() {
-      const current = this.line.background || 'blanco';
+      if (!this.hasBackgroundSelected) return 'Sin fondo';
+      const current = String(this.line.background).trim();
       const fromCatalog = this.backgrounds.find(
-        b => (b.name || '').toLowerCase().trim() === current.toLowerCase().trim()
+        b => (b.name || '').toLowerCase().trim() === current.toLowerCase()
       );
       return fromCatalog?.name || current;
+    },
+    orphanBackground() {
+      if (!this.hasBackgroundSelected) return false;
+      const current = String(this.line.background).trim().toLowerCase();
+      return !this.backgrounds.some(b => (b.name || '').toLowerCase().trim() === current);
     }
   },
   watch: {
@@ -330,6 +362,10 @@ export default {
     selectBackground(name) {
       this.line.background = name;
       this.backgroundDropdownOpen = false;
+    },
+    bgMatchesCurrent(bg) {
+      if (!this.hasBackgroundSelected) return false;
+      return (bg.name || '').toLowerCase().trim() === String(this.line.background).toLowerCase().trim();
     }
   }
 };

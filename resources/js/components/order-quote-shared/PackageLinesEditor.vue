@@ -214,15 +214,27 @@
                       <i :class="[cl.icon, 'text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400']"></i>
                     </span>
 
-                    <span class="flex flex-col min-w-0 flex-1">
+                    <span class="flex flex-col min-w-0 flex-1 gap-0.5">
                       <span class="break-words">
-                        {{ cl.name }}<span v-if="cl.quantity" class="text-blue-600 dark:text-blue-400 font-semibold ml-1">x{{ cl.quantity }}</span>
+                        {{ cl.name }}<span
+                          v-if="cl.quantity"
+                          class="text-gray-300 dark:text-gray-600 mx-1"
+                        >·</span><span
+                          v-if="cl.unitPrice !== undefined && cl.unitPrice !== null"
+                          class="text-green-700 dark:text-green-500 font-semibold"
+                        >{{ formatCurrency(cl.unitPrice) }} c/u</span><span
+                          v-if="cl.quantity"
+                          class="text-gray-300 dark:text-gray-600 mx-1"
+                        >·</span><span
+                          v-if="cl.quantity"
+                          class="text-blue-600 dark:text-blue-400 font-semibold"
+                        >x{{ cl.quantity }}</span>
                       </span>
                       <span
                         v-if="cl.features.length"
-                        class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] sm:text-xs short:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5"
+                        class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 break-words"
                       >
-                        <span v-for="(f, i) in cl.features" :key="i">{{ f }}</span>
+                        {{ cl.features.join(' · ') }}
                       </span>
                     </span>
                   </span>
@@ -392,15 +404,14 @@ export default {
     packageContentLines(line) {
       return this.packageContentFor(line).map((item, idx) => {
         const features = [];
-        features.push('• ' + this.formatCurrency(item.unit_price) + ' c/u');
         if (item.type === 'photo') {
-          features.push('• ' + (item.format === 'color' ? 'Color' : 'B/N'));
-          const rawBg = item.background;
-          const bg = (rawBg !== undefined && rawBg !== null && String(rawBg).trim() !== '')
-            ? String(rawBg).trim().toLowerCase()
-            : 'blanco';
-          features.push('• Fondo ' + bg);
-          if (item.paper_name) features.push('• Papel: ' + item.paper_name);
+          features.push(item.format === 'color' ? 'Color' : 'B/N');
+          if (item.background && String(item.background).trim() !== '') {
+            features.push('Fondo ' + String(item.background).trim().toLowerCase());
+          }
+          if (item.paper_name && String(item.paper_name).trim() !== '') {
+            features.push('Papel ' + String(item.paper_name).trim().toLowerCase());
+          }
         }
 
         return {

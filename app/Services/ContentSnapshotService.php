@@ -309,10 +309,10 @@ class ContentSnapshotService
         return PaperType::find($id) ?? throw new DomainException('Un tipo de papel ya no está disponible.');
     }
 
-    private function normalizeBackground(?string $value): string
+    private function normalizeBackground(?string $value): ?string
     {
         $trimmed = $value !== null ? trim($value) : '';
 
-        return $trimmed === '' ? 'blanco' : $trimmed;
+        return $trimmed === '' ? null : $trimmed;
     }
 }

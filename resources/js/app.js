@@ -5,6 +5,7 @@ import OrdersBoard from './components/orders/OrdersBoard.vue';
 import QuotesBoard from './components/quotes/QuotesBoard.vue';
 import PackagesBoard from './components/packages/PackagesBoard.vue';
 import CatalogsBoard from './components/catalog/CatalogsBoard.vue';
+import PhotoFeaturesBoard from './components/catalog/PhotoFeaturesBoard.vue';
 import blurOnEnter from './directives/blurOnEnter.js';
 import './plugins/authInterceptor.js';
 
@@ -15,6 +16,7 @@ const router = createRouter({
         { path: '/cotizaciones', component: QuotesBoard },
         { path: '/paquetes', component: PackagesBoard },
         { path: '/catalogos', component: CatalogsBoard },
+        { path: '/catalogos/caracteristicas-fotograficas', component: PhotoFeaturesBoard },
         { path: '/:pathMatch(.*)*', redirect: '/' },
     ],
 });

@@ -148,7 +148,20 @@ export default {
       this.openFormatKey = null;
     },
     addLine() {
-      this.lines.push({ photo_type_id: null, quantity: 1, format: 'bn', background: 'blanco', paper_type_id: null });
+      const defaultBackground = this.backgrounds.length > 0
+        ? this.backgrounds[0].name
+        : null;
+      const defaultPaperTypeId = this.paperTypes.length > 0
+        ? this.paperTypes[0].id
+        : null;
+
+      this.lines.push({
+        photo_type_id: null,
+        quantity: 1,
+        format: 'bn',
+        background: defaultBackground,
+        paper_type_id: defaultPaperTypeId
+      });
     },
     removeLine(idx) {
       this.lines.splice(idx, 1);

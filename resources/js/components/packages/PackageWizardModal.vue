@@ -335,7 +335,7 @@ export default {
             ? Math.floor(Number(l.quantity))
             : 1,
           format: l.format === 'color' ? 'color' : 'bn',
-          background: (l.background && String(l.background).trim()) || 'blanco',
+          background: (l.background && String(l.background).trim()) || null,
           paper_type_id: l.paper_type_id || null
         }));
     },

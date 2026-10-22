@@ -130,20 +130,54 @@
                     <div
                       v-for="line in viewPhotoLines"
                       :key="line.key"
-                      class="flex items-center justify-between gap-2 p-3 sm:p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+                      class="flex justify-between items-start text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
                     >
-                      <div class="flex items-center min-w-0 flex-1">
-                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center mr-2.5 sm:mr-3 flex-shrink-0 bg-blue-100 dark:bg-blue-900/40">
-                          <i class="ti ti-camera text-base sm:text-xl text-blue-600 dark:text-blue-300"></i>
-                        </div>
-                        <div class="truncate">
-                          <p class="font-medium text-gray-800 dark:text-gray-300 text-sm sm:text-base truncate">{{ line.name }}</p>
-                          <p class="text-xs sm:text-base text-gray-500 dark:text-gray-400 truncate">
-                            {{ line.format }}<span v-if="line.paper"> • {{ line.paper }}</span><span v-if="line.background && line.background !== 'blanco' && line.background !== 'Blanco'"> • Fondo: {{ line.background }}</span>
-                          </p>
-                        </div>
-                      </div>
-                      <span class="font-bold text-gray-800 dark:text-gray-200 text-base sm:text-lg ml-2 whitespace-nowrap">x{{ line.quantity }}</span>
+                      <span class="flex items-start gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
+                        <span
+                          v-if="line.formatCode"
+                          class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center mt-0.5"
+                          :class="line.formatCode === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : ''"
+                        >
+                          <template v-if="line.formatCode === 'color'">
+                            <span
+                              class="absolute inset-0 blur-md bg-[radial-gradient(circle_at_25%_25%,theme(colors.cyan.300),transparent_60%),radial-gradient(circle_at_75%_25%,theme(colors.fuchsia.300),transparent_60%),radial-gradient(circle_at_50%_80%,theme(colors.yellow.300),transparent_60%)] dark:bg-[radial-gradient(circle_at_25%_25%,theme(colors.cyan.700),transparent_60%),radial-gradient(circle_at_75%_25%,theme(colors.fuchsia.700),transparent_60%),radial-gradient(circle_at_50%_80%,theme(colors.yellow.700),transparent_60%)]"
+                            ></span>
+                            <span class="relative z-10 inline-block w-[18px] h-[18px]">
+                              <span class="absolute top-0 left-0 w-3 h-3 rounded-full bg-cyan-400 mix-blend-multiply"></span>
+                              <span class="absolute top-0 left-1.5 w-3 h-3 rounded-full bg-fuchsia-500 mix-blend-multiply"></span>
+                              <span class="absolute top-1.5 left-[3px] w-3 h-3 rounded-full bg-yellow-300 mix-blend-multiply"></span>
+                            </span>
+                          </template>
+                          <span v-else class="inline-flex -space-x-1">
+                            <span class="w-3.5 h-3.5 rounded-full bg-white border border-gray-400 dark:border-gray-500"></span>
+                            <span class="w-3.5 h-3.5 rounded-full bg-black border border-gray-300 dark:border-gray-400"></span>
+                          </span>
+                        </span>
+
+                        <span class="flex flex-col min-w-0 flex-1 gap-0.5">
+                          <span class="break-words">
+                            {{ line.name }}<span
+                              v-if="line.quantity"
+                              class="text-gray-300 dark:text-gray-600 mx-1"
+                            >·</span><span
+                              class="text-green-700 dark:text-green-500 font-semibold"
+                            >{{ formatCurrency(line.unitPrice) }} c/u</span><span
+                              v-if="line.quantity"
+                              class="text-gray-300 dark:text-gray-600 mx-1"
+                            >·</span><span
+                              v-if="line.quantity"
+                              class="text-blue-600 dark:text-blue-400 font-semibold"
+                            >x{{ line.quantity }}</span>
+                          </span>
+                          <span
+                            v-if="line.features.length"
+                            class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 break-words"
+                          >
+                            {{ line.features.join(' · ') }}
+                          </span>
+                        </span>
+                      </span>
+                      <span class="font-medium whitespace-nowrap ml-2 flex-shrink-0 text-gray-700 dark:text-gray-300">${{ line.lineTotal.toFixed(2) }}</span>
                     </div>
                   </div>
                   <div v-else class="text-center py-4 text-gray-500 dark:text-gray-400 text-sm sm:text-base">
@@ -161,15 +195,31 @@
                     <div
                       v-for="svc in viewServices"
                       :key="svc.key"
-                      class="flex items-center justify-between gap-2 p-3 sm:p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
+                      class="flex justify-between items-start text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
                     >
-                      <div class="flex items-center min-w-0 flex-1">
-                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center mr-2.5 sm:mr-3 flex-shrink-0 bg-gray-100 dark:bg-gray-700">
-                          <i class="ti ti-tool text-base sm:text-xl text-gray-600 dark:text-gray-300"></i>
-                        </div>
-                        <p class="font-medium text-gray-800 dark:text-gray-300 text-sm sm:text-base truncate">{{ svc.name }}</p>
-                      </div>
-                      <span class="font-bold text-gray-800 dark:text-gray-200 text-base sm:text-lg ml-2 whitespace-nowrap">x{{ svc.quantity }}</span>
+                      <span class="flex items-start gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
+                        <span class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 mt-0.5">
+                          <i class="ti ti-tool text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400"></i>
+                        </span>
+
+                        <span class="flex flex-col min-w-0 flex-1 gap-0.5">
+                          <span class="break-words">
+                            {{ svc.name }}<span
+                              v-if="svc.quantity"
+                              class="text-gray-300 dark:text-gray-600 mx-1"
+                            >·</span><span
+                              class="text-green-700 dark:text-green-500 font-semibold"
+                            >{{ formatCurrency(svc.unitPrice) }} c/u</span><span
+                              v-if="svc.quantity"
+                              class="text-gray-300 dark:text-gray-600 mx-1"
+                            >·</span><span
+                              v-if="svc.quantity"
+                              class="text-blue-600 dark:text-blue-400 font-semibold"
+                            >x{{ svc.quantity }}</span>
+                          </span>
+                        </span>
+                      </span>
+                      <span class="font-medium whitespace-nowrap ml-2 flex-shrink-0 text-gray-700 dark:text-gray-300">${{ svc.lineTotal.toFixed(2) }}</span>
                     </div>
                   </div>
                   <div v-else class="text-center py-4 text-gray-500 dark:text-gray-400 text-sm sm:text-base">
@@ -454,25 +504,46 @@ export default {
         .filter(l => l.photo_type_id)
         .map((l, idx) => {
           const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
-          const paper = l.paper_type_id ? this.paperTypes.find(p => p.id === l.paper_type_id) : null;
+          const paperId = l.paper_type_id;
+          const paper = paperId ? this.paperTypes.find(p => Number(p.id) === Number(paperId)) : null;
+          const formatCode = l.format === 'color' ? 'color' : 'bn';
+          const quantity = Number(l.quantity || 0);
+          const unitPrice = Number(l.unit_price ?? 0);
+
+          const features = [];
+          features.push(formatCode === 'color' ? 'Color' : 'B/N');
+          if (l.background && String(l.background).trim() !== '') {
+            features.push('Fondo ' + String(l.background).trim().toLowerCase());
+          }
+          if (paper?.name) {
+            features.push('Papel ' + paper.name.toLowerCase());
+          }
+
           return {
             key: `${l.photo_type_id}-${idx}`,
             name: pt?.name || 'Tipo de foto',
-            quantity: l.quantity,
-            format: l.format === 'color' ? 'Color' : 'Blanco/negro',
-            background: l.background || 'blanco',
-            paper: paper?.name || ''
+            quantity,
+            formatCode,
+            unitPrice,
+            lineTotal: unitPrice * quantity,
+            features
           };
         });
     },
     viewServices() {
       return this.serviceLines
         .filter(l => l.service_id)
-        .map((l, idx) => ({
-          key: `${l.service_id}-${idx}`,
-          name: this.additionalServices.find(s => s.id === l.service_id)?.name || 'Servicio adicional',
-          quantity: l.quantity
-        }));
+        .map((l, idx) => {
+          const quantity = Number(l.quantity || 0);
+          const unitPrice = Number(l.unit_price ?? 0);
+          return {
+            key: `${l.service_id}-${idx}`,
+            name: this.additionalServices.find(s => s.id === l.service_id)?.name || 'Servicio adicional',
+            quantity,
+            unitPrice,
+            lineTotal: unitPrice * quantity
+          };
+        });
     },
     priceMissing() {
       return this.form.total_price === null
@@ -615,12 +686,14 @@ export default {
           photo_type_id: pt.id,
           quantity: pt.pivot?.quantity || 1,
           format: pt.pivot?.format || 'bn',
-          background: pt.pivot?.background || 'blanco',
-          paper_type_id: pt.pivot?.paper_type_id || null
+          background: pt.pivot?.background || null,
+          paper_type_id: pt.pivot?.paper_type_id || null,
+          unit_price: Number(pt.pivot?.unit_price ?? pt.base_price ?? 0)
         }));
         this.serviceLines = (pkg.additional_services || []).map(svc => ({
           service_id: svc.id,
-          quantity: svc.pivot?.quantity || 1
+          quantity: svc.pivot?.quantity || 1,
+          unit_price: Number(svc.pivot?.unit_price ?? svc.default_price ?? 0)
         }));
       } catch (error) {
         this.$emit('notify', { title: 'Error', message: 'No se pudo cargar el paquete', type: 'error' });

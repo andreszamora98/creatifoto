@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::view('/cotizaciones', 'layouts.app');
     Route::view('/paquetes', 'layouts.app');
     Route::view('/catalogos', 'layouts.app');
+    Route::view('/catalogos/caracteristicas-fotograficas', 'layouts.app');
 
     Route::get('/photo-types', [PhotoTypeController::class, 'index']);
     Route::post('/photo-types', [PhotoTypeController::class, 'store']);
@@ -40,8 +41,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/photo-types/{id}', [PhotoTypeController::class, 'destroy']);
 
     Route::get('/paper-types', [PaperTypeController::class, 'index']);
-    Route::get('/customers', [CustomerController::class, 'index']);
+    Route::post('/paper-types', [PaperTypeController::class, 'store']);
+    Route::put('/paper-types/{paperType}', [PaperTypeController::class, 'update']);
+
     Route::get('/backgrounds', [BackgroundController::class, 'index']);
+    Route::post('/backgrounds', [BackgroundController::class, 'store']);
+    Route::put('/backgrounds/{background}', [BackgroundController::class, 'update']);
+
+    Route::get('/customers', [CustomerController::class, 'index']);
 
     Route::get('/orders-table', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);

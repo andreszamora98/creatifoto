@@ -1,18 +1,29 @@
 <template>
   <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-shrink-0 mb-4 sm:mb-6 short:mb-2">
-      <div class="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          @click="activeTab = tab.key"
-          class="px-3 sm:px-4 py-2 short:py-1 rounded-md text-xs sm:text-sm short:text-xs font-medium transition-colors whitespace-nowrap"
-          :class="activeTab === tab.key
-            ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div class="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            @click="activeTab = tab.key"
+            class="px-3 sm:px-4 py-2 short:py-1 rounded-md text-xs sm:text-sm short:text-xs font-medium transition-colors whitespace-nowrap"
+            :class="activeTab === tab.key
+              ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+          >
+            <i :class="tab.icon" class="mr-1.5"></i>{{ tab.label }}
+          </button>
+        </div>
+
+        <router-link
+          to="/catalogos/caracteristicas-fotograficas"
+          class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 short:py-1 rounded-lg text-xs sm:text-sm short:text-xs font-medium border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
         >
-          <i :class="tab.icon" class="mr-1.5"></i>{{ tab.label }}
-        </button>
+          <i class="ti ti-adjustments-horizontal text-base"></i>
+          <span class="hidden sm:inline">Configurar características fotográficas</span>
+          <span class="sm:hidden">Características</span>
+        </router-link>
       </div>
     </div>
 

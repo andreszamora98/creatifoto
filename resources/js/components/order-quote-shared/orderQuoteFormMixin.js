@@ -172,7 +172,7 @@ export default {
             photo_type_id: l.photo_type_id,
             quantity: l.quantity,
             format: l.format,
-            background: (l.background && String(l.background).trim()) || 'blanco',
+            background: (l.background && String(l.background).trim()) || null,
             paper_type_id: l.paper_type_id ?? null
           };
           if (l.id) out.id = l.id;
@@ -645,7 +645,7 @@ export default {
         photo_type_name_snapshot: l.photo_type_name_snapshot || null,
         quantity: l.quantity,
         format: l.format,
-        background: l.background || 'blanco',
+        background: l.background || null,
         paper_type_id: l.paper_type_id ?? null,
         paper_type_name_snapshot: l.paper_type_name_snapshot || null,
         locked_unit_price: Number(l.unit_price ?? 0),
