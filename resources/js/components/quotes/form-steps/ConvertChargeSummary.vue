@@ -3,10 +3,12 @@
     title="Resumen de la cotización"
     :lines="summaryLines"
     :estimated-total="estimatedTotal"
+    :discount-source="effectiveDiscountSource"
     :discount-type="effectiveDiscountType"
     :discount-value="effectiveDiscountValue"
     :discount-amount="discountAmount"
     :discount-reason="effectiveDiscountReason"
+    :discount-includes-packages="effectiveIncludesPackages"
     total-label="Total a cobrar"
     empty-message="Esta cotización no tiene conceptos registrados."
   />
@@ -21,9 +23,17 @@ export default {
   props: {
     quote: { type: Object, default: null },
     estimatedTotal: { type: Number, default: 0 },
-    overrideDiscount: { type: Object, default: null }
+    overrideDiscount: { type: Object, default: null },
+    discountSource: { type: String, default: null },
+    discountIncludesPackages: { type: Boolean, default: false }
   },
   computed: {
+    effectiveDiscountSource() {
+      return this.discountSource ?? this.quote?.discount_source ?? null;
+    },
+    effectiveIncludesPackages() {
+      return this.discountIncludesPackages ?? !!this.quote?.discount_applies_to_packages;
+    },
     effectiveDiscountType() {
       if (this.overrideDiscount !== null) return this.overrideDiscount.type ?? null;
       return this.quote?.discount_type ?? null;
@@ -45,7 +55,16 @@ export default {
       const services = (this.quote.services || []).filter(s => !s.quote_package_id);
       const serviceSum = services.reduce((sum, s) => sum + Number(s.price || 0) * Number(s.quantity || 0), 0);
 
-      return photoSum + serviceSum;
+      let base = photoSum + serviceSum;
+
+      if (this.effectiveIncludesPackages) {
+        const packagesTotal = (this.quote.quote_packages || []).reduce(
+          (sum, p) => sum + Number(p.price_snapshot || 0), 0
+        );
+        base += packagesTotal;
+      }
+
+      return base;
     },
     discountAmount() {
       if (!this.effectiveDiscountType) return 0;
@@ -123,12 +142,27 @@ export default {
           });
         });
 
+        const priceSnapshot = Number(pkg.price_snapshot || 0);
+        const listPrice = pkg.list_price_snapshot != null ? Number(pkg.list_price_snapshot) : 0;
+        const savedAmount = listPrice > priceSnapshot ? listPrice - priceSnapshot : 0;
+        const savedPercent = (savedAmount > 0 && pkg.discount_type === 'percent')
+          ? Number(pkg.discount_value || 0)
+          : null;
+        let savedReason = null;
+        if (savedAmount > 0) {
+          if (pkg.discount_source === 'auto') savedReason = pkg.auto_discount_reason || null;
+          else if (pkg.discount_source === 'manual') savedReason = pkg.discount_reason || null;
+        }
+
         result.push({
           key: `pkg-${pkg.id}`,
           isPackage: true,
           packageName: pkg.package_name_snapshot || ('Paquete #' + pkg.package_id),
           schoolName: pkg.school_name_snapshot || '',
-          amount: Number(pkg.price_snapshot || 0),
+          amount: priceSnapshot,
+          savedAmount,
+          savedPercent,
+          savedReason,
           children
         });
       });

@@ -18,7 +18,8 @@ class QuoteService
     public function __construct(
         protected ContentSnapshotService $content,
         protected OrderService $orders,
-        protected CustomerResolver $customerResolver
+        protected CustomerResolver $customerResolver,
+        protected AutomaticDiscountService $autoDiscount
     ) {
     }
 
@@ -29,19 +30,21 @@ class QuoteService
 
             $customer = $this->customerResolver->resolve($data);
 
-            $discountType = $data['discount_type'] ?? null;
-            $discountValue = isset($data['discount_value']) && $data['discount_value'] !== null
-                ? (float) $data['discount_value']
-                : null;
-            $discountReason = $data['discount_reason'] ?? null;
+            $source = array_key_exists('discount_source', $data) && $data['discount_source'] !== null
+                ? $data['discount_source']
+                : 'auto';
+            $appliesToPackages = (bool) ($data['discount_applies_to_packages'] ?? false);
 
             $quote = Quote::create([
                 'customer_id' => $customer->id,
                 'total' => 0,
-                'discount_type' => $discountType,
-                'discount_value' => $discountValue,
+                'discount_type' => null,
+                'discount_value' => null,
                 'discount_amount' => 0,
-                'discount_reason' => $discountReason,
+                'discount_reason' => null,
+                'discount_source' => $source,
+                'discount_applies_to_packages' => $appliesToPackages,
+                'auto_discount_reason' => null,
                 'notes' => $data['notes'] ?? null,
                 'valid_until' => $data['valid_until'] ?? null,
                 'status' => 'pending',
@@ -49,14 +52,39 @@ class QuoteService
 
             $this->content->createFor($quote, $data);
 
-            $calc = $this->content->recalculateWithDiscount($quote, $discountType, $discountValue);
+            $discountType = null;
+            $discountValue = null;
+            $discountReason = null;
+            $autoReason = null;
+
+            if ($source === 'auto') {
+                $eval = $this->autoDiscount->evaluate($quote);
+                if ($eval['eligible']) {
+                    $discountType = 'percent';
+                    $discountValue = (float) config('creatifoto.auto_discount_percent', 10);
+                    $discountReason = $eval['reason'];
+                    $autoReason = $eval['reason'];
+                }
+            } elseif ($source === 'manual') {
+                $discountType = $data['discount_type'] ?? null;
+                $discountValue = isset($data['discount_value']) && $data['discount_value'] !== null
+                    ? (float) $data['discount_value']
+                    : null;
+                $discountReason = $data['discount_reason'] ?? null;
+            }
+
+            $calc = $this->content->recalculateWithDiscount($quote, $discountType, $discountValue, $appliesToPackages);
 
             $quote->update([
                 'total' => $calc['total'],
+                'discount_type' => $discountType,
+                'discount_value' => $discountValue,
                 'discount_amount' => $calc['discount_amount'],
+                'discount_reason' => $discountReason,
+                'auto_discount_reason' => $autoReason,
             ]);
 
-            return $quote->load(self::RELATIONS);
+            return $quote->fresh(self::RELATIONS);
         });
     }
 
@@ -130,20 +158,50 @@ class QuoteService
 
             $this->content->syncFor($quote, $data);
 
-            $discountType = array_key_exists('discount_type', $data) ? $data['discount_type'] : $quote->discount_type;
-            $discountValue = array_key_exists('discount_value', $data)
-                ? ($data['discount_value'] !== null ? (float) $data['discount_value'] : null)
-                : ($quote->discount_value !== null ? (float) $quote->discount_value : null);
-            $discountReason = array_key_exists('discount_reason', $data) ? $data['discount_reason'] : $quote->discount_reason;
+            $source = array_key_exists('discount_source', $data)
+                ? $data['discount_source']
+                : $quote->discount_source;
 
-            $calc = $this->content->recalculateWithDiscount($quote, $discountType, $discountValue);
+            $appliesToPackages = array_key_exists('discount_applies_to_packages', $data)
+                ? (bool) $data['discount_applies_to_packages']
+                : (bool) $quote->discount_applies_to_packages;
+
+            $discountType = null;
+            $discountValue = null;
+            $discountReason = null;
+            $autoReason = null;
+
+            if ($source === 'auto') {
+                $eval = $this->autoDiscount->evaluate($quote);
+                if ($eval['eligible']) {
+                    $discountType = 'percent';
+                    $discountValue = (float) config('creatifoto.auto_discount_percent', 10);
+                    $discountReason = $eval['reason'];
+                    $autoReason = $eval['reason'];
+                }
+            } elseif ($source === 'manual') {
+                $discountType = array_key_exists('discount_type', $data)
+                    ? $data['discount_type']
+                    : $quote->discount_type;
+                $discountValue = array_key_exists('discount_value', $data)
+                    ? ($data['discount_value'] !== null ? (float) $data['discount_value'] : null)
+                    : ($quote->discount_value !== null ? (float) $quote->discount_value : null);
+                $discountReason = array_key_exists('discount_reason', $data)
+                    ? $data['discount_reason']
+                    : $quote->discount_reason;
+            }
+
+            $calc = $this->content->recalculateWithDiscount($quote, $discountType, $discountValue, $appliesToPackages);
 
             $quote->update([
                 'total' => $calc['total'],
+                'discount_source' => $source,
                 'discount_type' => $discountType,
                 'discount_value' => $discountValue,
                 'discount_amount' => $calc['discount_amount'],
                 'discount_reason' => $discountReason,
+                'discount_applies_to_packages' => $appliesToPackages,
+                'auto_discount_reason' => $autoReason,
             ]);
 
             return $quote->fresh(self::RELATIONS);

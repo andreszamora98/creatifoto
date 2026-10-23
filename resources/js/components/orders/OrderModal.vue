@@ -110,20 +110,28 @@
                     :selected-services="selectedServices"
                     :additional-services="additionalServices"
                     :estimated-total="estimatedTotal"
+                    :discount-source="discount_source"
                     :discount-type="discount_type"
                     :discount-value="discount_value"
                     :discount-reason="discount_reason"
+                    :discount-includes-packages="discount_applies_to_packages"
                   />
 
                   <DiscountPanel
+                    :source="discount_source"
                     :type="discount_type"
                     :value="discount_value"
                     :reason="discount_reason"
+                    :applies-to-packages="discount_applies_to_packages"
+                    :suggested-auto="autoDiscountEligibility.eligible"
+                    :suggested-auto-percent="autoDiscountPercent"
                     :show-errors="showErrorsStep3"
                     :error="fieldErrors.discount_value"
+                    @set-source="setDiscountSource"
                     @update:type="discount_type = $event"
                     @update:value="discount_value = $event"
                     @update:reason="discount_reason = $event"
+                    @update:appliesToPackages="discount_applies_to_packages = $event"
                   />
                 </div>
               </template>

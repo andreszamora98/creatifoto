@@ -61,6 +61,8 @@ class OrderController extends Controller
             'notes' => 'nullable|string|max:1000',
 
             'discount_type' => 'nullable|in:fixed,percent',
+            'discount_source' => 'nullable|in:auto,manual,none',
+            'discount_applies_to_packages' => 'nullable|boolean',
             'discount_value' => $this->discountValueRules($request),
             'discount_reason' => 'nullable|string|max:255',
 
@@ -98,6 +100,8 @@ class OrderController extends Controller
             'notes' => 'nullable|string|max:1000',
 
             'discount_type' => 'nullable|in:fixed,percent',
+            'discount_source' => 'nullable|in:auto,manual,none',
+            'discount_applies_to_packages' => 'nullable|boolean',
             'discount_value' => $this->discountValueRules($request),
             'discount_reason' => 'nullable|string|max:255',
         ], [
@@ -142,6 +146,8 @@ class OrderController extends Controller
             'amount' => 'required|numeric|min:0.01|max:9999999.99',
             'payment_method' => 'nullable|string|max:50',
             'notes' => 'nullable|string|max:255',
+            'discount_source' => 'nullable|in:auto,manual,none',
+            'discount_applies_to_packages' => 'nullable|boolean',
         ]);
 
         return $this->respondDomain(

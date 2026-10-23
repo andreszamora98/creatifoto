@@ -41,6 +41,8 @@ class QuoteController extends Controller
             'valid_until' => 'nullable|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
             'discount_type' => 'nullable|required_with:discount_value|in:fixed,percent',
+            'discount_source' => 'nullable|in:auto,manual,none',
+            'discount_applies_to_packages' => 'nullable|boolean',
             'discount_value' => $this->discountValueRules($request),
             'discount_reason' => 'nullable|string|max:255',
         ], $this->contentMessages());
@@ -71,6 +73,8 @@ class QuoteController extends Controller
             ],
             'notes' => 'nullable|string|max:1000',
             'discount_type' => 'nullable|in:fixed,percent',
+            'discount_source' => 'nullable|in:auto,manual,none',
+            'discount_applies_to_packages' => 'nullable|boolean',
             'discount_value' => $this->discountValueRules($request),
             'discount_reason' => 'nullable|string|max:255',
             'payments' => 'required|array|min:1|max:20',
@@ -121,6 +125,8 @@ class QuoteController extends Controller
     {
         $validated = $request->validate($this->contentRules($request) + [
             'discount_type' => 'nullable|required_with:discount_value|in:fixed,percent',
+            'discount_source' => 'nullable|in:auto,manual,none',
+            'discount_applies_to_packages' => 'nullable|boolean',
             'discount_value' => $this->discountValueRules($request),
             'discount_reason' => 'nullable|string|max:255',
         ], $this->contentMessages());

@@ -211,10 +211,12 @@
                   <ChargeSummary
                     :lines="summaryLines"
                     :estimated-total="Number(quote.total || 0)"
+                    :discount-source="quote.discount_source || null"
                     :discount-type="quote.discount_type || null"
                     :discount-value="quote.discount_value"
                     :discount-amount="Number(quote.discount_amount || 0)"
                     :discount-reason="quote.discount_reason"
+                    :discount-includes-packages="!!quote.discount_applies_to_packages"
                     hide-total
                     empty-message="Sin conceptos registrados."
                   />
@@ -222,14 +224,20 @@
 
                 <template v-else>
                   <DiscountPanel
+                    :source="discount_source"
                     :type="discount_type"
                     :value="discount_value"
                     :reason="discount_reason"
+                    :applies-to-packages="discount_applies_to_packages"
+                    :suggested-auto="autoDiscountEligibility.eligible"
+                    :suggested-auto-percent="autoDiscountPercent"
                     :show-errors="conceptsSubmittingAttempted"
                     :error="fieldErrors.discount_value"
+                    @set-source="setDiscountSource"
                     @update:type="discount_type = $event"
                     @update:value="discount_value = $event"
                     @update:reason="discount_reason = $event"
+                    @update:appliesToPackages="discount_applies_to_packages = $event"
                   />
 
                   <div class="mt-3 sm:mt-4">
@@ -424,12 +432,17 @@ export default {
           });
         });
 
+        const priceSnapshot = Number(pkg.price_snapshot || 0);
+        const listPrice = pkg.list_price_snapshot != null ? Number(pkg.list_price_snapshot) : 0;
+        const savedAmount = listPrice > priceSnapshot ? listPrice - priceSnapshot : 0;
+
         result.push({
           key: `pkg-${pkg.id}`,
           isPackage: true,
           packageName: pkg.package_name_snapshot || ('Paquete #' + pkg.package_id),
           schoolName: pkg.school_name_snapshot || '',
-          amount: Number(pkg.price_snapshot || 0),
+          amount: priceSnapshot,
+          savedAmount,
           children
         });
       });
@@ -475,7 +488,7 @@ export default {
         photo_type_name_snapshot: line.photo_type_name_snapshot || null,
         quantity: line.quantity,
         format: line.format,
-        background: line.background || 'blanco',
+        background: line.background || null,
         paper_type_id: line.paper_type_id ?? null,
         paper_type_name_snapshot: line.paper_type_name_snapshot || null,
         locked_unit_price: Number(line.unit_price ?? 0),
@@ -488,14 +501,18 @@ export default {
         package_name_snapshot: p.package_name_snapshot || null,
         school_id: p.school_id ?? null,
         school_name_snapshot: p.school_name_snapshot || null,
-        price_snapshot: Number(p.price_snapshot ?? 0)
+        price_snapshot: Number(p.price_snapshot ?? 0),
+        list_price_snapshot: p.list_price_snapshot != null ? Number(p.list_price_snapshot) : null
       }));
 
+      this.discount_source = this.quote.discount_source || 'none';
       this.discount_type = this.quote.discount_type || null;
       this.discount_value = (this.quote.discount_value !== null && this.quote.discount_value !== undefined)
         ? Number(this.quote.discount_value)
         : null;
       this.discount_reason = this.quote.discount_reason || '';
+      this.discount_applies_to_packages = !!this.quote.discount_applies_to_packages;
+      this.auto_discount_reason = this.quote.auto_discount_reason || null;
     },
     getCurrentState() {
       return {};

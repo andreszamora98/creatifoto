@@ -31,6 +31,8 @@ class PackageController extends Controller
             ->get([
                 'id', 'school_id', 'sequence', 'name',
                 'total_price', 'list_price', 'discount_amount',
+                'discount_type', 'discount_value', 'discount_source',
+                'discount_reason', 'auto_discount_reason',
                 'women_features', 'men_features', 'package_notes',
             ]);
     }
@@ -112,8 +114,12 @@ class PackageController extends Controller
         $validated = $request->validate([
             'school_id' => ['required', Rule::exists('schools', 'id')->whereNull('deleted_at')],
             'name' => ['required', 'string', 'max:255', $nameUnique],
-            'total_price' => 'required|numeric|min:0|max:9999999.99',
-            'list_price' => 'nullable|numeric|min:0|max:9999999.99|gte:total_price',
+            'list_price' => 'nullable|numeric|min:0|max:9999999.99',
+            'total_price' => 'nullable|numeric|min:0|max:9999999.99',
+            'discount_source' => 'nullable|in:auto,manual,none',
+            'discount_type' => 'nullable|in:percent,fixed,amount',
+            'discount_value' => 'nullable|numeric|min:0|max:9999999.99',
+            'discount_reason' => 'nullable|string|max:255',
             'package_notes' => 'nullable|string|max:2000',
             'women_features_text' => ['nullable', 'string', function ($attribute, $value, $fail) {
                 if ($value !== null && str_word_count(trim($value)) > 1000) {
@@ -137,7 +143,6 @@ class PackageController extends Controller
         ], [
             'name.unique' => 'Ya existe un paquete con ese nombre en esta escuela.',
             'name.required' => 'El nombre del paquete es obligatorio.',
-            'list_price.gte' => 'El precio de lista no puede ser menor al precio final.',
         ]);
 
         $this->assertNoDuplicatePhotoLines($validated['photo_types']);

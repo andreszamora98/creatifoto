@@ -27,9 +27,24 @@
                 >
                   {{ line.schoolName }}
                 </span>
+                <span v-if="line.savedAmount > 0" class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] sm:text-xs short:text-[10px]">
+                  <span class="inline-flex items-center gap-1 text-green-700 dark:text-green-500 font-medium">
+                    <i class="ti ti-discount-2 text-[10px] sm:text-xs"></i>
+                    Descuento incluido<span v-if="line.savedPercent !== null && line.savedPercent !== undefined"> {{ line.savedPercent }}%</span>
+                    (-${{ line.savedAmount.toFixed(2) }})
+                  </span>
+                  <span v-if="line.savedReason" class="italic text-green-700 dark:text-green-400">
+                    · Motivo: {{ line.savedReason }}
+                  </span>
+                </span>
               </span>
             </span>
-            <span class="font-semibold whitespace-nowrap ml-2 flex-shrink-0 text-gray-800 dark:text-gray-200">${{ line.amount.toFixed(2) }}</span>
+            <span class="flex flex-col items-end gap-0.5 flex-shrink-0 ml-2">
+              <span v-if="line.savedAmount > 0" class="text-[10px] sm:text-xs short:text-[10px] text-gray-400 dark:text-gray-500 line-through">
+                ${{ (line.amount + line.savedAmount).toFixed(2) }}
+              </span>
+              <span class="font-semibold whitespace-nowrap text-gray-800 dark:text-gray-200">${{ line.amount.toFixed(2) }}</span>
+            </span>
           </div>
 
           <div
@@ -173,17 +188,29 @@
 
       <div v-if="!hideTotal" class="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 short:pt-2 space-y-1">
         <template v-if="hasDiscount">
+          <div class="text-[10px] sm:text-xs short:text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Descuentos aplicados
+          </div>
+          <div class="flex justify-between items-baseline gap-2 text-sm sm:text-base short:text-sm text-red-600 dark:text-red-400">
+            <span class="flex items-baseline flex-wrap gap-1.5 min-w-0">
+              <i class="ti ti-percent text-xs"></i>
+              <span class="break-words">{{ discountLabel }}</span>
+              <span v-if="discountType === 'percent'" class="text-xs">({{ percentLabel }}%)</span>
+              <span v-if="discountIncludesPackages" class="text-[10px] italic">· incluye paquetes</span>
+            </span>
+            <span class="whitespace-nowrap font-semibold">-${{ discountAmount.toFixed(2) }}</span>
+          </div>
+          <div v-if="discountReason" class="text-xs text-gray-500 dark:text-gray-400 italic pl-5">
+            Motivo: {{ discountReason }}
+          </div>
+          <div class="border-t border-dashed border-gray-300 dark:border-gray-600 my-2"></div>
           <div class="flex justify-between items-center gap-2 text-sm sm:text-base short:text-sm text-gray-500 dark:text-gray-400">
             <span>Subtotal</span>
             <span>${{ estimatedTotal.toFixed(2) }}</span>
           </div>
           <div class="flex justify-between items-center gap-2 text-sm sm:text-base short:text-sm text-red-500 dark:text-red-400">
-            <span class="flex items-baseline gap-1.5 min-w-0">
-              <span>Descuento</span>
-              <span v-if="discountType === 'percent'" class="text-xs">({{ percentLabel }}%)</span>
-              <span v-if="discountReason" class="text-xs italic truncate">· {{ discountReason }}</span>
-            </span>
-            <span class="whitespace-nowrap">-${{ discountAmount.toFixed(2) }}</span>
+            <span>Descuento</span>
+            <span>-${{ discountAmount.toFixed(2) }}</span>
           </div>
           <div class="flex justify-between items-center gap-2 pt-1 border-t border-gray-300 dark:border-gray-600">
             <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">{{ totalLabel }}</span>
@@ -208,10 +235,12 @@ export default {
     title: { type: String, default: '' },
     lines: { type: Array, default: () => [] },
     estimatedTotal: { type: Number, default: 0 },
+    discountSource: { type: String, default: null },
     discountType: { type: String, default: null },
     discountValue: { type: [Number, String], default: null },
     discountAmount: { type: Number, default: 0 },
     discountReason: { type: String, default: null },
+    discountIncludesPackages: { type: Boolean, default: false },
     totalLabel: { type: String, default: 'Total a cobrar' },
     emptyMessage: { type: String, default: 'No hay conceptos registrados.' },
     hideTotal: { type: Boolean, default: false }
@@ -227,6 +256,11 @@ export default {
       const v = Number(this.discountValue);
       if (!Number.isFinite(v)) return '';
       return v % 1 === 0 ? v.toFixed(0) : v.toFixed(2);
+    },
+    discountLabel() {
+      if (this.discountSource === 'auto') return 'Descuento automático';
+      if (this.discountSource === 'manual') return 'Descuento manual';
+      return 'Descuento';
     }
   },
   methods: {

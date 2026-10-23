@@ -37,17 +37,25 @@
                     :quote="quote"
                     :estimated-total="estimatedTotal"
                     :override-discount="overrideDiscount"
+                    :discount-source="discount_source"
+                    :discount-includes-packages="discount_applies_to_packages"
                   />
 
                   <DiscountPanel
+                    :source="discount_source"
                     :type="discount_type"
                     :value="discount_value"
                     :reason="discount_reason"
+                    :applies-to-packages="discount_applies_to_packages"
+                    :suggested-auto="false"
+                    :suggested-auto-percent="10"
                     :show-errors="showErrorsStep2"
                     :error="discountValueError"
+                    @set-source="setDiscountSource"
                     @update:type="discount_type = $event"
                     @update:value="discount_value = $event"
                     @update:reason="discount_reason = $event"
+                    @update:appliesToPackages="discount_applies_to_packages = $event"
                   />
                 </div>
               </template>
@@ -148,9 +156,12 @@ export default {
       successModalTitle: '',
       successModalMessage: '',
       successNext: null,
+      discount_source: 'none',
       discount_type: null,
       discount_value: null,
-      discount_reason: ''
+      discount_reason: '',
+      discount_applies_to_packages: false,
+      auto_discount_reason: null
     };
   },
   computed: {
@@ -178,7 +189,16 @@ export default {
       const services = (this.quote.services || []).filter(s => !s.quote_package_id);
       const serviceSum = services.reduce((sum, s) => sum + Number(s.price || 0) * Number(s.quantity || 0), 0);
 
-      return photoSum + serviceSum;
+      let base = photoSum + serviceSum;
+
+      if (this.discount_applies_to_packages) {
+        const packagesTotal = (this.quote.quote_packages || []).reduce(
+          (sum, p) => sum + Number(p.price_snapshot || 0), 0
+        );
+        base += packagesTotal;
+      }
+
+      return base;
     },
     discountAmount() {
       if (!this.discount_type) return 0;
@@ -242,15 +262,36 @@ export default {
         this.submitting = false;
         this.showCancelConfirm = false;
 
+        this.discount_source = this.quote?.discount_source || 'none';
         this.discount_type = this.quote?.discount_type || null;
         this.discount_value = (this.quote?.discount_value !== null && this.quote?.discount_value !== undefined)
           ? Number(this.quote.discount_value)
           : null;
         this.discount_reason = this.quote?.discount_reason || '';
+        this.discount_applies_to_packages = !!this.quote?.discount_applies_to_packages;
+        this.auto_discount_reason = this.quote?.auto_discount_reason || null;
       }
     }
   },
   methods: {
+    setDiscountSource(source) {
+      this.discount_source = source;
+      if (source === 'auto') {
+        if (this.discount_type === null) {
+          this.discount_reason = null;
+        }
+      } else if (source === 'manual') {
+        if (!this.discount_type) {
+          this.discount_type = 'percent';
+          this.discount_value = 10;
+        }
+      } else {
+        this.discount_type = null;
+        this.discount_value = null;
+        this.discount_reason = null;
+        this.auto_discount_reason = null;
+      }
+    },
     getNextBusinessDay(from = new Date()) {
       const next = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1);
       if (next.getDay() === 0) next.setDate(next.getDate() + 1);
@@ -303,9 +344,11 @@ export default {
         const payload = {
           estimated_delivery_date: this.deliveryDate,
           estimated_delivery_time: this.deliveryTime,
+          discount_source: this.discount_source || 'none',
           discount_type: this.overrideDiscount.type,
           discount_value: this.overrideDiscount.value,
           discount_reason: this.overrideDiscount.reason,
+          discount_applies_to_packages: !!this.discount_applies_to_packages,
           payments: this.payments.map(p => ({ amount: p.amount, payment_method: p.payment_method }))
         };
         const res = await axios.post(`/quotes/${this.quote.id}/convert`, payload);

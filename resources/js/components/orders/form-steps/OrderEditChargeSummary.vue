@@ -39,10 +39,12 @@
       title="Conceptos"
       :lines="summaryLines"
       :estimated-total="estimatedTotal"
+      :discount-source="discountSource"
       :discount-type="discountType"
       :discount-value="discountValue"
       :discount-amount="discountAmount"
       :discount-reason="discountReason"
+      :discount-includes-packages="discountIncludesPackages"
       total-label="Total"
       empty-message="Sin conceptos registrados."
     />
@@ -66,9 +68,11 @@ export default {
     estimatedTotal: { type: Number, default: 0 },
     initialTotal: { type: Number, default: 0 },
     paidTotal: { type: Number, default: 0 },
+    discountSource: { type: String, default: null },
     discountType: { type: String, default: null },
     discountValue: { type: [Number, String], default: null },
-    discountReason: { type: String, default: null }
+    discountReason: { type: String, default: null },
+    discountIncludesPackages: { type: Boolean, default: false }
   },
   computed: {
     totalChanged() {
@@ -100,20 +104,31 @@ export default {
           return sum + price * Number(l.quantity || 1);
         }, 0);
 
-      return photoSum + serviceSum;
+      let base = photoSum + serviceSum;
+
+      if (this.discountIncludesPackages) {
+        const packagesTotal = (this.packageLines || [])
+          .filter(l => l.package_id)
+          .reduce((sum, l) => sum + Number(l.price_snapshot ?? 0), 0);
+        base += packagesTotal;
+      }
+
+      return base;
     },
     discountAmount() {
       if (!this.discountType) return 0;
       const v = Number(this.discountValue || 0);
       if (!Number.isFinite(v) || v <= 0) return 0;
 
+      const base = Number(this.baseDirect);
+
       if (this.discountType === 'percent') {
         const clamped = Math.max(0, Math.min(100, v));
-        return Number((this.baseDirect * clamped / 100).toFixed(2));
+        return Number((base * clamped / 100).toFixed(2));
       }
 
       if (this.discountType === 'fixed') {
-        return Number(Math.min(v, this.baseDirect).toFixed(2));
+        return Number(Math.min(v, base).toFixed(2));
       }
 
       return 0;
@@ -150,7 +165,7 @@ export default {
           };
         });
 
-      const packageLines = this.packageLines
+        const packageLines = this.packageLines
         .filter(l => l.package_id)
         .map((l, idx) => {
           const fromCatalog = this.packages.find(p => p.id === l.package_id);
@@ -163,10 +178,25 @@ export default {
           } else {
             amount = 0;
           }
+          let listPrice = 0;
+          if (l.list_price_snapshot != null) listPrice = Number(l.list_price_snapshot);
+          else if (fromCatalog?.list_price != null) listPrice = Number(fromCatalog.list_price);
+          const savedAmount = listPrice > amount ? listPrice - amount : 0;
+          const savedPercent = (savedAmount > 0 && fromCatalog?.discount_type === 'percent')
+            ? Number(fromCatalog.discount_value || 0)
+            : null;
+          let savedReason = null;
+          if (savedAmount > 0 && fromCatalog) {
+            if (fromCatalog.discount_source === 'auto') savedReason = fromCatalog.auto_discount_reason || null;
+            else if (fromCatalog.discount_source === 'manual') savedReason = fromCatalog.discount_reason || null;
+          }
           return {
             key: `pkg-${l.id ?? 'new'}-${idx}`,
             label: name,
             amount,
+            savedAmount,
+            savedPercent,
+            savedReason,
             icon: 'ti ti-school'
           };
         });

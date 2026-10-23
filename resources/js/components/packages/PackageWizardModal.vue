@@ -139,9 +139,11 @@
                   placeholder="Ej. Incluye sesión extra, retoque digital, entrega en USB..."
                   class="w-full text-sm sm:text-base short:text-sm p-2.5 sm:p-3 short:p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-y min-h-[5rem] sm:min-h-[6rem] short:min-h-[4rem]"
                 ></textarea>
+                <!--
                 <p class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500">
                   Opcional. Solo se edita aquí; viaja como snapshot a las órdenes y cotizaciones donde se use este paquete.
                 </p>
+                -->
               </div>
             </section>
 
@@ -166,11 +168,15 @@
                   :subtotal="subtotal"
                   :discount-amount="discountAmount"
                   :total="total"
+                  :auto-eligible="autoDiscountEligibility.eligible"
+                  :auto-reason="autoDiscountEligibility.reason"
+                  :auto-percent="autoDiscountPercent"
                   :show-errors="showErrorsStep3"
                   :subtotal-error="fieldErrors.price_subtotal"
                   :discount-error="fieldErrors.price_discount"
                   :discount-error-message="discountErrorMessage"
                   @update:pricing="pricing = $event"
+                  @set-source="setDiscountSource"
                 />
               </template>
             </ChargePaymentLayout>
@@ -259,8 +265,11 @@ const emptyForm = () => ({
 
 const emptyPricing = () => ({
   subtotal_override: '',
+  discount_source: 'auto',
   discount_type: 'percent',
-  discount_value: ''
+  discount_value: '',
+  discount_reason: '',
+  auto_discount_reason: null
 });
 
 export default {
@@ -293,18 +302,15 @@ export default {
         { label: 'Precio y resumen' }
       ];
     },
-
     featureTabs() {
       return [
         { key: 'women', label: 'Mujeres', icon: 'ti-woman' },
         { key: 'men', label: 'Hombres', icon: 'ti-man' }
       ];
     },
-
     selectedSchool() {
       return this.schools.find(s => Number(s.id) === Number(this.form.school_id)) || null;
     },
-
     nextPackageNumber() {
       if (!this.form.school_id) return null;
       const numbers = this.existingPackages
@@ -312,11 +318,9 @@ export default {
         .map(p => Number(p.package_number) || 0);
       return (numbers.length ? Math.max(...numbers) : 0) + 1;
     },
-
     nameMissing() {
       return !String(this.form.name || '').trim();
     },
-
     nameDuplicated() {
       if (this.nameMissing || !this.form.school_id) return false;
       const target = String(this.form.name || '').trim().toLowerCase();
@@ -325,7 +329,6 @@ export default {
         && String(p.name || '').trim().toLowerCase() === target
       );
     },
-
     activeLines() {
       return this.photoLines
         .filter(l => l.photo_type_id)
@@ -366,7 +369,6 @@ export default {
         l.service_id && !this.additionalServices.find(s => s.id === l.service_id)
       );
     },
-
     priceLines() {
       return this.activeLines.map(l => {
         const pt = this.photoTypes.find(p => p.id === l.photo_type_id);
@@ -412,19 +414,28 @@ export default {
       return Number.isFinite(v) ? v : 0;
     },
     discountAmount() {
+      if (!this.pricing.discount_type) return 0;
       const v = this.discountValueNumber;
-      const raw = this.pricing.discount_type === 'percent' ? (this.subtotal * v) / 100 : v;
-      return round2(Math.min(Math.max(raw, 0), this.subtotal));
+      if (v <= 0) return 0;
+      const base = this.subtotal;
+      if (this.pricing.discount_type === 'percent') {
+        const clamped = Math.max(0, Math.min(100, v));
+        return round2(Math.min(base, base * clamped / 100));
+      }
+      if (this.pricing.discount_type === 'fixed') {
+        return round2(Math.min(base, v));
+      }
+      return 0;
     },
     total() {
       return Math.max(0, round2(this.subtotal - this.discountAmount));
     },
-
     discountErrorMessage() {
       if (this.pricing.discount_type === 'percent') return 'El porcentaje debe estar entre 0 y 100.';
       return 'El descuento debe ser 0 o mayor y no puede superar el subtotal.';
     },
     discountInvalid() {
+      if (this.pricing.discount_source === 'auto') return false;
       if (isBlank(this.pricing.discount_value)) return false;
       const v = Number(this.pricing.discount_value);
       if (!Number.isFinite(v) || v < 0) return true;
@@ -436,7 +447,6 @@ export default {
       const v = Number(this.pricing.subtotal_override);
       return !Number.isFinite(v) || v < 0;
     },
-
     fieldErrors() {
       return {
         school: !this.form.school_id,
@@ -460,7 +470,6 @@ export default {
     currentStepValid() {
       return this.keysValid(this.stepKeys[this.currentStep] || []);
     },
-
     photoLinesHasError() {
       return this.fieldErrors.photo_content || this.fieldErrors.photo_lines || this.fieldErrors.photo_duplicates;
     },
@@ -487,7 +496,6 @@ export default {
     updateFeature(key, value) {
       this.form = { ...this.form, [key]: value };
     },
-
     getValidationMessage() {
       if (this.fieldErrors.name_duplicated) {
         return 'Ya existe un paquete con ese nombre en esta escuela.';
@@ -506,7 +514,6 @@ export default {
       }
       return 'Por favor, completa todos los campos marcados con * antes de continuar.';
     },
-
     getCurrentState() {
       return {
         form: { ...this.form },
@@ -515,7 +522,6 @@ export default {
         pricing: { ...this.pricing }
       };
     },
-
     resetForm() {
       this.resetWizardState();
       this.featureTab = 'women';
@@ -525,14 +531,12 @@ export default {
       this.pricing = emptyPricing();
       this.showSchoolModal = false;
     },
-
     handleSchoolCreated(school) {
       this.schools.push(school);
       this.form = { ...this.form, school_id: school.id };
       this.showSchoolModal = false;
       this.$emit('school-created', school);
     },
-
     async submit() {
       if (!this.runSubmitChecks()) return;
       if (this.submitting) return;
@@ -547,7 +551,11 @@ export default {
           photo_types: this.activeLines,
           additional_services: this.activeServices,
           list_price: this.subtotal,
-          total_price: this.total
+          total_price: this.total,
+          discount_source: this.pricing.discount_source || 'none',
+          discount_type: this.pricing.discount_type || null,
+          discount_value: this.discountValueNumber || null,
+          discount_reason: (this.pricing.discount_reason || '').trim() || null
         };
         const res = await axios.post('/packages', payload);
         this.$emit('created', res.data.package);

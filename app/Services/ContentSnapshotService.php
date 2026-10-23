@@ -106,7 +106,7 @@ class ContentSnapshotService
         return round($packages + $lines + $services, 2);
     }
 
-    public function recalculateWithDiscount(Model $doc, ?string $type, ?float $value): array
+    public function recalculateWithDiscount(Model $doc, ?string $type, ?float $value, bool $applyToPackages = false): array
     {
         $total = $this->recalculate($doc);
         $r = $this->r($doc);
@@ -121,6 +121,12 @@ class ContentSnapshotService
             ->selectRaw('COALESCE(SUM(price * quantity), 0) AS t')->value('t');
 
         $baseDirect = round($directLines + $directServices, 2);
+
+        if ($applyToPackages) {
+            $packagesTotal = (float) $doc->{$r['packages']}()->sum('price_snapshot');
+            $baseDirect = round($baseDirect + $packagesTotal, 2);
+        }
+
         $discountAmount = 0.0;
 
         if ($type === 'percent' && $value !== null) {

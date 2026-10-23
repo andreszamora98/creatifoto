@@ -11,10 +11,12 @@
           title="Resumen de la cotización"
           :lines="summaryLines"
           :estimated-total="estimatedTotal"
+          :discount-source="discountSource"
           :discount-type="discountType"
           :discount-value="discountValue"
           :discount-amount="discountAmount"
           :discount-reason="discountReason"
+          :discount-includes-packages="discountIncludesPackages"
           total-label="Total"
           empty-message="Agrega tipos de fotografía o paquetes para ver el resumen."
         />
@@ -57,9 +59,11 @@ export default {
     selectedServices: { type: Array, default: () => [] },
     additionalServices: { type: Array, default: () => [] },
     estimatedTotal: { type: Number, default: 0 },
+    discountSource: { type: String, default: null },
     discountType: { type: String, default: null },
     discountValue: { type: [Number, String], default: null },
     discountReason: { type: String, default: null },
+    discountIncludesPackages: { type: Boolean, default: false },
     validUntil: { type: String, default: '' }
   },
   emits: ['update:validUntil'],
@@ -88,7 +92,16 @@ export default {
           return sum + unitPrice * quantity;
         }, 0);
 
-      return photoSum + serviceSum;
+      let base = photoSum + serviceSum;
+
+      if (this.discountIncludesPackages) {
+        const packagesTotal = (this.selectedPackages || []).reduce(
+          (sum, p) => sum + Number(p.total_price || 0), 0
+        );
+        base += packagesTotal;
+      }
+
+      return base;
     },
     discountAmount() {
       if (!this.discountType) return 0;
@@ -126,14 +139,30 @@ export default {
         };
       });
 
-      const packageLines = (this.selectedPackages || []).map(pkg => ({
-        key: 'pkg-' + pkg.id,
-        isPackage: true,
-        packageName: pkg.name || ('Paquete ' + pkg.package_number),
-        schoolName: pkg.school?.name || '',
-        amount: Number(pkg.total_price || 0),
-        children: this.buildPackageChildren(pkg)
-      }));
+      const packageLines = (this.selectedPackages || []).map(pkg => {
+        const priceSnapshot = Number(pkg.total_price || 0);
+        const listPrice = pkg.list_price != null ? Number(pkg.list_price) : 0;
+        const savedAmount = listPrice > priceSnapshot ? listPrice - priceSnapshot : 0;
+        const savedPercent = (savedAmount > 0 && pkg.discount_type === 'percent')
+          ? Number(pkg.discount_value || 0)
+          : null;
+        let savedReason = null;
+        if (savedAmount > 0) {
+          if (pkg.discount_source === 'auto') savedReason = pkg.auto_discount_reason || null;
+          else if (pkg.discount_source === 'manual') savedReason = pkg.discount_reason || null;
+        }
+        return {
+          key: 'pkg-' + pkg.id,
+          isPackage: true,
+          packageName: pkg.name || ('Paquete ' + pkg.package_number),
+          schoolName: pkg.school?.name || '',
+          amount: priceSnapshot,
+          savedAmount,
+          savedPercent,
+          savedReason,
+          children: this.buildPackageChildren(pkg)
+        };
+      });
 
       const serviceLines = (this.selectedServices || [])
         .filter(s => !s.order_package_id && !s.quote_package_id)

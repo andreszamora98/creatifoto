@@ -67,21 +67,29 @@
               :estimated-total="estimatedTotal"
               :initial-total="initialTotal"
               :paid-total="paidTotal"
+              :discount-source="discount_source"
               :discount-type="discount_type"
               :discount-value="discount_value"
               :discount-reason="discount_reason"
+              :discount-includes-packages="discount_applies_to_packages"
             />
 
             <div class="mt-3">
               <DiscountPanel
+                :source="discount_source"
                 :type="discount_type"
                 :value="discount_value"
                 :reason="discount_reason"
+                :applies-to-packages="discount_applies_to_packages"
+                :suggested-auto="autoDiscountEligibility.eligible"
+                :suggested-auto-percent="autoDiscountPercent"
                 :show-errors="submittingAttempted"
                 :error="fieldErrors.discount_value"
+                @set-source="setDiscountSource"
                 @update:type="discount_type = $event"
                 @update:value="discount_value = $event"
                 @update:reason="discount_reason = $event"
+                @update:appliesToPackages="discount_applies_to_packages = $event"
               />
             </div>
           </div>
@@ -216,11 +224,14 @@ export default {
       this.hydratePackageLinesFromRows(this.order.order_packages || []);
       this.hydrateServiceLinesFromRows(this.order.services || []);
 
+      this.discount_source = this.order.discount_source || 'none';
       this.discount_type = this.order.discount_type || null;
       this.discount_value = (this.order.discount_value !== null && this.order.discount_value !== undefined)
         ? Number(this.order.discount_value)
         : null;
       this.discount_reason = this.order.discount_reason || '';
+      this.discount_applies_to_packages = !!this.order.discount_applies_to_packages;
+      this.auto_discount_reason = this.order.auto_discount_reason || null;
 
       this.form = {
         estimated_delivery_date: this.order.estimated_delivery_date

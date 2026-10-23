@@ -21,6 +21,9 @@ class Quote extends Model
         'discount_value',
         'discount_amount',
         'discount_reason',
+        'discount_source',
+        'discount_applies_to_packages',
+        'auto_discount_reason',
         'notes',
         'valid_until',
         'status',
@@ -30,6 +33,7 @@ class Quote extends Model
         'total' => 'decimal:2',
         'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'discount_applies_to_packages' => 'boolean',
         'valid_until' => 'date',
     ];
 

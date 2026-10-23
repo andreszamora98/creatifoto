@@ -37,7 +37,7 @@
                   v-if="line.package_id"
                   type="button"
                   @click="emitViewDetails(line)"
-                  class="flex-shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-800/70 hover:text-white dark:hover:bg-blue-300/40 dark:hover:text-gray-900 px-2 py-1 rounded-lg text-xs sm:text-sm flex items-center gap-1 transition-colors"
+                  class="flex-shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-lg text-xs sm:text-sm flex items-center gap-1 transition-colors"
                 >
                   <i class="ti ti-info-circle text-sm sm:text-base"></i>
                   <span class="whitespace-nowrap">Ver características</span>
@@ -128,7 +128,7 @@
                       class="flex-1 min-w-0 bg-transparent border-0 outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 truncate disabled:cursor-not-allowed"
                       autocomplete="off"
                     >
-                    <span v-if="line.package_id && !isPackageOpen(line)" class="text-xs sm:text-sm short:text-xs font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap flex-shrink-0">
+                    <span v-if="line.package_id && !isPackageOpen(line)" class="text-xs sm:text-sm short:text-xs font-semibold text-green-700 dark:text-green-500 whitespace-nowrap flex-shrink-0">
                       ${{ packagePriceForLine(line).toFixed(2) }}
                     </span>
                     <button
@@ -158,12 +158,34 @@
                           <i v-if="pkg.id === line.package_id" class="ti ti-check text-blue-600 dark:text-blue-400 text-base sm:text-lg flex-shrink-0"></i>
                           <span v-else class="w-4 sm:w-5 flex-shrink-0"></span>
                           <span class="flex-1 text-left truncate">{{ packageLabel(pkg) }}</span>
-                          <span class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap flex-shrink-0">${{ Number(pkg.total_price).toFixed(2) }}</span>
+                          <span
+                            class="text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap flex-shrink-0"
+                            :class="Number(pkg.discount_amount || 0) > 0 ? 'line-through decoration-gray-400 mr-1' : ''"
+                          >${{ Number(pkg.list_price ?? pkg.total_price ?? 0).toFixed(2) }}</span>
+                          <span v-if="Number(pkg.discount_amount || 0) > 0" class="text-xs sm:text-sm short:text-xs text-green-700 dark:text-green-500 font-semibold whitespace-nowrap flex-shrink-0">
+                            ${{ Number(pkg.total_price || 0).toFixed(2) }}
+                          </span>
                         </button>
                         <p v-if="filteredPackagesFor(line).length === 0" class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 text-center py-2 sm:py-3">Sin coincidencias</p>
                       </div>
                     </div>
                   </transition>
+                </div>
+              </div>
+
+              <div v-if="linePackageDiscount(line).amount > 0" class="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-2.5 sm:p-3 short:p-2">
+                <div class="flex items-start gap-2">
+                  <i class="ti ti-discount-2 text-green-600 dark:text-green-400 text-base sm:text-lg flex-shrink-0 mt-0.5"></i>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs sm:text-sm short:text-xs text-green-800 dark:text-green-300 font-medium">
+                      Este paquete ya incluye descuento de
+                      <strong>{{ linePackageDiscount(line).label }}</strong>
+                      (<strong>-${{ linePackageDiscount(line).amount.toFixed(2) }}</strong>)
+                    </p>
+                    <p v-if="linePackageDiscount(line).reason" class="text-[10px] sm:text-xs short:text-[10px] text-green-700 dark:text-green-400 italic mt-0.5">
+                      Motivo: {{ linePackageDiscount(line).reason }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -214,27 +236,15 @@
                       <i :class="[cl.icon, 'text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400']"></i>
                     </span>
 
-                    <span class="flex flex-col min-w-0 flex-1 gap-0.5">
+                    <span class="flex flex-col min-w-0 flex-1">
                       <span class="break-words">
-                        {{ cl.name }}<span
-                          v-if="cl.quantity"
-                          class="text-gray-300 dark:text-gray-600 mx-1"
-                        >·</span><span
-                          v-if="cl.unitPrice !== undefined && cl.unitPrice !== null"
-                          class="text-green-700 dark:text-green-500 font-semibold"
-                        >{{ formatCurrency(cl.unitPrice) }} c/u</span><span
-                          v-if="cl.quantity"
-                          class="text-gray-300 dark:text-gray-600 mx-1"
-                        >·</span><span
-                          v-if="cl.quantity"
-                          class="text-blue-600 dark:text-blue-400 font-semibold"
-                        >x{{ cl.quantity }}</span>
+                        {{ cl.name }}<span v-if="cl.quantity" class="text-blue-600 dark:text-blue-400 font-semibold ml-1">x{{ cl.quantity }}</span>
                       </span>
                       <span
                         v-if="cl.features.length"
-                        class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 break-words"
+                        class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] sm:text-xs short:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5"
                       >
-                        {{ cl.features.join(' · ') }}
+                        <span v-for="(f, i) in cl.features" :key="i">{{ f }}</span>
                       </span>
                     </span>
                   </span>
@@ -359,6 +369,31 @@ export default {
       return line.package_id ? 'Buscar otro paquete...' : 'Buscar o seleccionar paquete...';
     },
 
+    linePackageDiscount(line) {
+      const pkg = this.packageById(line.package_id);
+      if (!pkg) return { amount: 0, label: '', reason: null };
+      const amount = Number(pkg.discount_amount || 0);
+      if (amount <= 0) return { amount: 0, label: '', reason: null };
+
+      const type = pkg.discount_type;
+      const value = Number(pkg.discount_value || 0);
+      let label;
+      if (type === 'percent') {
+        label = `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(2)}%`;
+      } else {
+        label = `$${amount.toFixed(2)}`;
+      }
+
+      let reason = null;
+      if (pkg.discount_source === 'auto') {
+        reason = pkg.auto_discount_reason || 'Descuento automático';
+      } else if (pkg.discount_source === 'manual') {
+        reason = pkg.discount_reason || 'Descuento manual';
+      }
+
+      return { amount, label, reason };
+    },
+
     packageContentFor(line) {
       const pkg = this.packageById(line.package_id);
       if (!pkg) return [];
@@ -404,13 +439,15 @@ export default {
     packageContentLines(line) {
       return this.packageContentFor(line).map((item, idx) => {
         const features = [];
+        features.push('• ' + this.formatCurrency(item.unit_price) + ' c/u');
         if (item.type === 'photo') {
-          features.push(item.format === 'color' ? 'Color' : 'B/N');
-          if (item.background && String(item.background).trim() !== '') {
-            features.push('Fondo ' + String(item.background).trim().toLowerCase());
+          features.push('• ' + (item.format === 'color' ? 'Color' : 'B/N'));
+          const rawBg = item.background;
+          if (rawBg !== undefined && rawBg !== null && String(rawBg).trim() !== '') {
+            features.push('• Fondo ' + String(rawBg).trim().toLowerCase());
           }
           if (item.paper_name && String(item.paper_name).trim() !== '') {
-            features.push('Papel ' + String(item.paper_name).trim().toLowerCase());
+            features.push('• Papel ' + String(item.paper_name).trim().toLowerCase());
           }
         }
 

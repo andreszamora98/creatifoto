@@ -34,54 +34,139 @@
 
       <div>
         <label class="block text-sm sm:text-base short:text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 short:mb-0.5">Descuento</label>
-        <div class="flex gap-2 short:gap-1.5">
-          <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden flex-shrink-0">
-            <button
-              type="button"
-              @click="setDiscountType('percent')"
-              class="px-3 sm:px-4 short:px-3 text-sm sm:text-lg short:text-sm font-medium transition-colors"
-              :class="pricing.discount_type === 'percent'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
-              title="Descuento en porcentaje"
-            >%</button>
-            <button
-              type="button"
-              @click="setDiscountType('amount')"
-              class="px-3 sm:px-4 short:px-3 text-sm sm:text-lg short:text-sm font-medium border-l border-gray-300 dark:border-gray-600 transition-colors"
-              :class="pricing.discount_type === 'amount'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
-              title="Descuento en monto"
-            >$</button>
-          </div>
 
-          <div class="relative flex-1 min-w-0">
-            <span class="absolute left-2.5 sm:left-3 short:left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm short:text-xs pointer-events-none">
-              {{ pricing.discount_type === 'percent' ? '%' : '$' }}
-            </span>
-            <input
-              type="number" min="0" step="0.01"
-              :max="pricing.discount_type === 'percent' ? 100 : null"
-              :value="pricing.discount_value"
-              @input="update({ discount_value: $event.target.value })"
-              v-blur-on-enter
-              enterkeyhint="done"
-              placeholder="0"
-              :class="inputClass(showErrors && discountError, 'pl-7 sm:pl-8 short:pl-6')"
-            />
+        <div v-if="pricing.discount_source === 'auto' && autoEligible" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800 space-y-2">
+          <div>
+            <div class="text-sm sm:text-base font-semibold text-blue-800 dark:text-blue-300">
+              Descuento automático {{ autoPercent }}%
+            </div>
+            <p v-if="autoReason" class="text-xs sm:text-sm text-blue-700 dark:text-blue-400 mt-0.5">
+              Motivo: {{ autoReason }}
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              @click="$emit('set-source', 'none')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Quitar</button>
+            <button
+              type="button"
+              @click="$emit('set-source', 'manual')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Convertir a manual</button>
           </div>
         </div>
-        <p v-if="showErrors && discountError" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
-          {{ discountErrorMessage }}
-        </p>
+
+        <div v-else-if="pricing.discount_source === 'auto'" class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800 space-y-2">
+          <p class="text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+            No se cumple la condición para el descuento automático. Agrega más fotos o aplica uno manual.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              @click="$emit('set-source', 'manual')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Agregar manual</button>
+            <button
+              type="button"
+              @click="$emit('set-source', 'none')"
+              class="text-sm px-3 py-1.5 rounded-lg text-amber-700 dark:text-amber-300 hover:underline"
+            >Desactivar automático</button>
+          </div>
+        </div>
+
+        <div v-else-if="pricing.discount_source === 'manual'">
+          <div class="flex gap-2 short:gap-1.5">
+            <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden flex-shrink-0">
+              <button
+                type="button"
+                @click="setDiscountType('percent')"
+                class="px-3 sm:px-4 short:px-3 text-sm sm:text-lg short:text-sm font-medium transition-colors"
+                :class="pricing.discount_type === 'percent'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                title="Descuento en porcentaje"
+              >%</button>
+              <button
+                type="button"
+                @click="setDiscountType('amount')"
+                class="px-3 sm:px-4 short:px-3 text-sm sm:text-lg short:text-sm font-medium border-l border-gray-300 dark:border-gray-600 transition-colors"
+                :class="pricing.discount_type === 'amount'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'"
+                title="Descuento en monto"
+              >$</button>
+            </div>
+
+            <div class="relative flex-1 min-w-0">
+              <span class="absolute left-2.5 sm:left-3 short:left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm short:text-xs pointer-events-none">
+                {{ pricing.discount_type === 'percent' ? '%' : '$' }}
+              </span>
+              <input
+                type="number" min="0" step="0.01"
+                :max="pricing.discount_type === 'percent' ? 100 : null"
+                :value="pricing.discount_value"
+                @input="update({ discount_value: $event.target.value })"
+                v-blur-on-enter
+                enterkeyhint="done"
+                placeholder="0"
+                :class="inputClass(showErrors && discountError, 'pl-7 sm:pl-8 short:pl-6')"
+              />
+            </div>
+          </div>
+
+          <input
+            type="text"
+            :value="pricing.discount_reason || ''"
+            @input="update({ discount_reason: $event.target.value })"
+            v-blur-on-enter
+            maxlength="255"
+            placeholder="Motivo del descuento (opcional)"
+            class="w-full mt-2 text-sm sm:text-base short:text-sm p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+          >
+
+          <div class="flex flex-wrap gap-2 mt-2">
+            <button
+              v-if="autoEligible"
+              type="button"
+              @click="$emit('set-source', 'auto')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Restaurar automático</button>
+            <button
+              type="button"
+              @click="$emit('set-source', 'none')"
+              class="text-sm px-3 py-1.5 rounded-lg text-red-600 dark:text-red-400 hover:underline"
+            >Quitar descuento</button>
+          </div>
+
+          <p v-if="showErrors && discountError" class="text-xs sm:text-sm short:text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
+            {{ discountErrorMessage }}
+          </p>
+        </div>
+
+        <div v-else>
+          <p class="text-sm text-gray-500 dark:text-gray-400 italic mb-2">Sin descuento aplicado.</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-if="autoEligible"
+              type="button"
+              @click="$emit('set-source', 'auto')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+            >Aplicar descuento automático {{ autoPercent }}%</button>
+            <button
+              type="button"
+              @click="$emit('set-source', 'manual')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >Agregar manual</button>
+          </div>
+        </div>
       </div>
 
       <div v-if="discountAmount > 0" class="flex items-center justify-between gap-2 text-green-600 dark:text-green-400">
         <span class="truncate"><i class="ti ti-discount-2 mr-1"></i>{{ discountLabel }}</span>
         <span class="font-medium whitespace-nowrap">-${{ discountAmount.toFixed(2) }}</span>
       </div>
-      <p v-else class="text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 italic">Sin descuento aplicado.</p>
     </div>
 
     <div class="mt-3 sm:mt-5 short:mt-2 flex items-center justify-between gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 sm:p-5 short:p-2">
@@ -104,12 +189,15 @@ export default {
     subtotal: { type: Number, default: 0 },
     discountAmount: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
+    autoEligible: { type: Boolean, default: false },
+    autoReason: { type: String, default: null },
+    autoPercent: { type: Number, default: 10 },
     showErrors: { type: Boolean, default: false },
     subtotalError: { type: Boolean, default: false },
     discountError: { type: Boolean, default: false },
     discountErrorMessage: { type: String, default: 'Descuento inválido.' }
   },
-  emits: ['update:pricing'],
+  emits: ['update:pricing', 'set-source'],
   computed: {
     overridden() {
       const v = this.pricing.subtotal_override;
@@ -119,6 +207,9 @@ export default {
       return this.overridden ? this.pricing.subtotal_override : this.calculatedSubtotal.toFixed(2);
     },
     discountLabel() {
+      if (this.pricing.discount_source === 'auto') {
+        return `Descuento automático (${this.autoPercent}%)`;
+      }
       if (this.pricing.discount_type === 'percent') {
         const v = Number(this.pricing.discount_value);
         return `Descuento (${Number.isFinite(v) ? v : 0}%)`;

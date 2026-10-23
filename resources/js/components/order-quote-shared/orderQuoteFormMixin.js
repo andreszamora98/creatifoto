@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const AUTO_DISCOUNT_PERCENT = 10;
+
 export default {
   data() {
     return {
@@ -43,15 +45,58 @@ export default {
       photoLines: [],
       serviceLines: [],
 
+      discount_source: 'auto',
       discount_type: null,
       discount_value: null,
       discount_reason: '',
+      discount_applies_to_packages: false,
+      auto_discount_reason: null,
       pickup_persons: [],
 
       initialState: null
     };
   },
   computed: {
+    autoDiscountPercent() {
+      return AUTO_DISCOUNT_PERCENT;
+    },
+    autoDiscountEligibility() {
+      const direct = (this.photoLines || []).filter(
+        l => l.photo_type_id && !l.order_package_id && !l.quote_package_id
+      );
+
+      if (direct.length === 0 || this.photoTypes.length === 0) {
+        return { eligible: false, reason: null };
+      }
+
+      const grouped = {};
+      direct.forEach(l => {
+        const id = Number(l.photo_type_id);
+        grouped[id] = (grouped[id] || 0) + Number(l.quantity || 0);
+      });
+
+      let matchedA = null;
+      let completeTypes = 0;
+
+      for (const [typeId, total] of Object.entries(grouped)) {
+        const type = this.photoTypes.find(t => Number(t.id) === Number(typeId));
+        if (!type) continue;
+        const base = Math.max(1, Number(type.base_quantity || 1));
+
+        if (matchedA === null && total >= 2 * base) {
+          matchedA = type;
+        }
+        if (total >= base) completeTypes++;
+      }
+
+      if (matchedA) {
+        return { eligible: true, reason: `2+ órdenes completas de "${matchedA.name}"` };
+      }
+      if (completeTypes >= 3) {
+        return { eligible: true, reason: `${completeTypes} tipos de fotografía con cantidad completa` };
+      }
+      return { eligible: false, reason: null };
+    },
     selectedPackageIds() {
       return this.packageLines
         .filter(l => l.package_id)
@@ -67,6 +112,7 @@ export default {
             id: l.package_id,
             name: l.package_name_snapshot || ('Paquete #' + l.package_id),
             total_price: Number(l.price_snapshot || 0),
+            list_price: l.list_price_snapshot != null ? Number(l.list_price_snapshot) : null,
             school_id: l.school_id ?? null,
             package_number: null
           };
@@ -214,18 +260,28 @@ export default {
 
       return photoSum + serviceSum;
     },
+    discountBase() {
+      let base = Number(this.baseDirect);
+      if (this.discount_applies_to_packages) {
+        const packagesTotal = this.selectedPackagesData.reduce((sum, p) => sum + Number(p.total_price || 0), 0);
+        base += packagesTotal;
+      }
+      return base;
+    },
     discountAmount() {
       if (!this.discount_type) return 0;
       const v = Number(this.discount_value || 0);
       if (!Number.isFinite(v) || v <= 0) return 0;
 
+      const base = Number(this.discountBase);
+
       if (this.discount_type === 'percent') {
         const clamped = Math.max(0, Math.min(100, v));
-        return Number((this.baseDirect * clamped / 100).toFixed(2));
+        return Number((base * clamped / 100).toFixed(2));
       }
 
       if (this.discount_type === 'fixed') {
-        return Number(Math.min(v, this.baseDirect).toFixed(2));
+        return Number(Math.min(v, base).toFixed(2));
       }
 
       return 0;
@@ -254,6 +310,7 @@ export default {
         await this.loadCatalogs();
         this.afterCatalogsLoaded();
         this.$nextTick(() => {
+          this.syncAutoDiscount();
           this.initialState = this.getCurrentState();
           this.isDirty = false;
         });
@@ -261,6 +318,14 @@ export default {
         this.resetForm();
         this.initialState = null;
       }
+    },
+    photoLines: {
+      deep: true,
+      handler() { this.syncAutoDiscount(); }
+    },
+    photoTypes: {
+      deep: true,
+      handler() { this.syncAutoDiscount(); }
     },
     customerSearch(newVal) {
       const trimmed = newVal.trim();
@@ -285,6 +350,55 @@ export default {
     }
   },
   methods: {
+    syncAutoDiscount() {
+      if (this.discount_source !== 'auto') return;
+
+      const e = this.autoDiscountEligibility;
+      if (e.eligible) {
+        this.discount_type = 'percent';
+        this.discount_value = this.autoDiscountPercent;
+        this.discount_reason = e.reason;
+        this.auto_discount_reason = e.reason;
+      } else {
+        this.discount_type = null;
+        this.discount_value = null;
+        this.discount_reason = null;
+        this.auto_discount_reason = null;
+      }
+    },
+    setDiscountSource(source) {
+      this.discount_source = source;
+      if (source === 'auto') {
+        this.syncAutoDiscount();
+      } else if (source === 'manual') {
+        if (!this.discount_type) {
+          this.discount_type = 'percent';
+          this.discount_value = this.autoDiscountPercent;
+        }
+      } else {
+        this.discount_type = null;
+        this.discount_value = null;
+        this.discount_reason = null;
+        this.auto_discount_reason = null;
+      }
+    },
+    resolveDiscountPayload() {
+      const source = this.discount_source || 'none';
+      const type = source === 'auto' && !this.autoDiscountEligibility.eligible
+        ? null
+        : (this.discount_type || null);
+      return {
+        discount_source: source,
+        discount_type: type,
+        discount_value: type
+          ? (this.discount_value !== null && this.discount_value !== undefined && this.discount_value !== ''
+              ? Number(this.discount_value)
+              : null)
+          : null,
+        discount_reason: (this.discount_reason || '').trim() || null,
+        discount_applies_to_packages: !!this.discount_applies_to_packages,
+      };
+    },
     afterCatalogsLoaded() {},
     afterContactUpdated() {},
 
@@ -537,9 +651,12 @@ export default {
       this.photoLines = [];
       this.packageLines = [];
       this.serviceLines = [];
+      this.discount_source = 'auto';
       this.discount_type = null;
       this.discount_value = null;
       this.discount_reason = '';
+      this.discount_applies_to_packages = false;
+      this.auto_discount_reason = null;
       this.pickup_persons = [];
       this.isDirty = false;
       this.submittingAttempted = false;
@@ -556,9 +673,12 @@ export default {
         customerPhone: this.customerPhone,
         customerEmail: this.customerEmail,
         photoLines: JSON.parse(JSON.stringify(this.photoLines)),
+        discount_source: this.discount_source,
         discount_type: this.discount_type,
         discount_value: this.discount_value,
         discount_reason: this.discount_reason,
+        discount_applies_to_packages: this.discount_applies_to_packages,
+        auto_discount_reason: this.auto_discount_reason,
         pickup_persons: JSON.parse(JSON.stringify(this.pickup_persons))
       };
     },
@@ -603,15 +723,6 @@ export default {
         };
       }
       return { customer_id: customerId, new_customer: newCustomer };
-    },
-
-    resolveDiscountPayload() {
-      const type = this.discount_type || null;
-      return {
-        discount_type: type,
-        discount_value: type ? (this.discount_value !== null && this.discount_value !== undefined && this.discount_value !== '' ? Number(this.discount_value) : null) : null,
-        discount_reason: (this.discount_reason || '').trim() || null
-      };
     },
 
     handleClose() {
@@ -661,7 +772,8 @@ export default {
         package_name_snapshot: r.package_name_snapshot || null,
         school_id: r.school_id ?? null,
         school_name_snapshot: r.school_name_snapshot || null,
-        price_snapshot: Number(r.price_snapshot ?? 0)
+        price_snapshot: Number(r.price_snapshot ?? 0),
+        list_price_snapshot: r.list_price_snapshot != null ? Number(r.list_price_snapshot) : null
       }));
     },
 

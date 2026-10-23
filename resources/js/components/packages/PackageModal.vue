@@ -75,7 +75,29 @@
                     <div class="space-y-1 sm:space-y-2 text-sm sm:text-base">
                       <div v-for="row in infoRows" :key="row.label" class="flex justify-between items-center gap-2 py-1.5 sm:py-2">
                         <span class="font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">{{ row.label }}:</span>
-                        <span class="font-bold text-gray-700 dark:text-gray-300 text-right ml-2 min-w-0 break-words">{{ row.value }}</span>
+                        <span class="font-bold text-gray-700 dark:text-gray-300 text-right ml-2 min-w-0 break-words">
+                          <span v-if="row.strikeValue" class="text-gray-400 dark:text-gray-500 line-through mr-2">{{ row.strikeValue }}</span>
+                          <span>{{ row.value }}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div
+                      v-if="hasDiscount && discountMeta"
+                      class="mt-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-2.5 sm:p-3"
+                    >
+                      <div class="flex items-start gap-2">
+                        <i class="ti ti-discount-2 text-green-600 dark:text-green-400 text-base sm:text-lg flex-shrink-0 mt-0.5"></i>
+                        <div class="min-w-0 flex-1">
+                          <p class="text-xs sm:text-sm text-green-800 dark:text-green-300 font-medium">
+                            Este paquete ya incluye descuento de
+                            <strong>{{ discountMeta.percent != null ? discountMeta.percent + '%' : formatCurrency(discountMeta.amount) }}</strong>
+                            (<strong>-${{ discountMeta.amount.toFixed(2) }}</strong>)
+                          </p>
+                          <p v-if="discountMeta.reason" class="text-[10px] sm:text-xs text-green-700 dark:text-green-400 italic mt-0.5">
+                            Motivo: {{ discountMeta.reason }}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -246,29 +268,23 @@
                     <h5 class="text-xs sm:text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Precio del paquete
                     </h5>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
-                      <div>
-                        <label class="form-label text-sm sm:text-lg font-medium block mb-1.5 sm:mb-2 text-gray-700 dark:text-gray-300">
-                          Precio total <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                          <span class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm sm:text-lg">$</span>
-                          <input
-                            v-model.number="form.total_price"
-                            v-blur-on-enter
-                            enterkeyhint="done"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            :class="[fieldClass(showErrors && priceMissing), 'pl-7 sm:pl-9']"
-                          >
-                        </div>
-                        <p v-if="showErrors && priceMissing" class="text-xs sm:text-base text-red-600 dark:text-red-400 mt-1 font-medium">
-                          Campo obligatorio*
-                        </p>
-                      </div>
-                    </div>
+
+                    <PackagePriceBreakdown
+                      :pricing="pricing"
+                      :calculated-subtotal="calculatedSubtotal"
+                      :subtotal="subtotal"
+                      :discount-amount="discountAmount"
+                      :total="total"
+                      :auto-eligible="autoDiscountEligibility.eligible"
+                      :auto-reason="autoDiscountEligibility.reason"
+                      :auto-percent="autoDiscountPercent"
+                      :show-errors="showErrors"
+                      :subtotal-error="subtotalInvalid"
+                      :discount-error="discountInvalid"
+                      :discount-error-message="discountErrorMessage"
+                      @update:pricing="pricing = $event"
+                      @set-source="setDiscountSource"
+                    />
                   </div>
                 </div>
 
@@ -389,12 +405,13 @@ import axios from 'axios';
 import AlertModal from '../common/AlertModal.vue';
 import SchoolModal from './SchoolModal.vue';
 import PackageInfoStep from './form-steps/PackageInfoStep.vue';
+import PackagePriceBreakdown from './form-steps/PackagePriceBreakdown.vue';
 import PhotoTypeLinesEditor from '../order-quote-shared/photo-lines/PhotoTypeLinesEditor.vue';
 import AdditionalServiceLinesEditor from '../order-quote-shared/AdditionalServiceLinesEditor.vue';
 
-const FIELD_BASE =
-  'form-control form-control-sm w-full text-sm sm:text-lg p-2.5 sm:p-4 rounded-lg border bg-gray-50 dark:bg-gray-700 ' +
-  'text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+const AUTO_DISCOUNT_PERCENT = 10;
+const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+const isBlank = (v) => v === '' || v === null || v === undefined;
 
 const FEATURE_THEMES = {
   women: {
@@ -415,10 +432,30 @@ const FEATURE_THEMES = {
 
 const pad = (n, len = 2) => String(n ?? '').padStart(len, '0');
 
+const emptyPricing = () => ({
+  subtotal_override: '',
+  discount_source: 'auto',
+  discount_type: 'percent',
+  discount_value: '',
+  discount_reason: '',
+  auto_discount_reason: null
+});
+
+const emptyForm = () => ({
+  school_id: null,
+  name: '',
+  total_price: null,
+  list_price: null,
+  women_features_text: '',
+  men_features_text: '',
+  package_notes: ''
+});
+
 export default {
   name: 'PackageModal',
   components: {
-    AlertModal, SchoolModal, PackageInfoStep, PhotoTypeLinesEditor, AdditionalServiceLinesEditor
+    AlertModal, SchoolModal, PackageInfoStep, PackagePriceBreakdown,
+    PhotoTypeLinesEditor, AdditionalServiceLinesEditor
   },
   props: {
     show: { type: Boolean, default: false },
@@ -447,17 +484,132 @@ export default {
       existingPackages: [],
       photoLines: [],
       serviceLines: [],
-      form: {
-        school_id: null,
-        name: '',
-        total_price: null,
-        women_features_text: '',
-        men_features_text: '',
-        package_notes: ''
-      }
+      pricing: emptyPricing(),
+      form: emptyForm()
     };
   },
   computed: {
+    autoDiscountPercent() {
+      return AUTO_DISCOUNT_PERCENT;
+    },
+    autoDiscountEligibility() {
+      const direct = (this.photoLines || []).filter(l => l.photo_type_id);
+      if (direct.length === 0) return { eligible: false, reason: null };
+
+      const grouped = {};
+      direct.forEach(l => {
+        const id = Number(l.photo_type_id);
+        grouped[id] = (grouped[id] || 0) + Number(l.quantity || 0);
+      });
+
+      let matchedA = null;
+      let completeTypes = 0;
+
+      for (const [typeId, total] of Object.entries(grouped)) {
+        const type = this.photoTypes.find(t => Number(t.id) === Number(typeId));
+        if (!type) continue;
+        const base = Math.max(1, Number(type.base_quantity || 1));
+        if (matchedA === null && total >= 2 * base) matchedA = type;
+        if (total >= base) completeTypes++;
+      }
+
+      if (matchedA) return { eligible: true, reason: `2+ órdenes completas de "${matchedA.name}"` };
+      if (completeTypes >= 3) return { eligible: true, reason: `${completeTypes} tipos de fotografía con cantidad completa` };
+      return { eligible: false, reason: null };
+    },
+    calculatedSubtotal() {
+      const photos = this.photoLines
+        .filter(l => l.photo_type_id)
+        .reduce((sum, l) => {
+          const price = (l.unit_price !== undefined && l.unit_price !== null)
+            ? Number(l.unit_price)
+            : Number(this.photoTypes.find(p => p.id === l.photo_type_id)?.base_price || 0);
+          return sum + price * Number(l.quantity || 0);
+        }, 0);
+
+      const services = this.serviceLines
+        .filter(l => l.service_id)
+        .reduce((sum, l) => {
+          const price = (l.unit_price !== undefined && l.unit_price !== null)
+            ? Number(l.unit_price)
+            : Number(this.additionalServices.find(s => s.id === l.service_id)?.default_price || 0);
+          return sum + price * Number(l.quantity || 0);
+        }, 0);
+
+      return round2(photos + services);
+    },
+    subtotalOverridden() {
+      return !isBlank(this.pricing.subtotal_override);
+    },
+    subtotal() {
+      if (!this.subtotalOverridden) return this.calculatedSubtotal;
+      const v = Number(this.pricing.subtotal_override);
+      return Number.isFinite(v) ? round2(Math.max(0, v)) : 0;
+    },
+    discountValueNumber() {
+      const v = Number(this.pricing.discount_value);
+      return Number.isFinite(v) ? v : 0;
+    },
+    discountAmount() {
+      if (!this.pricing.discount_type) return 0;
+      const v = this.discountValueNumber;
+      if (v <= 0) return 0;
+      const base = this.subtotal;
+      if (this.pricing.discount_type === 'percent') {
+        const clamped = Math.max(0, Math.min(100, v));
+        return round2(Math.min(base, base * clamped / 100));
+      }
+      if (this.pricing.discount_type === 'fixed') {
+        return round2(Math.min(base, v));
+      }
+      return 0;
+    },
+    total() {
+      return Math.max(0, round2(this.subtotal - this.discountAmount));
+    },
+    discountErrorMessage() {
+      if (this.pricing.discount_type === 'percent') return 'El porcentaje debe estar entre 0 y 100.';
+      return 'El descuento debe ser 0 o mayor y no puede superar el subtotal.';
+    },
+    discountInvalid() {
+      if (this.pricing.discount_source === 'auto') return false;
+      if (isBlank(this.pricing.discount_value)) return false;
+      const v = Number(this.pricing.discount_value);
+      if (!Number.isFinite(v) || v < 0) return true;
+      if (this.pricing.discount_type === 'percent') return v > 100;
+      return v > this.subtotal;
+    },
+    subtotalInvalid() {
+      if (!this.subtotalOverridden) return false;
+      const v = Number(this.pricing.subtotal_override);
+      return !Number.isFinite(v) || v < 0;
+    },
+    hasDiscount() {
+      return this.form.list_price != null
+        && this.form.total_price != null
+        && Number(this.form.list_price) > Number(this.form.total_price);
+    },
+    discountMeta() {
+      if (!this.hasDiscount) return null;
+      const listPrice = Number(this.form.list_price);
+      const totalPrice = Number(this.form.total_price);
+      const amount = round2(listPrice - totalPrice);
+      const type = this.pricing.discount_type;
+      const value = Number(this.pricing.discount_value || 0);
+
+      let percent = null;
+      if (type === 'percent' && value > 0) {
+        percent = value % 1 === 0 ? Number(value.toFixed(0)) : Number(value.toFixed(2));
+      } else if (listPrice > 0 && amount > 0) {
+        percent = Math.round((amount / listPrice) * 100);
+      }
+
+      let reason = null;
+      if (this.pricing.discount_source === 'auto') reason = this.pricing.auto_discount_reason || null;
+      else if (this.pricing.discount_source === 'manual') reason = this.pricing.discount_reason || null;
+
+      return { amount, percent, reason };
+    },
     featureTabs() {
       return [
         { key: 'women', label: 'Mujeres', icon: 'ti-woman' },
@@ -486,10 +638,17 @@ export default {
       return String(this.form.package_notes || '').trim() !== '';
     },
     infoRows() {
+      const priceRow = {
+        label: 'Precio total',
+        value: this.formatCurrency(this.form.total_price)
+      };
+      if (this.hasDiscount) {
+        priceRow.strikeValue = this.formatCurrency(this.form.list_price);
+      }
       const rows = [
         { label: 'Folio', value: this.packageCode },
         { label: 'Nombre', value: this.form.name || '—' },
-        { label: 'Precio total', value: this.formatCurrency(this.form.total_price) }
+        priceRow
       ];
       if (this.createdAt) rows.push({ label: 'Fecha de creación', value: this.formatDate(this.createdAt) });
       return rows;
@@ -545,11 +704,6 @@ export default {
           };
         });
     },
-    priceMissing() {
-      return this.form.total_price === null
-        || this.form.total_price === undefined
-        || this.form.total_price === '';
-    },
     nameMissing() {
       return !String(this.form.name || '').trim();
     },
@@ -595,6 +749,12 @@ export default {
         this.resetForm();
       }
     },
+    photoLines: {
+      deep: true,
+      handler() {
+        this.syncAutoDiscount();
+      }
+    },
     'form.name'() {
       if (this.backendNameError) this.backendNameError = '';
     },
@@ -603,11 +763,55 @@ export default {
     }
   },
   methods: {
-    fieldClass(invalid) {
-      return [
-        FIELD_BASE,
-        invalid ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
-      ];
+    syncAutoDiscount() {
+      if (!this.pricing || this.pricing.discount_source !== 'auto') return;
+
+      const e = this.autoDiscountEligibility;
+      if (e.eligible) {
+        this.pricing = {
+          ...this.pricing,
+          discount_type: 'percent',
+          discount_value: this.autoDiscountPercent,
+          auto_discount_reason: e.reason
+        };
+      } else {
+        this.pricing = {
+          ...this.pricing,
+          discount_type: null,
+          discount_value: null,
+          auto_discount_reason: null
+        };
+      }
+    },
+    setDiscountSource(source) {
+      if (!this.pricing) return;
+      if (source === 'auto') {
+        const e = this.autoDiscountEligibility;
+        this.pricing = {
+          ...this.pricing,
+          discount_source: 'auto',
+          discount_type: e.eligible ? 'percent' : null,
+          discount_value: e.eligible ? this.autoDiscountPercent : null,
+          auto_discount_reason: e.eligible ? e.reason : null
+        };
+      } else if (source === 'manual') {
+        this.pricing = {
+          ...this.pricing,
+          discount_source: 'manual',
+          discount_type: this.pricing.discount_type || 'percent',
+          discount_value: this.pricing.discount_value || this.autoDiscountPercent,
+          auto_discount_reason: null
+        };
+      } else {
+        this.pricing = {
+          ...this.pricing,
+          discount_source: 'none',
+          discount_type: null,
+          discount_value: null,
+          discount_reason: '',
+          auto_discount_reason: null
+        };
+      }
     },
     featureText(key) {
       const text = key === 'women' ? this.form.women_features_text : this.form.men_features_text;
@@ -678,6 +882,7 @@ export default {
           school_id: pkg.school_id,
           name: pkg.name || '',
           total_price: Number(pkg.total_price),
+          list_price: pkg.list_price != null ? Number(pkg.list_price) : null,
           women_features_text: pkg.women_features_text || '',
           men_features_text: pkg.men_features_text || '',
           package_notes: pkg.package_notes || ''
@@ -695,6 +900,15 @@ export default {
           quantity: svc.pivot?.quantity || 1,
           unit_price: Number(svc.pivot?.unit_price ?? svc.default_price ?? 0)
         }));
+        this.pricing = {
+          subtotal_override: pkg.list_price != null ? String(pkg.list_price) : '',
+          discount_source: pkg.discount_source || 'none',
+          discount_type: pkg.discount_type || 'percent',
+          discount_value: pkg.discount_value != null ? Number(pkg.discount_value) : '',
+          discount_reason: pkg.discount_reason || '',
+          auto_discount_reason: pkg.auto_discount_reason || null
+        };
+        this.$nextTick(() => this.syncAutoDiscount());
       } catch (error) {
         this.$emit('notify', { title: 'Error', message: 'No se pudo cargar el paquete', type: 'error' });
       } finally {
@@ -702,16 +916,10 @@ export default {
       }
     },
     resetForm() {
-      this.form = {
-        school_id: null,
-        name: '',
-        total_price: null,
-        women_features_text: '',
-        men_features_text: '',
-        package_notes: ''
-      };
+      this.form = emptyForm();
       this.photoLines = [];
       this.serviceLines = [];
+      this.pricing = emptyPricing();
       this.packageNumber = null;
       this.createdAt = null;
       this.featureTab = 'women';
@@ -729,7 +937,7 @@ export default {
       this.showErrors = true;
       const validLines = this.photoLines.filter(l => l.photo_type_id);
       const validServices = this.serviceLines.filter(l => l.service_id);
-      if (!this.form.school_id || this.priceMissing || validLines.length === 0 || this.nameMissing || this.nameDuplicatedMessage) {
+      if (!this.form.school_id || validLines.length === 0 || this.nameMissing || this.nameDuplicatedMessage || this.subtotalInvalid || this.discountInvalid) {
         if (!this.nameDuplicatedMessage) {
           this.alertMessage = 'Completa todos los campos obligatorios antes de continuar.';
           this.showAlertModal = true;
@@ -740,14 +948,22 @@ export default {
       this.backendNameError = '';
       try {
         const payload = {
-          ...this.form,
+          school_id: this.form.school_id,
           name: String(this.form.name || '').trim(),
+          women_features_text: this.form.women_features_text,
+          men_features_text: this.form.men_features_text,
           package_notes: String(this.form.package_notes || '').trim() || null,
+          list_price: this.subtotal,
+          total_price: this.total,
+          discount_source: this.pricing.discount_source || 'none',
+          discount_type: this.pricing.discount_type || null,
+          discount_value: this.discountValueNumber || null,
+          discount_reason: (this.pricing.discount_reason || '').trim() || null,
           photo_types: validLines.map(l => ({
             photo_type_id: l.photo_type_id,
             quantity: l.quantity,
             format: l.format,
-            background: (l.background && String(l.background).trim()) || 'blanco',
+            background: (l.background && String(l.background).trim()) || null,
             paper_type_id: l.paper_type_id
           })),
           additional_services: validServices.map(l => {
@@ -775,7 +991,8 @@ export default {
         if (nameError) {
           this.backendNameError = nameError;
         } else {
-          this.alertMessage = data?.message || 'No se pudo guardar el paquete';
+          const firstValidationError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+          this.alertMessage = firstValidationError || data?.message || 'No se pudo guardar el paquete';
           this.showAlertModal = true;
         }
       } finally {
