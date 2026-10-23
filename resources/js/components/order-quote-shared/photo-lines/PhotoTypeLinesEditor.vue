@@ -148,12 +148,15 @@ export default {
       this.openFormatKey = null;
     },
     addLine() {
-      const defaultBackground = this.backgrounds.length > 0
-        ? this.backgrounds[0].name
-        : null;
-      const defaultPaperTypeId = this.paperTypes.length > 0
-        ? this.paperTypes[0].id
-        : null;
+      const activeBackgrounds = this.backgrounds.filter(b => b.is_active !== false);
+      const activePaperTypes = this.paperTypes.filter(p => p.is_active !== false);
+      const defaultBackground = activeBackgrounds.length > 0
+      ? activeBackgrounds[0].name
+      : null;
+      const defaultPaperTypeId = activePaperTypes.length > 0
+      ? activePaperTypes[0].id
+      : null;
+
 
       this.lines.push({
         photo_type_id: null,

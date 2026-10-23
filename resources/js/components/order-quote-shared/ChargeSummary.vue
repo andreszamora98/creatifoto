@@ -19,7 +19,7 @@
               <span class="flex flex-col min-w-0 flex-1 gap-0.5">
                 <span class="font-semibold break-words">
                   <span class="text-gray-700 dark:text-gray-300 mr-1">Paquete</span>
-                  <span class="text-amber-600 dark:text-amber-400">{{ line.packageName }}</span>
+                  <span class="text-blue-600 dark:text-blue-400">{{ line.packageName }}</span>
                 </span>
                 <span
                   v-if="line.schoolName"
@@ -39,7 +39,7 @@
             <div
               v-for="child in line.children"
               :key="child.key"
-              class="flex justify-between items-start text-xs sm:text-base short:text-xs text-gray-600 dark:text-gray-400 py-1.5 sm:py-2 short:py-1 pl-3 sm:pl-4 short:pl-3 pr-2 sm:pr-3 short:pr-2 ml-4 sm:ml-6 short:ml-4 border-l-2 border-gray-300 dark:border-gray-600 gap-2"
+              class="relative flex justify-between items-start text-xs sm:text-base short:text-xs text-gray-600 dark:text-gray-400 py-1.5 sm:py-2 short:py-1 pl-3 sm:pl-4 short:pl-3 pr-2 sm:pr-3 short:pr-2 ml-4 sm:ml-6 short:ml-4 gap-2 before:content-[''] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-gray-300 dark:before:bg-gray-600 before:pointer-events-none"
             >
               <span class="flex items-start gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
                 <span

@@ -16,7 +16,7 @@
 
     <div class="grid grid-cols-[1fr_auto] gap-x-1.5 sm:gap-x-3 short:gap-x-1.5 gap-y-1 items-start">
       <span></span>
-      <span class="text-[10px] sm:text-sm short:text-[10px] font-medium text-gray-500 dark:text-gray-400 text-center whitespace-nowrap">Cantidad</span>
+      <span class="text-sm sm:text-base short:text-xs font-semibold text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">Cantidad</span>
 
       <div class="relative min-w-0 sm:min-w-[10rem]" :data-photo-type-dropdown="editorId" @focusout="onFocusOut">
         <div
@@ -47,7 +47,7 @@
               v-if="line.photo_type_id && !isOpen"
               class="flex items-center gap-1.5 justify-end sm:flex-shrink-0"
             >
-              <span class="text-xs sm:text-sm short:text-xs font-semibold text-gray-600 dark:text-gray-400 whitespace-nowrap">
+              <span class="text-xs sm:text-sm short:text-xs font-semibold text-green-700 dark:text-green-500 whitespace-nowrap">
                 {{ displayPrice }}
               </span>
               <button
@@ -85,18 +85,21 @@
         </transition>
       </div>
 
-      <input
-        type="number" min="1" v-model.number="line.quantity"
-        @blur="onQuantityBlur"
-        v-blur-on-enter
-        enterkeyhint="done"
-        :disabled="!line.photo_type_id || includedInPackage"
-        class="form-control form-control-sm text-sm sm:text-lg short:text-sm p-2 sm:p-3 short:p-1.5 w-14 sm:w-28 short:w-12 text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <div class="w-14 sm:w-28 short:w-12">
+        <input
+          type="number" min="1" v-model.number="line.quantity"
+          @blur="onQuantityBlur"
+          v-blur-on-enter
+          enterkeyhint="done"
+          :disabled="!line.photo_type_id || includedInPackage"
+          class="form-control form-control-sm text-sm sm:text-lg short:text-sm p-2 sm:p-3 short:p-1.5 w-full text-center rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+      </div>
     </div>
 
     <div v-if="showFormatAndPaper" class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 short:gap-2">
       <div class="relative min-w-0" :data-format-dropdown="editorId">
+        <label class="text-sm sm:text-base short:text-xs font-semibold text-gray-500 dark:text-gray-400 block text-left mb-1 whitespace-nowrap">Formato</label>
         <button
           type="button"
           @click="onToggleFormat"
@@ -142,6 +145,7 @@
       </div>
 
       <div class="relative min-w-0" :data-paper-dropdown="editorId">
+        <label class="text-sm sm:text-base short:text-xs font-semibold text-gray-500 dark:text-gray-400 block text-left mb-1 whitespace-nowrap">Papel</label>
         <button
           type="button"
           @click="togglePaperDropdown"
@@ -155,7 +159,7 @@
         <transition name="dropdown">
           <div v-if="paperDropdownOpen" class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
             <div class="max-h-48 sm:max-h-56 short:max-h-32 overflow-y-auto">
-              <template v-if="paperTypes.length === 0">
+              <template v-if="activePaperTypes.length === 0 && !paperIsOrphan">
                 <p class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 text-center py-2 sm:py-3 px-2">
                   Sin selección
                 </p>
@@ -171,7 +175,7 @@
                   <span class="truncate">Sin papel</span>
                 </button>
                 <button
-                  v-if="line.paper_type_id && !paperTypes.some(p => p.id === line.paper_type_id)"
+                  v-if="paperIsOrphan"
                   @mousedown.prevent="selectPaper(line.paper_type_id)"
                   class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm bg-blue-50 dark:bg-blue-900/20 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
                 >
@@ -179,7 +183,7 @@
                   <span class="truncate">{{ line.paper_type_name_snapshot || 'Papel eliminado' }}</span>
                 </button>
                 <button
-                  v-for="p in paperTypes"
+                  v-for="p in activePaperTypes"
                   :key="p.id"
                   @mousedown.prevent="selectPaper(p.id)"
                   class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
@@ -196,6 +200,7 @@
       </div>
 
       <div class="relative min-w-0" :data-background-dropdown="editorId">
+        <label class="text-sm sm:text-base short:text-xs font-semibold text-gray-500 dark:text-gray-400 block text-left mb-1 whitespace-nowrap">Fondo</label>
         <button
           type="button"
           @click="toggleBackgroundDropdown"
@@ -209,7 +214,7 @@
         <transition name="dropdown">
           <div v-if="backgroundDropdownOpen" class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg overflow-hidden">
             <div class="max-h-48 sm:max-h-56 short:max-h-32 overflow-y-auto">
-              <template v-if="backgrounds.length === 0">
+              <template v-if="activeBackgrounds.length === 0 && !orphanBackground">
                 <p class="text-sm sm:text-base short:text-sm text-gray-400 dark:text-gray-500 text-center py-2 sm:py-3 px-2">
                   Sin selección
                 </p>
@@ -233,7 +238,7 @@
                   <span class="truncate">{{ line.background }} (actual)</span>
                 </button>
                 <button
-                  v-for="bg in backgrounds"
+                  v-for="bg in activeBackgrounds"
                   :key="bg.id"
                   @mousedown.prevent="selectBackground(bg.name)"
                   class="w-full px-2.5 sm:px-3 short:px-2 py-1.5 sm:py-2.5 short:py-1.5 text-sm sm:text-base short:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-gray-200"
@@ -293,6 +298,12 @@ export default {
     };
   },
   computed: {
+    activePaperTypes() {
+      return this.paperTypes.filter(p => p.is_active !== false);
+    },
+    activeBackgrounds() {
+      return this.backgrounds.filter(b => b.is_active !== false);
+    },
     displayPrice() {
       if (this.includedInPackage) return 'Incluido';
       const locked = this.line.locked_unit_price;
@@ -306,6 +317,10 @@ export default {
       const p = this.paperTypes.find(pt => pt.id === this.line.paper_type_id);
       if (p) return p.name;
       return this.line.paper_type_name_snapshot || 'Papel eliminado';
+    },
+    paperIsOrphan() {
+      if (!this.line.paper_type_id) return false;
+      return !this.activePaperTypes.some(p => p.id === this.line.paper_type_id);
     },
     hasBackgroundSelected() {
       return String(this.line.background || '').trim() !== '';
@@ -321,7 +336,7 @@ export default {
     orphanBackground() {
       if (!this.hasBackgroundSelected) return false;
       const current = String(this.line.background).trim().toLowerCase();
-      return !this.backgrounds.some(b => (b.name || '').toLowerCase().trim() === current);
+      return !this.activeBackgrounds.some(b => (b.name || '').toLowerCase().trim() === current);
     }
   },
   watch: {

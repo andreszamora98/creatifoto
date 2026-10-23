@@ -37,7 +37,7 @@
                   v-if="line.package_id"
                   type="button"
                   @click="emitViewDetails(line)"
-                  class="flex-shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-lg text-xs sm:text-sm flex items-center gap-1 transition-colors"
+                  class="flex-shrink-0 text-blue-600 dark:text-blue-400 hover:bg-blue-800/70 hover:text-white dark:hover:bg-blue-300/40 dark:hover:text-gray-900 px-2 py-1 rounded-lg text-xs sm:text-sm flex items-center gap-1 transition-colors"
                 >
                   <i class="ti ti-info-circle text-sm sm:text-base"></i>
                   <span class="whitespace-nowrap">Ver características</span>
