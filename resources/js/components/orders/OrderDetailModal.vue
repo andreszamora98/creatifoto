@@ -175,15 +175,6 @@
                 </template>
               </div>
 
-              <div v-if="localOrder.notes" class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
-                <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center mb-2 sm:mb-3">
-                  <i class="ti ti-notes mr-2 text-lg sm:text-xl"></i>Observaciones
-                </h4>
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-                  <p class="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-wrap break-words">{{ localOrder.notes }}</p>
-                </div>
-              </div>
-
               <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
                 <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
                   <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center">
@@ -280,17 +271,60 @@
               </div>
 
               <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center">
+                    <i class="ti ti-photo mr-2 text-lg sm:text-xl"></i>Conceptos
+                    <span class="ml-2 text-sm sm:text-base px-2.5 sm:px-3 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300 rounded">{{ summaryLines.length }}</span>
+                  </h4>
+                </div>
+
+                <div
+                  v-if="hasDiscount"
+                  class="mb-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2.5 sm:p-3"
+                >
+                  <div class="flex items-start gap-2">
+                    <i class="ti ti-discount-2 text-amber-600 dark:text-amber-400 text-base sm:text-lg flex-shrink-0 mt-0.5"></i>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-xs sm:text-sm text-amber-800 dark:text-amber-300 font-medium">
+                        Esta orden tiene un descuento aplicado
+                        <template v-if="localOrder.discount_type === 'percent'">
+                          de <strong>{{ localOrder.discount_value }}%</strong>
+                        </template>
+                        (<strong>-{{ formatCurrency(localOrder.discount_amount) }}</strong>)
+                      </p>
+                      <p v-if="localOrder.discount_reason" class="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400 italic mt-0.5">
+                        Motivo: {{ localOrder.discount_reason }}
+                      </p>
+                      <p v-if="localOrder.discount_applies_to_packages" class="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400 italic mt-0.5">
+                        Incluye paquetes escolares
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <ChargeSummary
-                  title="Conceptos"
+                  title=""
                   :lines="summaryLines"
                   :estimated-total="Number(localOrder.total || 0)"
                   :discount-type="localOrder.discount_type || null"
                   :discount-value="localOrder.discount_value"
                   :discount-amount="Number(localOrder.discount_amount || 0)"
                   :discount-reason="localOrder.discount_reason"
+                  :discount-source="localOrder.discount_source || null"
+                  :discount-includes-packages="!!localOrder.discount_applies_to_packages"
                   hide-total
                   empty-message="Sin conceptos registrados."
                 />
+              </div>
+
+              <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center mb-2 sm:mb-3">
+                  <i class="ti ti-notes mr-2 text-lg sm:text-xl"></i>Observaciones
+                </h4>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                  <p v-if="localOrder.notes" class="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-wrap break-words">{{ localOrder.notes }}</p>
+                  <p v-else class="text-sm sm:text-base text-gray-400 dark:text-gray-500 italic">Sin observaciones.</p>
+                </div>
               </div>
 
               <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
@@ -649,12 +683,25 @@ export default {
           });
         });
 
+        const priceSnapshot = Number(pkg.price_snapshot || 0);
+        const listPriceSnapshot = pkg.list_price_snapshot != null ? Number(pkg.list_price_snapshot) : 0;
+        const discountAmountSnapshot = pkg.discount_amount_snapshot != null ? Number(pkg.discount_amount_snapshot) : 0;
+        const savedAmount = discountAmountSnapshot > 0
+          ? discountAmountSnapshot
+          : Math.max(0, listPriceSnapshot - priceSnapshot);
+        const savedPercent = (savedAmount > 0 && listPriceSnapshot > 0)
+          ? Number(((savedAmount / listPriceSnapshot) * 100).toFixed(2))
+          : null;
+
         result.push({
           key: `pkg-${pkg.id}`,
           isPackage: true,
           packageName: pkg.package_name_snapshot || ('Paquete #' + pkg.package_id),
           schoolName: pkg.school_name_snapshot || '',
-          amount: Number(pkg.price_snapshot || 0),
+          amount: priceSnapshot,
+          savedAmount,
+          savedPercent,
+          savedReason: null,
           children
         });
       });

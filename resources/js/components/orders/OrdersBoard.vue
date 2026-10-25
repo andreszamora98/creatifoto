@@ -2,35 +2,44 @@
   <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-shrink-0 mb-3 short:mb-1 lg:mb-7">
       <div class="flex flex-col md:flex-row md:items-center short:flex-row short:items-center gap-2 short:gap-1 lg:mt-2 lg:ml-4">
-        <div class="flex-1 w-full md:max-w-sm short:w-auto short:min-w-0">
+        <div class="flex-1 w-full md:max-w-md short:w-auto short:min-w-0">
           <div class="relative">
             <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
             <input
               v-model="searchQuery"
               type="text"
               placeholder="Buscar por cliente o código..."
-              class="w-full pl-9 pr-3 py-2 short:py-1 text-sm short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full pl-9 pr-10 py-2.5 short:py-1.5 text-sm short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
+            <button
+              v-if="searchQuery"
+              type="button"
+              @click="clearSearch"
+              aria-label="Borrar búsqueda"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-300 hover:bg-gray-400 text-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 transition-colors"
+            >
+              <i class="ti ti-x text-sm"></i>
+            </button>
           </div>
         </div>
 
         <div class="flex items-center gap-2 short:gap-1 short:flex-shrink-0">
           <button
-            class="hidden md:flex md:flex-initial flex-1 justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            class="hidden md:flex md:flex-initial flex-1 justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
           >
             <i class="ti ti-filter text-base"></i>
             <span class="hidden sm:inline">Filtros</span>
           </button>
           <button
             @click="refreshOrders"
-            class="flex-1 md:flex-initial short:flex-initial justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            class="flex-1 md:flex-initial short:flex-initial justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
           >
             <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
             <span class="hidden sm:inline short:hidden">Actualizar</span>
           </button>
           <button
             @click="showChoiceModal = true"
-            class="flex-1 md:flex-initial short:flex-initial justify-center bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            class="flex-1 md:flex-initial short:flex-initial justify-center bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
           >
             <i class="ti ti-plus text-base"></i>
             <span>Nuevo</span>
@@ -62,7 +71,9 @@
                   'flex flex-row items-center justify-center gap-4',
                   activeColumn === index
                     ? 'shadow-xl z-10'
-                    : 'opacity-60 hover:opacity-80 hover:shadow-sm'
+                    : (hasColumnMatches(column.type)
+                        ? 'opacity-95 hover:opacity-100 hover:shadow-md'
+                        : 'opacity-60 hover:opacity-80 hover:shadow-sm')
                 ]"
                 :style="{
                   backgroundColor: column.color.inactive,
@@ -70,7 +81,9 @@
                   outlineOffset: '0px',
                   boxShadow: activeColumn === index
                     ? `inset 0 0 0 2px ${column.color.outline}, 0 10px 15px -3px rgba(0, 0, 0, 0.1)`
-                    : 'none'
+                    : (hasColumnMatches(column.type)
+                        ? `inset 0 0 0 1.5px ${column.color.outline}80, 0 0 12px -2px ${column.color.outline}99`
+                        : 'none')
                 }">
               <div class="w-12 h-12 rounded-md flex items-center justify-center shadow-md flex-shrink-0"
                   :style="{
@@ -85,7 +98,7 @@
                   {{ column.title }}
                 </h3>
                 <div class="text-xl font-bold" :style="{ color: column.textColor.active }">
-                  {{ columnCounts[column.type] }}
+                  {{ formatColumnCount(column.type) }}
                 </div>
               </div>
             </div>
@@ -100,14 +113,20 @@
               :class="[
                 'relative rounded-lg cursor-pointer transition-all duration-200',
                 'flex flex-row items-center justify-center gap-2.5 p-2',
-                activeColumn === index ? 'shadow-lg' : 'opacity-60 hover:opacity-90'
+                activeColumn === index
+                  ? 'shadow-lg'
+                  : (hasColumnMatches(column.type)
+                      ? 'opacity-95 hover:opacity-100'
+                      : 'opacity-60 hover:opacity-90')
               ]"
               :style="{
                 backgroundColor: column.color.inactive,
                 border: activeColumn === index ? `2px solid ${column.color.outline}` : '2px solid transparent',
                 boxShadow: activeColumn === index
                   ? `inset 0 0 0 1px ${column.color.outline}`
-                  : 'none'
+                  : (hasColumnMatches(column.type)
+                      ? `inset 0 0 0 1.5px ${column.color.outline}80, 0 0 10px -2px ${column.color.outline}99`
+                      : 'none')
               }">
             <div class="w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0"
                 :style="{ backgroundColor: column.color.active }">
@@ -118,7 +137,7 @@
                 {{ column.title }}
               </span>
               <span class="text-lg font-bold leading-tight" :style="{ color: column.textColor.active }">
-                {{ columnCounts[column.type] }}
+                {{ formatColumnCount(column.type) }}
               </span>
             </div>
           </div>
@@ -142,7 +161,7 @@
               <i :class="columns[activeColumn]?.icon + ' text-base flex-shrink-0'"
                  :style="{ color: columns[activeColumn]?.textColor.active }"></i>
               <span class="font-semibold truncate">{{ columns[activeColumn]?.title }}</span>
-              <span class="font-bold">{{ columnCounts[columns[activeColumn]?.type] }}</span>
+              <span class="font-bold">{{ formatColumnCount(columns[activeColumn]?.type) }}</span>
             </span>
             <i class="ti ti-chevron-down text-sm flex-shrink-0 transition-transform duration-200"
                :class="{ 'rotate-180': shortColumnDropdownOpen }"></i>
@@ -159,12 +178,15 @@
                 class="w-full px-3 py-2 text-xs flex items-center gap-2 transition-[filter] duration-150 hover:brightness-95 active:brightness-90"
                 :style="{
                   backgroundColor: col.color.inactive,
-                  color: col.textColor.active
+                  color: col.textColor.active,
+                  boxShadow: hasColumnMatches(col.type) && i !== activeColumn
+                    ? `inset 0 0 0 1.5px ${col.color.outline}80`
+                    : 'none'
                 }"
               >
                 <i :class="col.icon + ' text-base flex-shrink-0'" :style="{ color: col.textColor.active }"></i>
                 <span class="flex-1 text-left font-medium">{{ col.title }}</span>
-                <span class="font-bold">{{ columnCounts[col.type] }}</span>
+                <span class="font-bold">{{ formatColumnCount(col.type) }}</span>
                 <i v-if="i === activeColumn"
                    class="ti ti-check text-sm flex-shrink-0"
                    :style="{ color: col.textColor.active }"></i>
@@ -248,7 +270,10 @@
                 <div class="p-3 short:p-2">
                   <div class="flex justify-between items-start mb-2 short:mb-1 gap-2">
                     <div class="min-w-0">
-                      <h3 class="font-bold text-gray-800 dark:text-gray-200 text-sm">
+                      <h3
+                        class="font-bold text-gray-800 dark:text-gray-200 text-sm"
+                        :style="matchesQuery(orderCode(order)) ? cellMatchStyle : null"
+                      >
                         #{{ orderCode(order) }}
                       </h3>
                       <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 short:mt-0">
@@ -263,7 +288,10 @@
                   </div>
 
                   <div class="mb-2 short:mb-1">
-                    <p class="text-gray-600 dark:text-gray-400 text-xs line-clamp-2">
+                    <p
+                      class="text-gray-600 dark:text-gray-400 text-xs line-clamp-2"
+                      :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
+                    >
                       {{ order.customer?.name || 'Sin cliente' }}
                     </p>
                   </div>
@@ -315,8 +343,14 @@
                         `hover-bg-row-${activeColumn}`,
                         isBlinking(order.id) ? 'animate-blink-row' : ''
                       ]">
-                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">#{{ orderCode(order) }}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ order.customer?.name || 'Sin cliente' }}</td>
+                    <td
+                      class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200"
+                      :style="matchesQuery(orderCode(order)) ? cellMatchStyle : null"
+                    >#{{ orderCode(order) }}</td>
+                    <td
+                      class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                      :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
+                    >{{ order.customer?.name || 'Sin cliente' }}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ packagesSummary(order) }}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatCurrency(order.total) }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">
@@ -535,23 +569,40 @@ export default {
         textColor: col.textColor[theme]
       }));
     },
-    columnCounts() {
-      const counts = {};
+    cellMatchStyle() {
+      const col = this.columns[this.activeColumn];
+      if (!col) return {};
+      const hex = col.color.outline.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const aBg = this.isDarkMode ? 0.18 : 0.22;
+      const aBorder = this.isDarkMode ? 0.35 : 0.45;
+      return {
+        backgroundColor: `rgba(${r}, ${g}, ${b}, ${aBg})`,
+        boxShadow: `inset 0 0 0 1px rgba(${r}, ${g}, ${b}, ${aBorder})`,
+        borderRadius: '4px'
+      };
+    },
+    columnCountsDetailed() {
+      const q = this.normalizeText(this.searchQuery);
+      const result = {};
       this.columns.forEach(col => {
-        counts[col.type] = this.orders.filter(o => o.status === col.type).length;
+        const all = this.orders.filter(o => o.status === col.type);
+        const matched = q
+          ? all.filter(o => this.matchesSearch(o, q)).length
+          : all.length;
+        result[col.type] = { matched, total: all.length };
       });
-      return counts;
+      return result;
     },
     filteredOrders() {
       const columnType = this.columns[this.activeColumn]?.type;
       let list = this.orders.filter(o => o.status === columnType);
 
-      if (this.searchQuery.trim()) {
-        const q = this.searchQuery.toLowerCase().trim();
-        list = list.filter(o =>
-          this.orderCode(o).toLowerCase().includes(q) ||
-          (o.customer?.name || '').toLowerCase().includes(q)
-        );
+      const q = this.normalizeText(this.searchQuery);
+      if (q) {
+        list = list.filter(o => this.matchesSearch(o, q));
       }
 
       return [...list].sort((a, b) => {
@@ -598,10 +649,7 @@ export default {
     this.loadOrders();
   },
   beforeUnmount() {
-    if (this.blinkInterval) {
-      clearInterval(this.blinkInterval);
-      this.blinkInterval = null;
-    }
+    this.stopBlink();
     if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
     if (this.darkObserver) {
       this.darkObserver.disconnect();
@@ -609,6 +657,30 @@ export default {
     }
   },
   methods: {
+    normalizeText(value) {
+      return String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    },
+    matchesSearch(order, normalizedQuery) {
+      if (!normalizedQuery) return true;
+      const haystack = [
+        this.orderCode(order),
+        order.customer?.name || ''
+      ].map(v => this.normalizeText(v));
+      return haystack.some(v => v.includes(normalizedQuery));
+    },
+    matchesQuery(...values) {
+      const q = this.normalizeText(this.searchQuery);
+      if (!q) return false;
+      return values.some(v => this.normalizeText(v).includes(q));
+    },
+    hasColumnMatches(type) {
+      if (!this.normalizeText(this.searchQuery)) return false;
+      return (this.columnCountsDetailed[type]?.matched || 0) > 0;
+    },
     handleOrderDetailEdit(order) {
       this.showOrderDetailModal = false;
       this.selectedOrderForDetail = null;
@@ -661,6 +733,9 @@ export default {
       }
     },
     openOrderDetail(order) {
+      if (this.newOrderId === order.id) {
+        this.stopBlink();
+      }
       this.selectedOrderForDetail = order;
       this.showOrderDetailModal = true;
     },
@@ -757,6 +832,16 @@ export default {
     toggleDateSort() {
       this.dateSort = this.dateSort === 'desc' ? 'asc' : 'desc';
     },
+    clearSearch() {
+      this.searchQuery = '';
+    },
+    formatColumnCount(type) {
+      const c = this.columnCountsDetailed[type];
+      if (!c) return '0';
+      return this.normalizeText(this.searchQuery)
+        ? `${c.matched}/${c.total}`
+        : String(c.total);
+    },
     orderCode(order) {
       return 'ORD-' + String(order.id).padStart(3, '0');
     },
@@ -812,21 +897,23 @@ export default {
       }
     },
     startBlink(orderId) {
-      if (this.blinkInterval) {
-        clearInterval(this.blinkInterval);
-        this.blinkInterval = null;
-      }
+      this.stopBlink();
       this.newOrderId = orderId;
       let count = 0;
       const maxCount = 8;
       this.blinkInterval = setInterval(() => {
         count++;
         if (count >= maxCount) {
-          clearInterval(this.blinkInterval);
-          this.blinkInterval = null;
-          this.newOrderId = null;
+          this.stopBlink();
         }
       }, 400);
+    },
+    stopBlink() {
+      if (this.blinkInterval) {
+        clearInterval(this.blinkInterval);
+        this.blinkInterval = null;
+      }
+      this.newOrderId = null;
     },
     isBlinking(orderId) {
       return this.newOrderId === orderId && this.blinkInterval !== null;
@@ -915,50 +1002,50 @@ export default {
   50% { background-color: #FFD700; }
 }
 
-.hover-bg-0:hover {
+.hover-bg-0:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(255, 235, 59, 0.15) !important;
   box-shadow: 0 4px 10px -2px rgba(255, 235, 59, 0.75);
 }
-.hover-bg-1:hover {
+.hover-bg-1:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(251, 191, 36, 0.15) !important;
   box-shadow: 0 4px 10px -2px rgba(251, 191, 36, 0.75);
 }
-.hover-bg-2:hover {
+.hover-bg-2:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(56, 189, 248, 0.15) !important;
   box-shadow: 0 4px 10px -2px rgba(56, 189, 248, 0.75);
 }
-.hover-bg-3:hover {
+.hover-bg-3:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(52, 211, 153, 0.15) !important;
   box-shadow: 0 4px 10px -2px rgba(52, 211, 153, 0.75);
 }
 
-.hover-bg-row-0:hover {
+.hover-bg-row-0:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(255, 235, 59, 0.15) !important;
 }
-.hover-bg-row-1:hover {
+.hover-bg-row-1:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(251, 191, 36, 0.15) !important;
 }
-.hover-bg-row-2:hover {
+.hover-bg-row-2:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(56, 189, 248, 0.15) !important;
 }
-.hover-bg-row-3:hover {
+.hover-bg-row-3:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(52, 211, 153, 0.15) !important;
 }
 
-.dark .hover-bg-0:hover,
-.dark .hover-bg-row-0:hover {
+.dark .hover-bg-0:not(.animate-blink):not(.animate-blink-row):hover,
+.dark .hover-bg-row-0:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(255, 235, 59, 0.08) !important;
 }
-.dark .hover-bg-1:hover,
-.dark .hover-bg-row-1:hover {
+.dark .hover-bg-1:not(.animate-blink):not(.animate-blink-row):hover,
+.dark .hover-bg-row-1:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(251, 191, 36, 0.08) !important;
 }
-.dark .hover-bg-2:hover,
-.dark .hover-bg-row-2:hover {
+.dark .hover-bg-2:not(.animate-blink):not(.animate-blink-row):hover,
+.dark .hover-bg-row-2:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(56, 189, 248, 0.08) !important;
 }
-.dark .hover-bg-3:hover,
-.dark .hover-bg-row-3:hover {
+.dark .hover-bg-3:not(.animate-blink):not(.animate-blink-row):hover,
+.dark .hover-bg-row-3:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(52, 211, 153, 0.08) !important;
 }
 </style>

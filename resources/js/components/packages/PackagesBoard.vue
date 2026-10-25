@@ -2,15 +2,24 @@
   <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-shrink-0 mb-3 short:mb-1">
       <div class="flex flex-col md:flex-row md:items-center gap-2 short:gap-1">
-        <div class="flex-1 w-full md:max-w-sm">
+        <div class="flex-1 w-full md:max-w-md">
           <div class="relative">
             <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
             <input
               v-model="searchQuery"
               type="text"
               placeholder="Buscar por escuela, paquete, precio..."
-              class="w-full pl-9 pr-3 py-2 short:py-1 text-sm short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full pl-9 pr-10 py-2.5 short:py-1.5 text-sm short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
+            <button
+              v-if="searchQuery"
+              type="button"
+              @click="clearSearch"
+              aria-label="Borrar búsqueda"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-300 hover:bg-gray-400 text-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 transition-colors"
+            >
+              <i class="ti ti-x text-sm"></i>
+            </button>
           </div>
         </div>
 
@@ -18,7 +27,7 @@
           <button
             @click="refreshAll"
             :disabled="loading"
-            class="justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            class="justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             aria-label="Actualizar"
           >
             <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
@@ -27,7 +36,7 @@
 
           <button
             @click="openCreateSchool()"
-            class="justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            class="justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
           >
             <i class="ti ti-school text-base"></i>
             <span class="hidden sm:inline short:hidden">Nueva escuela</span>
@@ -36,7 +45,7 @@
 
           <button
             @click="openCreate()"
-            class="justify-center bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            class="justify-center bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
           >
             <i class="ti ti-plus text-base"></i>
             <span class="hidden sm:inline short:hidden">Nuevo paquete</span>
@@ -525,6 +534,10 @@ export default {
   },
 
   methods: {
+    clearSearch() {
+      this.searchQuery = '';
+    },
+
     async loadPackages() {
       try {
         const res = await axios.get('/packages');

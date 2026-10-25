@@ -2,29 +2,38 @@
   <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-shrink-0 mb-3 short:mb-1">
       <div class="flex flex-col md:flex-row md:items-center gap-2 short:gap-1">
-        <div class="flex-1 w-full md:max-w-sm">
+        <div class="flex-1 w-full md:max-w-md">
           <div class="relative">
             <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
             <input
               v-model="searchQuery"
               type="text"
               placeholder="Buscar por folio, cliente, teléfono, correo, estado..."
-              class="w-full pl-9 pr-3 py-2 short:py-1 text-sm short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full pl-9 pr-10 py-2.5 short:py-1.5 text-sm short:text-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
+            <button
+              v-if="searchQuery"
+              type="button"
+              @click="clearSearch"
+              aria-label="Borrar búsqueda"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-300 hover:bg-gray-400 text-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 transition-colors"
+            >
+              <i class="ti ti-x text-sm"></i>
+            </button>
           </div>
         </div>
 
         <div class="flex items-center gap-2 short:gap-1">
           <button
             @click="loadQuotes"
-            class="flex-1 md:flex-initial justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            class="flex-1 md:flex-initial justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
           >
             <i class="ti ti-refresh text-base" :class="{ 'animate-spin': loading }"></i>
             <span class="hidden sm:inline short:hidden">Actualizar</span>
           </button>
           <button
             @click="showQuoteModal = true"
-            class="flex-1 md:flex-initial justify-center bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 py-2 short:py-1 rounded-lg text-sm flex items-center gap-2 transition-colors"
+            class="flex-1 md:flex-initial justify-center bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-3.5 py-2.5 short:py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors"
           >
             <i class="ti ti-plus text-base"></i>
             <span>Nueva</span>
@@ -210,19 +219,19 @@ export default {
     },
     filteredQuotes() {
       if (!this.loadedInSearchMode) return this.quotes;
-      const q = this.searchQuery.toLowerCase().trim();
+      const q = this.normalizeText(this.searchQuery);
       if (!q) return this.quotes;
 
       return this.quotes.filter(quote => {
-        const folio = `c-${String(quote.id).padStart(3, '0')}`;
-        const customerName = (quote.customer?.name || '').toLowerCase();
-        const customerPhone = (quote.customer?.phone || '').toLowerCase();
-        const customerEmail = (quote.customer?.email || '').toLowerCase();
-        const total = String(quote.total ?? '');
-        const statusLabel = this.statusLabel(quote.status).toLowerCase();
-        const status = (quote.status || '').toLowerCase();
-        const validUntil = (quote.valid_until || '').toLowerCase();
-        const validUntilFormatted = this.formatDate(quote.valid_until).toLowerCase();
+        const folio = this.normalizeText(`c-${String(quote.id).padStart(3, '0')}`);
+        const customerName = this.normalizeText(quote.customer?.name || '');
+        const customerPhone = this.normalizeText(quote.customer?.phone || '');
+        const customerEmail = this.normalizeText(quote.customer?.email || '');
+        const total = this.normalizeText(quote.total ?? '');
+        const statusLabel = this.normalizeText(this.statusLabel(quote.status));
+        const status = this.normalizeText(quote.status || '');
+        const validUntil = this.normalizeText(quote.valid_until || '');
+        const validUntilFormatted = this.normalizeText(this.formatDate(quote.valid_until));
 
         return (
           folio.includes(q) ||
@@ -296,6 +305,16 @@ export default {
     if (this.searchDebounceId) clearTimeout(this.searchDebounceId);
   },
   methods: {
+    normalizeText(value) {
+      return String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    },
+    clearSearch() {
+      this.searchQuery = '';
+    },
     onPageChange(page) {
       if (page === this.currentPage) return;
       this.currentPage = page;

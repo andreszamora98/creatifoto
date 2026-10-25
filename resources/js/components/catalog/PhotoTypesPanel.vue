@@ -7,10 +7,19 @@
           v-model="searchQuery"
           type="text"
           placeholder="Buscar tipo de fotografía..."
-          class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+          class="w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
         >
+        <button
+          v-if="searchQuery"
+          type="button"
+          @click="clearSearch"
+          aria-label="Borrar búsqueda"
+          class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-300 hover:bg-gray-400 text-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 transition-colors"
+        >
+          <i class="ti ti-x text-sm"></i>
+        </button>
       </div>
-      <button @click="openCreate" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm flex items-center gap-2 transition-colors flex-shrink-0">
+      <button @click="openCreate" class="px-4.5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm flex items-center gap-2 transition-colors flex-shrink-0">
         <i class="ti ti-plus text-base"></i>
         <span>Nuevo tipo de fotografía</span>
       </button>
@@ -92,6 +101,9 @@ export default {
     this.loadItems();
   },
   methods: {
+    clearSearch() {
+      this.searchQuery = '';
+    },
     async loadItems() {
       this.loading = true;
       try {

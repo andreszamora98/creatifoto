@@ -54,13 +54,17 @@
             <div
               v-for="child in line.children"
               :key="child.key"
-              class="relative flex justify-between items-start text-xs sm:text-base short:text-xs text-gray-600 dark:text-gray-400 py-1.5 sm:py-2 short:py-1 pl-3 sm:pl-4 short:pl-3 pr-2 sm:pr-3 short:pr-2 ml-4 sm:ml-6 short:ml-4 gap-2 before:content-[''] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-gray-300 dark:before:bg-gray-600 before:pointer-events-none"
+              class="relative flex justify-between text-xs sm:text-base short:text-xs text-gray-600 dark:text-gray-400 py-1.5 sm:py-2 short:py-1 pl-3 sm:pl-4 short:pl-3 pr-2 sm:pr-3 short:pr-2 ml-4 sm:ml-6 short:ml-4 gap-2 before:content-[''] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-gray-300 dark:before:bg-gray-600 before:pointer-events-none"
+              :class="featuresList(child).length > 0 ? 'items-start' : 'items-center'"
             >
-              <span class="flex items-start gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
+              <span
+                class="flex gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1"
+                :class="featuresList(child).length > 0 ? 'items-start' : 'items-center'"
+              >
                 <span
                   v-if="child.format"
-                  class="relative w-5 h-5 sm:w-7 sm:h-7 short:w-5 short:h-5 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center mt-0.5"
-                  :class="child.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : ''"
+                  class="relative w-5 h-5 sm:w-7 sm:h-7 short:w-5 short:h-5 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
+                  :class="[child.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : '', featuresList(child).length > 0 ? 'mt-0.5' : '']"
                 >
                   <template v-if="child.format === 'color'">
                     <span
@@ -80,7 +84,8 @@
 
                 <span
                   v-else-if="child.icon"
-                  class="w-5 h-5 sm:w-7 sm:h-7 short:w-5 short:h-5 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 mt-0.5"
+                  class="w-5 h-5 sm:w-7 sm:h-7 short:w-5 short:h-5 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700"
+                  :class="featuresList(child).length > 0 ? 'mt-0.5' : ''"
                 >
                   <i :class="[child.icon, 'text-xs sm:text-base short:text-xs text-gray-500 dark:text-gray-400']"></i>
                 </span>
@@ -119,14 +124,17 @@
 
         <div
           v-else
-          class="flex justify-between items-start text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2"
-          :class="lineBackgroundClass(line)"
+          class="flex justify-between text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2"
+          :class="[lineBackgroundClass(line), featuresList(line).length > 0 ? 'items-start' : 'items-center']"
         >
-          <span class="flex items-start gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
+          <span
+            class="flex gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1"
+            :class="featuresList(line).length > 0 ? 'items-start' : 'items-center'"
+          >
             <span
               v-if="line.format"
-              class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center mt-0.5"
-              :class="line.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : ''"
+              class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
+              :class="[line.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : '', featuresList(line).length > 0 ? 'mt-0.5' : '']"
             >
               <template v-if="line.format === 'color'">
                 <span
@@ -146,7 +154,8 @@
 
             <span
               v-else-if="line.icon"
-              class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 mt-0.5"
+              class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700"
+              :class="featuresList(line).length > 0 ? 'mt-0.5' : ''"
             >
               <i :class="[line.icon, 'text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400']"></i>
             </span>

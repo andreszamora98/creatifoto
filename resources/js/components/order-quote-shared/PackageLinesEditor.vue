@@ -206,13 +206,17 @@
                 <div
                   v-for="cl in packageContentLines(line)"
                   :key="cl.key"
-                  class="flex justify-between items-start text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
+                  class="flex justify-between text-sm sm:text-lg short:text-sm text-gray-700 dark:text-gray-300 p-2 sm:p-3 short:p-2 rounded-lg border gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
+                  :class="cl.features.length > 0 ? 'items-start' : 'items-center'"
                 >
-                  <span class="flex items-start gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1">
+                  <span
+                    class="flex gap-2 sm:gap-3 short:gap-2 min-w-0 flex-1"
+                    :class="cl.features.length > 0 ? 'items-start' : 'items-center'"
+                  >
                     <span
                       v-if="cl.format"
-                      class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center mt-0.5"
-                      :class="cl.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : ''"
+                      class="relative w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
+                      :class="[cl.format === 'bn' ? 'bg-gray-200 dark:bg-gray-700' : '', cl.features.length > 0 ? 'mt-0.5' : '']"
                     >
                       <template v-if="cl.format === 'color'">
                         <span
@@ -231,18 +235,30 @@
                     </span>
                     <span
                       v-else
-                      class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 mt-0.5"
+                      class="w-7 h-7 sm:w-9 sm:h-9 short:w-6 short:h-6 rounded-md flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700"
+                      :class="cl.features.length > 0 ? 'mt-0.5' : ''"
                     >
                       <i :class="[cl.icon, 'text-base sm:text-xl short:text-sm text-gray-500 dark:text-gray-400']"></i>
                     </span>
 
-                    <span class="flex flex-col min-w-0 flex-1">
+                    <span class="flex flex-col min-w-0 flex-1 gap-0.5">
                       <span class="break-words">
-                        {{ cl.name }}<span v-if="cl.quantity" class="text-blue-600 dark:text-blue-400 font-semibold ml-1">x{{ cl.quantity }}</span>
+                        {{ cl.name }}<span
+                          v-if="cl.quantity"
+                          class="text-gray-300 dark:text-gray-600 mx-1"
+                        >·</span><span
+                          class="text-green-700 dark:text-green-500 font-semibold"
+                        >{{ formatCurrency(cl.unitPrice) }} c/u</span><span
+                          v-if="cl.quantity"
+                          class="text-gray-300 dark:text-gray-600 mx-1"
+                        >·</span><span
+                          v-if="cl.quantity"
+                          class="text-blue-600 dark:text-blue-400 font-semibold"
+                        >x{{ cl.quantity }}</span>
                       </span>
                       <span
                         v-if="cl.features.length"
-                        class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] sm:text-xs short:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5"
+                        class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs sm:text-sm short:text-xs text-gray-400 dark:text-gray-500 mt-0.5"
                       >
                         <span v-for="(f, i) in cl.features" :key="i">{{ f }}</span>
                       </span>
@@ -251,9 +267,30 @@
                   <span class="font-medium whitespace-nowrap ml-2 flex-shrink-0">${{ cl.amount.toFixed(2) }}</span>
                 </div>
 
-                <div class="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 short:pt-2 flex justify-between items-center gap-2">
-                  <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">Suma de referencia</span>
-                  <span class="text-lg sm:text-2xl short:text-lg font-bold text-blue-600 dark:text-blue-400">${{ packageReferenceTotal(line).toFixed(2) }}</span>
+                <div class="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 short:pt-2 space-y-1">
+                  <template v-if="packageSavings(line).saved > 0">
+                    <div class="flex justify-between items-center gap-2 text-xs sm:text-sm short:text-xs text-gray-500 dark:text-gray-400">
+                      <span>Suma sin descuento</span>
+                      <span>${{ packageSavings(line).listTotal.toFixed(2) }}</span>
+                    </div>
+                    <div class="flex justify-between items-center gap-2 text-xs sm:text-sm short:text-xs text-red-500 dark:text-red-400">
+                      <span class="flex items-center gap-1">
+                        <i class="ti ti-discount-2"></i>
+                        Descuento{{ packageSavings(line).label ? ' ' + packageSavings(line).label : '' }}
+                      </span>
+                      <span>-${{ packageSavings(line).saved.toFixed(2) }}</span>
+                    </div>
+                    <div class="flex justify-between items-center gap-2 pt-1 border-t border-gray-200 dark:border-gray-600">
+                      <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">Precio final del paquete</span>
+                      <span class="text-lg sm:text-2xl short:text-lg font-bold text-green-700 dark:text-green-500">${{ packageSavings(line).finalPrice.toFixed(2) }}</span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex justify-between items-center gap-2">
+                      <span class="text-base sm:text-xl short:text-base font-semibold text-gray-800 dark:text-gray-200">Suma de referencia</span>
+                      <span class="text-lg sm:text-2xl short:text-lg font-bold text-blue-600 dark:text-blue-400">${{ packageSavings(line).finalPrice.toFixed(2) }}</span>
+                    </div>
+                  </template>
                 </div>
               </template>
             </div>
@@ -394,6 +431,28 @@ export default {
       return { amount, label, reason };
     },
 
+    packageSavings(line) {
+      const pkg = this.packageById(line.package_id);
+      if (!pkg) return { listTotal: 0, finalPrice: 0, saved: 0, label: '' };
+
+      const listTotal = Number(pkg.list_price ?? pkg.total_price ?? 0);
+      const finalPrice = Number(pkg.total_price ?? 0);
+      const saved = Math.max(0, Math.round((listTotal - finalPrice) * 100) / 100);
+
+      const type = pkg.discount_type;
+      const value = Number(pkg.discount_value || 0);
+      let label = '';
+      if (saved > 0) {
+        if (type === 'percent' && value > 0) {
+          label = `(${value % 1 === 0 ? value.toFixed(0) : value.toFixed(2)}%)`;
+        } else {
+          label = `($${saved.toFixed(2)})`;
+        }
+      }
+
+      return { listTotal, finalPrice, saved, label };
+    },
+
     packageContentFor(line) {
       const pkg = this.packageById(line.package_id);
       if (!pkg) return [];
@@ -439,7 +498,6 @@ export default {
     packageContentLines(line) {
       return this.packageContentFor(line).map((item, idx) => {
         const features = [];
-        features.push('• ' + this.formatCurrency(item.unit_price) + ' c/u');
         if (item.type === 'photo') {
           features.push('• ' + (item.format === 'color' ? 'Color' : 'B/N'));
           const rawBg = item.background;
