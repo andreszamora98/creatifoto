@@ -310,11 +310,12 @@
                       <div class="p-3 short:p-2">
                         <div class="flex justify-between items-start mb-2 short:mb-1 gap-2">
                           <div class="min-w-0">
-                            <h3
-                              class="font-bold text-gray-800 dark:text-gray-200 text-sm"
-                              :style="matchesQuery(String(order.id).padStart(3, '0')) ? cellMatchStyle : null"
-                            >
-                              #{{ orderCode(order) }}
+                            <h3 class="font-bold text-gray-800 dark:text-gray-200 text-sm">
+                              <span
+                                v-for="(seg, i) in getSegments('#' + orderCode(order), orderMatchesCode(order))"
+                                :key="'c-code-' + order.id + '-' + i"
+                                :style="seg.match ? cellMatchStyle : null"
+                              >{{ seg.text }}</span>
                             </h3>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 short:mt-0">
                               <i class="ti ti-calendar mr-1"></i>
@@ -328,11 +329,12 @@
                         </div>
 
                         <div class="mb-2 short:mb-1">
-                          <p
-                            class="text-gray-600 dark:text-gray-400 text-xs line-clamp-2"
-                            :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
-                          >
-                            {{ order.customer?.name || 'Sin cliente' }}
+                          <p class="text-gray-600 dark:text-gray-400 text-xs line-clamp-2">
+                            <span
+                              v-for="(seg, i) in getSegments(order.customer?.name || 'Sin cliente', orderMatchesName(order))"
+                              :key="'c-name-' + order.id + '-' + i"
+                              :style="seg.match ? cellMatchStyle : null"
+                            >{{ seg.text }}</span>
                           </p>
                         </div>
 
@@ -388,14 +390,20 @@
                             `hover-bg-row-${activeColumn}`,
                             isBlinking(order.id) ? 'animate-blink-row' : ''
                           ]">
-                        <td
-                          class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200"
-                          :style="matchesQuery(String(order.id).padStart(3, '0')) ? cellMatchStyle : null"
-                        >#{{ orderCode(order) }}</td>
-                        <td
-                          class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
-                          :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
-                        >{{ order.customer?.name || 'Sin cliente' }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
+                          <span
+                            v-for="(seg, i) in getSegments('#' + orderCode(order), orderMatchesCode(order))"
+                            :key="'t-code-' + order.id + '-' + i"
+                            :style="seg.match ? cellMatchStyle : null"
+                          >{{ seg.text }}</span>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          <span
+                            v-for="(seg, i) in getSegments(order.customer?.name || 'Sin cliente', orderMatchesName(order))"
+                            :key="'t-name-' + order.id + '-' + i"
+                            :style="seg.match ? cellMatchStyle : null"
+                          >{{ seg.text }}</span>
+                        </td>
                         <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ packagesSummary(order) }}</td>
                         <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatCurrency(order.total) }}</td>
                         <td class="px-3 py-2 whitespace-nowrap">
@@ -624,12 +632,13 @@ export default {
       const r = parseInt(hex.substring(0, 2), 16);
       const g = parseInt(hex.substring(2, 4), 16);
       const b = parseInt(hex.substring(4, 6), 16);
-      const aBg = this.isDarkMode ? 0.18 : 0.22;
-      const aBorder = this.isDarkMode ? 0.35 : 0.45;
+      const aBg = this.isDarkMode ? 0.22 : 0.28;
+      const aBorder = this.isDarkMode ? 0.4 : 0.5;
       return {
         backgroundColor: `rgba(${r}, ${g}, ${b}, ${aBg})`,
         boxShadow: `inset 0 0 0 1px rgba(${r}, ${g}, ${b}, ${aBorder})`,
-        borderRadius: '4px'
+        borderRadius: '4px',
+        padding: '0 3px'
       };
     },
     columnCountsDetailed() {
@@ -727,29 +736,81 @@ export default {
     },
     matchesSearch(order, normalizedQuery) {
       if (!normalizedQuery) return true;
-
       const q = normalizedQuery;
       const qNumeric = q.replace(/^ord-?/, '');
       const numericCode = String(order.id).padStart(3, '0');
       const name = this.normalizeText(order.customer?.name || '');
 
-      if (qNumeric && numericCode.startsWith(qNumeric)) return true;
-      if (name.startsWith(q)) return true;
+      if (qNumeric && numericCode.includes(qNumeric)) return true;
+      if (name.includes(q)) return true;
 
       return false;
     },
-    matchesQuery(...values) {
+    orderMatchesCode(order) {
       const q = this.normalizeText(this.searchQuery);
       if (!q) return false;
-
       const qNumeric = q.replace(/^ord-?/, '');
+      if (!qNumeric) return false;
+      return String(order.id).padStart(3, '0').includes(qNumeric);
+    },
+    orderMatchesName(order) {
+      const q = this.normalizeText(this.searchQuery);
+      if (!q) return false;
+      return this.normalizeText(order.customer?.name || '').includes(q);
+    },
+    buildNormalizedMap(text) {
+      const str = String(text ?? '');
+      let normalized = '';
+      const map = [];
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        let norm = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        if (norm.length === 0) {
+          norm = ch;
+        }
+        for (let j = 0; j < norm.length; j++) {
+          normalized += norm[j];
+          map.push(i);
+        }
+      }
+      map.push(str.length);
+      return { normalized, map };
+    },
+    getSegments(text, allowMatch = true) {
+      const str = String(text ?? '');
+      const q = this.normalizeText(this.searchQuery);
+      if (!str || !q || !allowMatch) return [{ text: str, match: false }];
 
-      return values.some(v => {
-        const n = this.normalizeText(v);
-        if (n.startsWith(q)) return true;
-        if (qNumeric && n.startsWith(qNumeric)) return true;
-        return false;
-      });
+      const { normalized, map } = this.buildNormalizedMap(str);
+      const segments = [];
+      let normCursor = 0;
+      let origCursor = 0;
+      let found = false;
+
+      while (normCursor <= normalized.length - q.length) {
+        const idx = normalized.indexOf(q, normCursor);
+        if (idx === -1) break;
+        found = true;
+
+        const origStart = map[idx];
+        const origEnd = map[idx + q.length];
+
+        if (origStart > origCursor) {
+          segments.push({ text: str.slice(origCursor, origStart), match: false });
+        }
+        segments.push({ text: str.slice(origStart, origEnd), match: true });
+
+        origCursor = origEnd;
+        normCursor = idx + q.length;
+      }
+
+      if (!found) return [{ text: str, match: false }];
+
+      if (origCursor < str.length) {
+        segments.push({ text: str.slice(origCursor), match: false });
+      }
+
+      return segments;
     },
     hasColumnMatches(type) {
       if (!this.normalizeText(this.searchQuery)) return false;

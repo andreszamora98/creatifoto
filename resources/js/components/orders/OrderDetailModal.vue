@@ -397,7 +397,7 @@
                   >
                     <div class="flex items-center min-w-0 flex-1">
                       <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center mr-2.5 sm:mr-3 flex-shrink-0"
-                           :class="payment.type === 'settlement' ? 'bg-green-100 dark:bg-green-900/40' : 'bg-blue-100 dark:bg-blue-900/40'">
+                          :class="payment.type === 'settlement' ? 'bg-green-100 dark:bg-green-900/40' : 'bg-blue-100 dark:bg-blue-900/40'">
                         <i
                           :class="payment.type === 'settlement' ? 'ti ti-check text-green-600 dark:text-green-300' : 'ti ti-coin text-blue-600 dark:text-blue-300'"
                           class="text-base sm:text-xl"
@@ -406,7 +406,14 @@
                       <div class="truncate">
                         <p class="font-medium text-gray-800 dark:text-gray-300 text-sm sm:text-base truncate">
                           {{ payment.type === 'settlement' ? 'Liquidación' : 'Abono' }}
-                          <span v-if="payment.payment_method" class="text-gray-500 dark:text-gray-400"> • {{ payment.payment_method }}</span>
+                          <span v-if="payment.payment_method" class="text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
+                            <span aria-hidden="true">•</span>
+                            <span class="capitalize">{{ payment.payment_method }}</span>
+                            <i
+                              :class="[paymentMethodIcon(payment.payment_method), paymentMethodIconClass(payment.payment_method)]"
+                              class="text-sm sm:text-base leading-none self-center"
+                            ></i>
+                          </span>
                         </p>
                         <p class="text-xs sm:text-base text-gray-500 dark:text-gray-400 truncate">
                           {{ formatDate(payment.paid_at) }}
@@ -754,6 +761,22 @@ export default {
     }
   },
   methods: {
+    paymentMethodIconClass(method) {
+      const m = String(method || '').trim().toLowerCase();
+      if (m.includes('efectivo')) return 'text-green-600 dark:text-green-400';
+      if (m.includes('tarjeta')) return 'text-blue-600 dark:text-blue-400';
+      if (m.includes('transferencia')) return 'text-purple-600 dark:text-purple-400';
+      if (m.includes('depósito') || m.includes('deposito')) return 'text-amber-600 dark:text-amber-400';
+      return 'text-gray-600 dark:text-gray-400';
+    },
+    paymentMethodIcon(method) {
+      const m = String(method || '').trim().toLowerCase();
+      if (m.includes('efectivo')) return 'ti ti-cash';
+      if (m.includes('tarjeta')) return 'ti ti-credit-card';
+      if (m.includes('transferencia')) return 'ti ti-arrows-exchange';
+      if (m.includes('depósito') || m.includes('deposito')) return 'ti ti-building-bank';
+      return 'ti ti-wallet';
+    },
     requestEdit() {
       if (!this.canEdit) return;
       this.$emit('edit', this.localOrder);
