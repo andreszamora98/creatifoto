@@ -6,6 +6,7 @@
           <div class="relative">
             <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
             <input
+              ref="searchInput"
               v-model="searchQuery"
               type="text"
               placeholder="Buscar por cliente o código..."
@@ -14,6 +15,7 @@
             <button
               v-if="searchQuery"
               type="button"
+              @mousedown.prevent
               @click="clearSearch"
               aria-label="Borrar búsqueda"
               class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-300 hover:bg-gray-400 text-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 transition-colors"
@@ -220,15 +222,38 @@
               @click="toggleDateSort"
               class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 sm:px-3 py-2 short:py-1 rounded-lg text-xs sm:text-sm short:text-xs flex items-center gap-1 sm:gap-2 short:gap-1 transition-colors"
             >
-              <i class="ti ti-sort-descending text-sm sm:text-base short:text-xs"></i>
-              <span class="whitespace-nowrap">{{ dateSort === 'desc' ? 'Recientes' : 'Antiguas' }}</span>
+              <i
+                class="ti ti-sort-descending text-sm sm:text-base short:text-xs transition-transform duration-300 ease-out"
+                :class="{ 'rotate-180': dateSort === 'asc' }"
+              ></i>
+              <span class="relative whitespace-nowrap">
+                <span class="invisible" aria-hidden="true">Recientes</span>
+                <Transition name="text-swap" mode="out-in">
+                  <span :key="dateSort" class="absolute inset-0 flex items-center">
+                    {{ dateSort === 'desc' ? 'Recientes' : 'Antiguas' }}
+                  </span>
+                </Transition>
+              </span>
             </button>
             <button
               @click="toggleViewMode"
               class="flex items-center gap-1 sm:gap-2 short:gap-1 px-2 sm:px-3 py-2 short:py-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white text-xs sm:text-sm short:text-xs transition-colors"
             >
-              <i :class="viewMode === 'cards' ? 'ti ti-table' : 'ti ti-layout-grid'" class="text-sm sm:text-base short:text-xs"></i>
-              <span class="whitespace-nowrap">{{ viewMode === 'cards' ? 'Tabla' : 'Tarjetas' }}</span>
+              <Transition name="icon-swap" mode="out-in">
+                <i
+                  :key="viewMode"
+                  :class="viewMode === 'cards' ? 'ti ti-table' : 'ti ti-layout-grid'"
+                  class="text-sm sm:text-base short:text-xs"
+                ></i>
+              </Transition>
+              <span class="relative whitespace-nowrap">
+                <span class="invisible" aria-hidden="true">Tarjetas</span>
+                <Transition name="text-swap" mode="out-in">
+                  <span :key="viewMode" class="absolute inset-0 flex items-center">
+                    {{ viewMode === 'cards' ? 'Tabla' : 'Tarjetas' }}
+                  </span>
+                </Transition>
+              </span>
             </button>
           </div>
         </div>
@@ -241,132 +266,154 @@
             </div>
           </div>
 
-          <div v-else-if="filteredOrders.length === 0" class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="text-center max-w-xs">
-              <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-                   :style="{ backgroundColor: columns[activeColumn]?.color.inactive }">
-                <i class="ti ti-inbox text-lg" :style="{ color: columns[activeColumn]?.textColor.active }"></i>
-              </div>
-              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                {{ searchQuery ? 'No se encontraron resultados' : 'No hay órdenes' }}
-              </h3>
-              <p class="text-gray-500 dark:text-gray-400 text-xs">
-                {{ searchQuery ? 'Intenta con otros términos de búsqueda.' : 'No hay órdenes en esta categoría.' }}
-              </p>
-            </div>
-          </div>
-
-          <div v-else class="h-full overflow-y-auto p-2 sm:p-3 short:p-1.5">
-            <div v-if="viewMode === 'cards'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 short:gap-2">
-              <div v-for="order in paginatedOrders" :key="order.id"
-                   :id="'order-card-' + order.id"
-                   @click="openOrderDetail(order)"
-                   :class="[
-                     'bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 transition-all duration-200 cursor-pointer overflow-hidden group',
-                     `hover-bg-${activeColumn}`,
-                     isBlinking(order.id) ? 'animate-blink' : ''
-                   ]">
-                <div class="h-1.5" :style="{ backgroundColor: columns[activeColumn]?.color.active }"></div>
-                <div class="p-3 short:p-2">
-                  <div class="flex justify-between items-start mb-2 short:mb-1 gap-2">
-                    <div class="min-w-0">
-                      <h3
-                        class="font-bold text-gray-800 dark:text-gray-200 text-sm"
-                        :style="matchesQuery(orderCode(order)) ? cellMatchStyle : null"
-                      >
-                        #{{ orderCode(order) }}
-                      </h3>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 short:mt-0">
-                        <i class="ti ti-calendar mr-1"></i>
-                        {{ formatDate(order.created_at) }}
-                      </p>
-                    </div>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
-                          :class="statusClass(order.status)">
-                      {{ statusLabel(order.status) }}
-                    </span>
-                  </div>
-
-                  <div class="mb-2 short:mb-1">
-                    <p
-                      class="text-gray-600 dark:text-gray-400 text-xs line-clamp-2"
-                      :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
-                    >
-                      {{ order.customer?.name || 'Sin cliente' }}
-                    </p>
-                  </div>
-
-                  <div class="flex justify-between items-center text-xs mb-2 short:mb-1 gap-2">
-                    <div class="flex items-center min-w-0">
-                      <i class="ti ti-package mr-1 text-gray-500 flex-shrink-0"></i>
-                      <span class="text-gray-600 dark:text-gray-400 truncate">{{ packagesSummary(order) }}</span>
-                    </div>
-                    <div class="flex items-center flex-shrink-0">
-                      <i class="ti ti-currency-dollar mr-1 text-gray-500"></i>
-                      <span class="text-gray-600 dark:text-gray-400">{{ formatCurrency(order.total) }}</span>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center justify-between text-xs gap-2">
-                    <div class="flex items-center min-w-0">
-                      <i class="ti ti-calendar-event mr-1 text-gray-500 flex-shrink-0"></i>
-                      <span class="text-gray-600 dark:text-gray-400 truncate">Entrega: {{ formatDeliveryDate(order.estimated_delivery_date) }}</span>
-                    </div>
-                    <div class="flex items-center gap-1 flex-shrink-0">
-                      <i class="ti ti-check-circle text-green-500" v-if="order.status === 'delivered'"></i>
-                      <i class="ti ti-clock text-yellow-500" v-else></i>
-                    </div>
-                  </div>
+          <transition v-else :name="transitionName" mode="out-in">
+            <div
+              v-if="filteredOrders.length === 0"
+              :key="'empty-' + activeColumn"
+              class="absolute inset-0 flex items-center justify-center p-4"
+            >
+              <div class="text-center max-w-xs">
+                <div class="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
+                     :style="{ backgroundColor: columns[activeColumn]?.color.inactive }">
+                  <i class="ti ti-inbox text-lg" :style="{ color: columns[activeColumn]?.textColor.active }"></i>
                 </div>
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  {{ searchQuery ? 'No se encontraron resultados' : 'No hay órdenes' }}
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400 text-xs">
+                  {{ searchQuery ? 'Intenta con otros términos de búsqueda.' : 'No hay órdenes en esta categoría.' }}
+                </p>
               </div>
             </div>
 
-            <div v-else class="overflow-x-auto">
-              <table class="min-w-[720px] w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
-                  <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Código</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Cliente</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Paquetes/Tipos</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Total</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Estado</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">F. Entrega</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Entregado</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr v-for="order in paginatedOrders" :key="order.id"
-                      :id="'order-card-' + order.id"
-                      @click="openOrderDetail(order)"
-                      class="transition-colors cursor-pointer"
-                      :class="[
-                        `hover-bg-row-${activeColumn}`,
-                        isBlinking(order.id) ? 'animate-blink-row' : ''
-                      ]">
-                    <td
-                      class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200"
-                      :style="matchesQuery(orderCode(order)) ? cellMatchStyle : null"
-                    >#{{ orderCode(order) }}</td>
-                    <td
-                      class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
-                      :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
-                    >{{ order.customer?.name || 'Sin cliente' }}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ packagesSummary(order) }}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatCurrency(order.total) }}</td>
-                    <td class="px-3 py-2 whitespace-nowrap">
-                      <span class="px-2 py-0.5 text-xs rounded-full" :class="statusClass(order.status)">
-                        {{ statusLabel(order.status) }}
-                      </span>
-                    </td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDeliveryDate(order.estimated_delivery_date) }}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      <i :class="order.status === 'delivered' ? 'ti ti-check-circle text-green-500' : 'ti ti-clock text-yellow-500'"></i>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div
+              v-else
+              :key="'content-' + activeColumn"
+              class="h-full overflow-y-auto overflow-x-hidden p-2 sm:p-3 short:p-1.5"
+            >
+              <transition name="view-fade" mode="out-in">
+                <div v-if="viewMode === 'cards'" key="cards">
+                  <TransitionGroup
+                    name="list"
+                    tag="div"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 short:gap-2"
+                  >
+                    <div v-for="order in paginatedOrders" :key="order.id"
+                         :id="'order-card-' + order.id"
+                         @click="openOrderDetail(order)"
+                         :class="[
+                           'bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 transition-all duration-200 cursor-pointer overflow-hidden group',
+                           `hover-bg-${activeColumn}`,
+                           isBlinking(order.id) ? 'animate-blink' : ''
+                         ]">
+                      <div class="h-1.5" :style="{ backgroundColor: columns[activeColumn]?.color.active }"></div>
+                      <div class="p-3 short:p-2">
+                        <div class="flex justify-between items-start mb-2 short:mb-1 gap-2">
+                          <div class="min-w-0">
+                            <h3
+                              class="font-bold text-gray-800 dark:text-gray-200 text-sm"
+                              :style="matchesQuery(String(order.id).padStart(3, '0')) ? cellMatchStyle : null"
+                            >
+                              #{{ orderCode(order) }}
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 short:mt-0">
+                              <i class="ti ti-calendar mr-1"></i>
+                              {{ formatDate(order.created_at) }}
+                            </p>
+                          </div>
+                          <span class="px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
+                                :class="statusClass(order.status)">
+                            {{ statusLabel(order.status) }}
+                          </span>
+                        </div>
+
+                        <div class="mb-2 short:mb-1">
+                          <p
+                            class="text-gray-600 dark:text-gray-400 text-xs line-clamp-2"
+                            :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
+                          >
+                            {{ order.customer?.name || 'Sin cliente' }}
+                          </p>
+                        </div>
+
+                        <div class="flex justify-between items-center text-xs mb-2 short:mb-1 gap-2">
+                          <div class="flex items-center min-w-0">
+                            <i class="ti ti-package mr-1 text-gray-500 flex-shrink-0"></i>
+                            <span class="text-gray-600 dark:text-gray-400 truncate">{{ packagesSummary(order) }}</span>
+                          </div>
+                          <div class="flex items-center flex-shrink-0">
+                            <i class="ti ti-currency-dollar mr-1 text-gray-500"></i>
+                            <span class="text-gray-600 dark:text-gray-400">{{ formatCurrency(order.total) }}</span>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs gap-2">
+                          <div class="flex items-center min-w-0">
+                            <i class="ti ti-calendar-event mr-1 text-gray-500 flex-shrink-0"></i>
+                            <span class="text-gray-600 dark:text-gray-400 truncate">Entrega: {{ formatDeliveryDate(order.estimated_delivery_date) }}</span>
+                          </div>
+                          <div class="flex items-center gap-1 flex-shrink-0">
+                            <i class="ti ti-check-circle text-green-500" v-if="order.status === 'delivered'"></i>
+                            <i class="ti ti-clock text-yellow-500" v-else></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TransitionGroup>
+                </div>
+
+                <div v-else key="table" class="overflow-x-auto overflow-y-hidden">
+                  <table class="min-w-[720px] w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
+                      <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Código</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Cliente</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Paquetes/Tipos</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Total</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Estado</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">F. Entrega</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Entregado</th>
+                      </tr>
+                    </thead>
+                    <TransitionGroup
+                      name="list"
+                      tag="tbody"
+                      class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                    >
+                      <tr v-for="order in paginatedOrders" :key="order.id"
+                          :id="'order-card-' + order.id"
+                          @click="openOrderDetail(order)"
+                          class="transition-colors cursor-pointer"
+                          :class="[
+                            `hover-bg-row-${activeColumn}`,
+                            isBlinking(order.id) ? 'animate-blink-row' : ''
+                          ]">
+                        <td
+                          class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200"
+                          :style="matchesQuery(String(order.id).padStart(3, '0')) ? cellMatchStyle : null"
+                        >#{{ orderCode(order) }}</td>
+                        <td
+                          class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                          :style="matchesQuery(order.customer?.name || 'Sin cliente') ? cellMatchStyle : null"
+                        >{{ order.customer?.name || 'Sin cliente' }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ packagesSummary(order) }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatCurrency(order.total) }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap">
+                          <span class="px-2 py-0.5 text-xs rounded-full" :class="statusClass(order.status)">
+                            {{ statusLabel(order.status) }}
+                          </span>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDeliveryDate(order.estimated_delivery_date) }}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          <i :class="order.status === 'delivered' ? 'ti ti-check-circle text-green-500' : 'ti ti-clock text-yellow-500'"></i>
+                        </td>
+                      </tr>
+                    </TransitionGroup>
+                  </table>
+                </div>
+              </transition>
             </div>
-          </div>
+          </transition>
         </div>
 
         <div class="flex-shrink-0 mt-2 sm:mt-3 short:mt-1 pb-2 sm:pb-3 short:pb-1 pt-2 sm:pt-3 short:pt-1 border-t border-gray-200 dark:border-gray-700 px-3">
@@ -479,7 +526,7 @@ export default {
       selectedOrderForDetail: null,
       pendingBlinkOrderId: null,
       activeColumn: 0,
-      viewMode: 'cards',
+      viewMode: 'table',
       loading: true,
       orders: [],
       searchQuery: '',
@@ -489,6 +536,7 @@ export default {
       showChoiceModal: false,
       pendingNavigateToQuotes: false,
       shortColumnDropdownOpen: false,
+      transitionName: 'view-fade',
 
       currentPage: 1,
       itemsPerPage: 15,
@@ -628,9 +676,22 @@ export default {
     },
     searchQuery() {
       this.currentPage = 1;
+      this.transitionName = 'view-fade';
+
+      const q = this.normalizeText(this.searchQuery);
+      if (!q) return;
+
+      const matchedColumns = this.columns
+        .map((col, idx) => ({ idx, matched: this.columnCountsDetailed[col.type]?.matched || 0 }))
+        .filter(c => c.matched > 0);
+
+      if (matchedColumns.length === 1 && this.activeColumn !== matchedColumns[0].idx) {
+        this.activeColumn = matchedColumns[0].idx;
+      }
     },
-    activeColumn() {
+    activeColumn(newVal, oldVal) {
       this.currentPage = 1;
+      this.transitionName = newVal > oldVal ? 'col-slide-right' : 'col-slide-left';
     },
     dateSort() {
       this.currentPage = 1;
@@ -666,16 +727,29 @@ export default {
     },
     matchesSearch(order, normalizedQuery) {
       if (!normalizedQuery) return true;
-      const haystack = [
-        this.orderCode(order),
-        order.customer?.name || ''
-      ].map(v => this.normalizeText(v));
-      return haystack.some(v => v.includes(normalizedQuery));
+
+      const q = normalizedQuery;
+      const qNumeric = q.replace(/^ord-?/, '');
+      const numericCode = String(order.id).padStart(3, '0');
+      const name = this.normalizeText(order.customer?.name || '');
+
+      if (qNumeric && numericCode.startsWith(qNumeric)) return true;
+      if (name.startsWith(q)) return true;
+
+      return false;
     },
     matchesQuery(...values) {
       const q = this.normalizeText(this.searchQuery);
       if (!q) return false;
-      return values.some(v => this.normalizeText(v).includes(q));
+
+      const qNumeric = q.replace(/^ord-?/, '');
+
+      return values.some(v => {
+        const n = this.normalizeText(v);
+        if (n.startsWith(q)) return true;
+        if (qNumeric && n.startsWith(qNumeric)) return true;
+        return false;
+      });
     },
     hasColumnMatches(type) {
       if (!this.normalizeText(this.searchQuery)) return false;
@@ -786,7 +860,6 @@ export default {
     },
     selectColumn(index) {
       this.activeColumn = index;
-      this.currentPage = 1;
     },
     onSelectShortColumn(index) {
       this.selectColumn(index);
@@ -834,6 +907,9 @@ export default {
     },
     clearSearch() {
       this.searchQuery = '';
+      this.$nextTick(() => {
+        this.$refs.searchInput?.focus();
+      });
     },
     formatColumnCount(type) {
       const c = this.columnCountsDetailed[type];
@@ -927,17 +1003,67 @@ export default {
 .flex-1 { flex: 1 1 0%; }
 .flex-shrink-0 { flex-shrink: 0; }
 .min-h-0 { min-height: 0; }
-.overflow-y-auto {
+
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e0 #f1f1f1;
+  overscroll-behavior: contain;
 }
-.overflow-y-auto::-webkit-scrollbar { width: 6px; }
-.overflow-y-auto::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-.overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
-.dark .overflow-y-auto::-webkit-scrollbar-track { background: #374151; }
-.dark .overflow-y-auto::-webkit-scrollbar-thumb { background: #4b5563; }
-.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+.dark .overflow-y-auto,
+.dark .overflow-x-auto,
+.dark .overflow-auto {
+  scrollbar-color: #4b5563 #374151;
+}
+
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track,
+.overflow-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb,
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+  transition: background-color 0.15s ease;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover,
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+.dark .overflow-y-auto::-webkit-scrollbar-track,
+.dark .overflow-x-auto::-webkit-scrollbar-track,
+.dark .overflow-auto::-webkit-scrollbar-track {
+  background: #374151;
+}
+.dark .overflow-y-auto::-webkit-scrollbar-thumb,
+.dark .overflow-x-auto::-webkit-scrollbar-thumb,
+.dark .overflow-auto::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.dark .overflow-x-auto::-webkit-scrollbar-thumb:hover,
+.dark .overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+.overflow-x-auto::-webkit-scrollbar-corner,
+.overflow-auto::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+.dark .overflow-x-auto::-webkit-scrollbar-corner,
+.dark .overflow-auto::-webkit-scrollbar-corner {
+  background: #374151;
+}
 
 .category-card {
   transition: all 0.2s ease;
@@ -1047,5 +1173,92 @@ export default {
 .dark .hover-bg-3:not(.animate-blink):not(.animate-blink-row):hover,
 .dark .hover-bg-row-3:not(.animate-blink):not(.animate-blink-row):hover {
   background-color: rgba(52, 211, 153, 0.08) !important;
+}
+
+.text-swap-enter-active,
+.text-swap-leave-active {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.text-swap-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.text-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.icon-swap-enter-active,
+.icon-swap-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.icon-swap-enter-from {
+  opacity: 0;
+  transform: scale(0.7);
+}
+.icon-swap-leave-to {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.view-fade-enter-active,
+.view-fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.view-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px) scale(0.99);
+}
+.view-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.99);
+}
+
+.col-slide-right-enter-active,
+.col-slide-right-leave-active,
+.col-slide-left-enter-active,
+.col-slide-left-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.col-slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(24px);
+}
+.col-slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(-24px);
+}
+
+.col-slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(-24px);
+}
+.col-slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.list-move {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.list-move-move {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-swap-enter-active,
+  .text-swap-leave-active,
+  .icon-swap-enter-active,
+  .icon-swap-leave-active,
+  .view-fade-enter-active,
+  .view-fade-leave-active,
+  .col-slide-right-enter-active,
+  .col-slide-right-leave-active,
+  .col-slide-left-enter-active,
+  .col-slide-left-leave-active,
+  .list-move,
+  .list-move-move {
+    transition: none;
+  }
 }
 </style>

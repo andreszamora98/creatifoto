@@ -44,7 +44,7 @@ class Order extends Model
         'discount_amount' => 'decimal:2',
         'discount_applies_to_packages' => 'boolean',
         'estimated_delivery_date' => 'date',
-        'actual_delivery_date' => 'date',
+        'actual_delivery_date' => 'datetime',
         'estimated_delivery_time' => 'datetime:H:i',
     ];
 

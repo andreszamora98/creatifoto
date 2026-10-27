@@ -202,11 +202,14 @@
               <div class="bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-5 short:p-3 shadow-sm">
                 <div class="flex items-center justify-between mb-2 sm:mb-3">
                   <h4 class="font-semibold text-gray-800 dark:text-gray-200 text-base sm:text-lg short:text-sm flex items-center">
-                    <i class="ti ti-photo mr-2 text-lg sm:text-xl short:text-base"></i>Conceptos
+                    <ConceptCardIcon
+                      preserveAspectRatio="none"
+                      class="mr-1.5 w-7 h-6 sm:w-8 sm:h-7 short:w-6 short:h-5"
+                    />
+                    Conceptos
                   </h4>
                   <button v-if="!editingConcepts && canEdit" @click="startEditingConcepts" type="button" aria-label="Editar conceptos" class="text-gray-400 hover:text-blue-600 flex-shrink-0 p-1"><i class="ti ti-pencil"></i></button>
                 </div>
-
                 <template v-if="!editingConcepts">
                   <ChargeSummary
                     :lines="summaryLines"
@@ -308,13 +311,15 @@ import DiscountPanel from '../order-quote-shared/DiscountPanel.vue';
 import ConfirmModal from '../common/ConfirmModal.vue';
 import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
+import ConceptCardIcon from '../icons/ConceptCardIcon.vue'
+
 
 export default {
   name: 'QuoteDetailModal',
   mixins: [orderQuoteFormMixin],
   components: {
     CustomerStep, PackagesSummaryList, AdditionalServicesSummaryList,
-    PhotoTypeLinesEditor, ChargeSummary, DiscountPanel, ConfirmModal, SuccessModal, AlertModal
+    PhotoTypeLinesEditor, ChargeSummary, DiscountPanel, ConfirmModal, SuccessModal, AlertModal, ConceptCardIcon
   },
   props: {
     show: { type: Boolean, default: false },

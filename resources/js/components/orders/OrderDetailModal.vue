@@ -271,12 +271,28 @@
               </div>
 
               <div class="rounded-lg p-3 sm:p-5 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 shadow-sm">
+                <!--
                 <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
                   <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center">
-                    <i class="ti ti-photo mr-2 text-lg sm:text-xl"></i>Conceptos
+                    <i class="ti ti-stack-3 mr-2 text-lg sm:text-xl"></i>Conceptos
                     <span class="ml-2 text-sm sm:text-base px-2.5 sm:px-3 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300 rounded">{{ summaryLines.length }}</span>
                   </h4>
                 </div>
+                -->
+                
+                <div class="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-base sm:text-lg flex items-center">
+                    <ConceptCardIcon
+                      preserveAspectRatio="none"
+                      class="mr-1.5 w-7 h-6 sm:w-8 sm:h-7"
+                    />
+                    Conceptos
+                    <span class="ml-2 text-sm sm:text-base px-2.5 sm:px-3 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-300 rounded">
+                      {{ summaryLines.length }}
+                    </span>
+                  </h4>
+                </div>
+
 
                 <div
                   v-if="hasDiscount"
@@ -499,10 +515,11 @@ import SuccessModal from '../common/SuccessModal.vue';
 import AlertModal from '../common/AlertModal.vue';
 import ChargeSummary from '../order-quote-shared/ChargeSummary.vue';
 import PickupPersonsManager from '../order-quote-shared/PickupPersonsManager.vue';
+import ConceptCardIcon from '../icons/ConceptCardIcon.vue'
 
 export default {
   name: 'OrderDetailModal',
-  components: { ConfirmModal, SuccessModal, AlertModal, ChargeSummary, PickupPersonsManager },
+  components: { ConfirmModal, SuccessModal, AlertModal, ChargeSummary, PickupPersonsManager, ConceptCardIcon },
   props: {
     show: { type: Boolean, default: false },
     order: { type: Object, default: null },
